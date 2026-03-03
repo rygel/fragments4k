@@ -4,6 +4,7 @@ import io.andromeda.fragments.Fragment
 import io.andromeda.fragments.FragmentViewModel
 import io.andromeda.fragments.blog.BlogEngine
 import io.andromeda.fragments.rss.RssGenerator
+import io.andromeda.fragments.sitemap.SitemapGenerator
 import io.andromeda.fragments.static.StaticPageEngine
 import io.quarkus.qute.TemplateInstance
 import jakarta.inject.Inject
@@ -22,6 +23,11 @@ class FragmentsQuarkusResource @Inject constructor(
     private val blogEngine: BlogEngine,
     private val rssGenerator: RssGenerator = RssGenerator(
         repository = staticEngine.getRepository()
+    ),
+    private val sitemapGenerator: SitemapGenerator = SitemapGenerator(
+        repository = staticEngine.getRepository(),
+        siteUrl = "http://localhost:8080",
+        lastModified = null
     ),
     private val siteTitle: String = "My Blog",
     private val siteDescription: String = "My Awesome Blog",
@@ -161,6 +167,17 @@ class FragmentsQuarkusResource @Inject constructor(
         return Response.ok()
             .header("Content-Type", "application/rss+xml; charset=utf-8")
             .entity(rssXml)
+            .build()
+    }
+
+    @GET
+    @Path("/sitemap.xml")
+    @Produces("application/xml")
+    suspend fun sitemap(): Response {
+        val sitemapXml = sitemapGenerator.generateSitemap()
+        return Response.ok()
+            .header("Content-Type", "application/xml; charset=utf-8")
+            .entity(sitemapXml)
             .build()
     }
 }

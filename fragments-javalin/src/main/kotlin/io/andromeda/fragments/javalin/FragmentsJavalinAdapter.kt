@@ -3,6 +3,7 @@ package io.andromeda.fragments.javalin
 import io.andromeda.fragments.*
 import io.andromeda.fragments.blog.BlogEngine
 import io.andromeda.fragments.rss.RssGenerator
+import io.andromeda.fragments.sitemap.SitemapGenerator
 import io.andromeda.fragments.static.StaticPageEngine
 import io.javalin.Javalin
 import io.javalin.rendering.template.JavalinPebble
@@ -21,6 +22,11 @@ fun Javalin.fragmentsRoutes(
 ) {
     val rssGenerator = RssGenerator(
         repository = staticEngine.getRepository()
+    )
+    val sitemapGenerator = SitemapGenerator(
+        repository = staticEngine.getRepository(),
+        siteUrl = siteUrl,
+        lastModified = null
     )
 
     get("/") { ctx ->
@@ -140,6 +146,14 @@ fun Javalin.fragmentsRoutes(
             )
             ctx.contentType("application/rss+xml")
             ctx.result(rssXml)
+        }
+    }
+
+    get("/sitemap.xml") { ctx ->
+        runBlocking {
+            val sitemapXml = sitemapGenerator.generateSitemap()
+            ctx.contentType("application/xml")
+            ctx.result(sitemapXml)
         }
     }
 

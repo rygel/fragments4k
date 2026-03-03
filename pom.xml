@@ -204,6 +204,11 @@
                 <artifactId>fragments-lucene-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.andromeda</groupId>
+                <artifactId>fragments-sitemap-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

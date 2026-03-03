@@ -3,6 +3,7 @@ package io.andromeda.fragments.micronaut
 import io.andromeda.fragments.*
 import io.andromeda.fragments.blog.BlogEngine
 import io.andromeda.fragments.rss.RssGenerator
+import io.andromeda.fragments.sitemap.SitemapGenerator
 import io.andromeda.fragments.static.StaticPageEngine
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpStatus
@@ -18,6 +19,11 @@ class FragmentsMicronautController @Inject constructor(
     private val blogEngine: BlogEngine,
     private val rssGenerator: RssGenerator = RssGenerator(
         repository = staticEngine.getRepository()
+    ),
+    private val sitemapGenerator: SitemapGenerator = SitemapGenerator(
+        repository = staticEngine.getRepository(),
+        siteUrl = "http://localhost:8080",
+        lastModified = null
     ),
     private val siteTitle: String = "My Blog",
     private val siteDescription: String = "My Awesome Blog",
@@ -143,6 +149,14 @@ class FragmentsMicronautController @Inject constructor(
         return HttpResponse.ok()
             .header("Content-Type", "application/rss+xml; charset=utf-8")
             .body(rssXml)
+    }
+
+    @Get(value = ["/sitemap.xml"], produces = [MediaType.APPLICATION_XML])
+    suspend fun sitemap(): HttpResponse<String> {
+        val sitemapXml = sitemapGenerator.generateSitemap()
+        return HttpResponse.ok()
+            .header("Content-Type", "application/xml; charset=utf-8")
+            .body(sitemapXml)
     }
 }
 

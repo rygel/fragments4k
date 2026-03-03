@@ -3,6 +3,7 @@ package io.andromeda.fragments.http4k
 import io.andromeda.fragments.*
 import io.andromeda.fragments.blog.BlogEngine
 import io.andromeda.fragments.rss.RssGenerator
+import io.andromeda.fragments.sitemap.SitemapGenerator
 import io.andromeda.fragments.static.StaticPageEngine
 import kotlinx.coroutines.runBlocking
 import org.http4k.core.*
@@ -20,6 +21,11 @@ class FragmentsHttp4kAdapter(
     private val rssGenerator: RssGenerator = RssGenerator(
         repository = staticEngine.getRepository()
     ),
+    private val sitemapGenerator: SitemapGenerator = SitemapGenerator(
+        repository = staticEngine.getRepository(),
+        siteUrl = "http://localhost:8080",
+        lastModified = null
+    ),
     private val siteTitle: String = "My Blog",
     private val siteDescription: String = "My Awesome Blog",
     private val siteUrl: String = "http://localhost:8080",
@@ -35,7 +41,8 @@ class FragmentsHttp4kAdapter(
             "/blog/{year}/{month}/{slug}" bind GET to { request -> handleBlogPost(request) },
             "/blog/tag/{tag}" bind GET to { request -> handleByTag(request) },
             "/blog/category/{category}" bind GET to { request -> handleByCategory(request) },
-            "/rss.xml" bind GET to { _ -> handleRss() }
+            "/rss.xml" bind GET to { _ -> handleRss() },
+            "/sitemap.xml" bind GET to { _ -> handleSitemap() }
         )
     }
 
@@ -144,6 +151,14 @@ class FragmentsHttp4kAdapter(
                 .body(rssXml)
         }
     }
+
+    private fun handleSitemap(): Response {
+        return runBlocking {
+            val sitemapXml = sitemapGenerator.generateSitemap()
+            Response(Status.OK)
+                .header("Content-Type", "application/xml; charset=utf-8")
+                .body(sitemapXml)
+        }
     }
 
     private fun isHtmxRequest(request: Request): Boolean {
