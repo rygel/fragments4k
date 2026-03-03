@@ -107,16 +107,23 @@ Note: Full endpoint tests would require running servers and more complex test se
 ### Core Features
 
 1. **RSS feed endpoints in adapters**
-   - ✅ **Javalin** - Complete with `/rss.xml` endpoint
-   - **Status:** Partial - Javalin done, 4 adapters remaining (HTTP4k, Spring Boot, Quarkus, Micronaut)
-   - Add `/rss` or `/feed.xml` routes to each adapter
-   - Generate RSS feeds for blog and categories
-   - Priority: High
+    - ✅ **All adapters complete** - All 5 adapters have RSS endpoints
+    - HTTP4k: `/rss.xml`
+    - Javalin: `/rss.xml`
+    - Spring Boot: `/rss.xml`, `/feed.xml`
+    - Quarkus: `/rss.xml`
+    - Micronaut: `/rss.xml`, `/feed.xml`
+    - Generate RSS feeds for blog and categories
+    - Status: Complete ✅
+    - Priority: High
 
 2. **Sitemap generation**
-   - Generate XML sitemap for all pages and posts
-   - Include lastModified dates
-   - Priority: High
+    - ✅ **Complete** - All 5 adapters have sitemap endpoints
+    - Generate XML sitemap for all pages and posts
+    - Include lastModified dates
+    - All adapters support `/sitemap.xml` endpoint
+    - Status: Complete ✅
+    - Priority: High
 
 3. **Search UI components**
    - Pre-built search form templates for each framework
