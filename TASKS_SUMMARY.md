@@ -191,6 +191,7 @@ Note: Full endpoint tests would require running servers and more complex test se
     - Provides framework-specific run instructions
     - Status: Complete ✅
     - Priority: High
+    - Tests: Added comprehensive test coverage for init command
 
 14. **Live reload in development**
     - ✅ **Complete** - fragments-live-reload module with file watching
@@ -199,7 +200,7 @@ Note: Full endpoint tests would require running servers and more complex test se
     - Kotlin coroutines support with SharedFlow for event emission
     - CLI --watch flag to enable live reload
     - Auto-reloads fragment repository when content changes
-    - Includes comprehensive tests
+    - Includes comprehensive tests (file creation, modification, deletion, nested directories, errors)
     - Status: Complete ✅
     - Priority: High
 
