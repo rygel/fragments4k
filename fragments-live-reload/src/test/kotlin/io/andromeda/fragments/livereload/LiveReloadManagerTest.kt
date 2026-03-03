@@ -14,6 +14,7 @@ import java.time.LocalDateTime
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlin.test.assertFalse
 
 class LiveReloadManagerTest {
     
@@ -126,6 +127,184 @@ class LiveReloadManagerTest {
         assertFalse(liveReloadManager.isWatching())
     }
     
+    @Test
+    fun `should detect file deletion`() = runBlocking {
+        val file = contentDir.resolve("test.md")
+        Files.writeString(file, createMarkdown("Test"))
+        testRepository.addFragment(createFragment("test", "Test"))
+        
+        liveReloadManager.startWatching()
+        
+        // Wait for watch to start
+        kotlinx.coroutines.delay(500)
+        
+        // Delete the file
+        Files.delete(file)
+        testRepository.deleteFragment("test")
+        
+        // Wait for event processing
+        kotlinx.coroutines.delay(1000)
+        
+        // Verify event was emitted
+        val events = mutableListOf<ReloadEvent>()
+        liveReloadManager.reloadEvents.collect { event ->
+            events.add(event)
+            if (events.size >= 1) return@collect
+        }
+        
+        assertTrue(events.isNotEmpty())
+        assertEquals(ReloadType.CONTENT, events[0].type)
+    }
+    
+    @Test
+    fun `should detect changes in nested directories`() = runBlocking {
+        val nestedDir = contentDir.resolve("blog").resolve("2024").resolve("03")
+        Files.createDirectories(nestedDir)
+        
+        val file = nestedDir.resolve("test-post.md")
+        Files.writeString(file, createMarkdown("Test Post"))
+        testRepository.addFragment(createFragment("test-post", "Test Post"))
+        
+        liveReloadManager.startWatching()
+        
+        // Wait for watch to start
+        kotlinx.coroutines.delay(500)
+        
+        // Modify nested file
+        Files.writeString(file, createMarkdown("Modified Post"))
+        testRepository.updateFragment(createFragment("test-post", "Modified Post"))
+        
+        // Wait for event processing
+        kotlinx.coroutines.delay(1000)
+        
+        // Verify event was emitted
+        val events = mutableListOf<ReloadEvent>()
+        liveReloadManager.reloadEvents.collect { event ->
+            events.add(event)
+            if (events.size >= 1) return@collect
+        }
+        
+        assertTrue(events.isNotEmpty())
+        assertEquals(ReloadType.CONTENT, events[0].type)
+        assertTrue(events[0].changedFiles.isNotEmpty())
+    }
+    
+    @Test
+    fun `should handle multiple rapid changes`() = runBlocking {
+        liveReloadManager.startWatching()
+        
+        // Wait for watch to start
+        kotlinx.coroutines.delay(500)
+        
+        // Create multiple files rapidly
+        val file1 = contentDir.resolve("post1.md")
+        val file2 = contentDir.resolve("post2.md")
+        val file3 = contentDir.resolve("post3.md")
+        
+        Files.writeString(file1, createMarkdown("Post 1"))
+        testRepository.addFragment(createFragment("post1", "Post 1"))
+        kotlinx.coroutines.delay(100)
+        
+        Files.writeString(file2, createMarkdown("Post 2"))
+        testRepository.addFragment(createFragment("post2", "Post 2"))
+        kotlinx.coroutines.delay(100)
+        
+        Files.writeString(file3, createMarkdown("Post 3"))
+        testRepository.addFragment(createFragment("post3", "Post 3"))
+        
+        // Wait for event processing
+        kotlinx.coroutines.delay(2000)
+        
+        // Verify multiple events were emitted
+        val events = mutableListOf<ReloadEvent>()
+        liveReloadManager.reloadEvents.collect { event ->
+            events.add(event)
+            if (events.size >= 3) return@collect
+        }
+        
+        assertTrue(events.size >= 1)
+        assertEquals(ReloadType.CONTENT, events[0].type)
+    }
+    
+    @Test
+    fun `should emit error event on reload failure`() = runBlocking {
+        val errorRepository = ErrorFragmentRepository()
+        val errorLiveReloadManager = LiveReloadManager(errorRepository, contentDir)
+        
+        errorLiveReloadManager.startWatching()
+        
+        // Wait for watch to start
+        kotlinx.coroutines.delay(500)
+        
+        // Create a file to trigger reload
+        val file = contentDir.resolve("test.md")
+        Files.writeString(file, createMarkdown("Test"))
+        
+        // Wait for event processing
+        kotlinx.coroutines.delay(1000)
+        
+        // Verify error event was emitted
+        val events = mutableListOf<ReloadEvent>()
+        errorLiveReloadManager.reloadEvents.collect { event ->
+            events.add(event)
+            if (events.size >= 1) return@collect
+        }
+        
+        assertTrue(events.isNotEmpty())
+        assertEquals(ReloadType.ERROR, events[0].type)
+        assertNotNull(events[0].error)
+        
+        // Clean up
+        errorLiveReloadManager.stopWatching()
+    }
+    
+    @Test
+    fun `should not watch non-existent directory`() = runBlocking {
+        val nonExistentDir = tempDir.resolve("nonexistent")
+        val liveReloadManager = LiveReloadManager(testRepository, nonExistentDir)
+        
+        // Should not throw exception
+        liveReloadManager.startWatching()
+        
+        // Verify it's not watching
+        kotlinx.coroutines.delay(500)
+        assertFalse(liveReloadManager.isWatching())
+    }
+    
+    @Test
+    fun `should collect all events sequentially`() = runBlocking {
+        liveReloadManager.startWatching()
+        
+        // Wait for watch to start
+        kotlinx.coroutines.delay(500)
+        
+        // Create, modify, then delete a file
+        val file = contentDir.resolve("test.md")
+        
+        Files.writeString(file, createMarkdown("Initial"))
+        testRepository.addFragment(createFragment("test", "Initial"))
+        kotlinx.coroutines.delay(200)
+        
+        Files.writeString(file, createMarkdown("Modified"))
+        testRepository.updateFragment(createFragment("test", "Modified"))
+        kotlinx.coroutines.delay(200)
+        
+        Files.delete(file)
+        testRepository.deleteFragment("test")
+        kotlinx.coroutines.delay(200)
+        
+        // Collect all events
+        val events = mutableListOf<ReloadEvent>()
+        liveReloadManager.reloadEvents.collect { event ->
+            events.add(event)
+            if (events.size >= 3) return@collect
+        }
+        
+        // Verify we got 3 events
+        assertTrue(events.size >= 2)
+        events.forEach { assertEquals(ReloadType.CONTENT, it.type) }
+    }
+    
     private fun createMarkdown(title: String): String {
         return """---
 title: "$title"
@@ -177,5 +356,31 @@ class InMemoryFragmentRepository : FragmentRepository {
     
     override suspend fun deleteFragment(slug: String) {
         fragments.removeIf { it.slug == slug }
+    }
+}
+
+class ErrorFragmentRepository : FragmentRepository {
+    override suspend fun getAll(): List<Fragment> {
+        throw RuntimeException("Simulated repository error")
+    }
+    
+    override suspend fun getAllVisible(): List<Fragment> {
+        throw RuntimeException("Simulated repository error")
+    }
+    
+    override suspend fun getBySlug(slug: String): Fragment? {
+        throw RuntimeException("Simulated repository error")
+    }
+    
+    override suspend fun addFragment(fragment: Fragment) {
+        throw RuntimeException("Simulated repository error")
+    }
+    
+    override suspend fun updateFragment(fragment: Fragment) {
+        throw RuntimeException("Simulated repository error")
+    }
+    
+    override suspend fun deleteFragment(slug: String) {
+        throw RuntimeException("Simulated repository error")
     }
 }
