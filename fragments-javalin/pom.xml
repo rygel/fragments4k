@@ -47,6 +47,10 @@
             <artifactId>kotlinx-coroutines-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.andromeda</groupId>
+            <artifactId>fragments-rss-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
         </dependency>

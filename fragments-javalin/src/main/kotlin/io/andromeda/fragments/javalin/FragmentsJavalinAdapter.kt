@@ -3,7 +3,10 @@ package io.andromeda.fragments.javalin
 import io.andromeda.fragments.*
 import io.andromeda.fragments.blog.BlogEngine
 import io.andromeda.fragments.rss.RssGenerator
+import io.andromeda.fragments.static.StaticPageEngine
 import io.javalin.Javalin
+import io.javalin.rendering.template.JavalinPebble
+import io.javalin.rendering.template.ModelAndView
 import org.jetbrains.kotlinx.coroutines.runBlocking
 import java.nio.file.Paths
 
@@ -12,15 +15,12 @@ fun Javalin.fragmentsRoutes(
     blogEngine: BlogEngine,
     renderer: TemplateRenderer,
     siteTitle: String = "My Blog",
-    siteDescription: String = "A Fragments blog",
-    siteUrl: String = "http://localhost:8080"
+    siteDescription: String = "My Awesome Blog",
+    siteUrl: String = "http://localhost:8080",
+    feedUrl: String = "http://localhost:8080/rss.xml"
 ) {
     val rssGenerator = RssGenerator(
-        repository = staticEngine.getRepository(),
-        siteTitle = siteTitle,
-        siteDescription = siteDescription,
-        siteUrl = siteUrl,
-        feedUrl = "$siteUrl/rss.xml"
+        repository = staticEngine.getRepository()
     )
 
     get("/") { ctx ->
@@ -32,6 +32,126 @@ fun Javalin.fragmentsRoutes(
             )
             render(ctx, "index", viewModel)
         }
+    }
+
+    get("/page/{slug}") { ctx ->
+        val slug = ctx.pathParam("slug")
+        runBlocking {
+            val fragment = staticEngine.getPage(slug)
+            if (fragment != null) {
+                val viewModel = FragmentViewModel(fragment, isHtmxRequest(ctx))
+                render(ctx, fragment.template, viewModel)
+            } else {
+                ctx.status(404).result("Page not found")
+            }
+        }
+    }
+
+    get("/blog") { ctx ->
+        val page = ctx.queryParam("page")?.toIntOrNull() ?: 1
+        runBlocking {
+            val pageResult = blogEngine.getOverview(page)
+            val viewModel = BlogOverviewViewModel(
+                fragments = pageResult.items.map { FragmentViewModel(it) },
+                currentPage = pageResult.currentPage,
+                totalPages = pageResult.totalPages,
+                hasNext = pageResult.hasNext,
+                hasPrevious = pageResult.hasPrevious,
+                isPartialRender = isHtmxRequest(ctx)
+            )
+            render(ctx, "blog_overview", viewModel)
+        }
+    }
+
+    get("/blog/page/{page}") { ctx ->
+        val page = ctx.pathParam("page").toIntOrNull() ?: 1
+        runBlocking {
+            val pageResult = blogEngine.getOverview(page)
+            val viewModel = BlogOverviewViewModel(
+                fragments = pageResult.items.map { FragmentViewModel(it) },
+                currentPage = pageResult.currentPage,
+                totalPages = pageResult.totalPages,
+                hasNext = pageResult.hasNext,
+                hasPrevious = pageResult.hasPrevious,
+                isPartialRender = isHtmxRequest(ctx)
+            )
+            render(ctx, "blog_overview", viewModel)
+        }
+    }
+
+    get("/blog/{year}/{month}/{slug}") { ctx ->
+        val year = ctx.pathParam("year")
+        val month = ctx.pathParam("month")
+        val slug = ctx.pathParam("slug")
+        runBlocking {
+            val fragment = blogEngine.getPost(year, month, slug)
+            if (fragment != null) {
+                val viewModel = FragmentViewModel(fragment, isHtmxRequest(ctx))
+                render(ctx, fragment.template, viewModel)
+            } else {
+                ctx.status(404).result("Post not found")
+            }
+        }
+    }
+
+    get("/blog/tag/{tag}") { ctx ->
+        val tag = ctx.pathParam("tag")
+        val page = ctx.queryParam("page")?.toIntOrNull() ?: 1
+        runBlocking {
+            val pageResult = blogEngine.getByTag(tag, page)
+            val viewModel = TagViewModel(
+                tag = tag,
+                fragments = pageResult.items.map { FragmentViewModel(it) },
+                currentPage = pageResult.currentPage,
+                totalPages = pageResult.totalPages,
+                hasNext = pageResult.hasNext,
+                hasPrevious = pageResult.hasPrevious,
+                isPartialRender = isHtmxRequest(ctx)
+            )
+            render(ctx, "blog_overview", viewModel)
+        }
+    }
+
+    get("/blog/category/{category}") { ctx ->
+        val category = ctx.pathParam("category")
+        val page = ctx.queryParam("page")?.toIntOrNull() ?: 1
+        runBlocking {
+            val pageResult = blogEngine.getByCategory(category, page)
+            val viewModel = CategoryViewModel(
+                category = category,
+                fragments = pageResult.items.map { FragmentViewModel(it) },
+                currentPage = pageResult.currentPage,
+                totalPages = pageResult.totalPages,
+                hasNext = pageResult.hasNext,
+                hasPrevious = pageResult.hasPrevious,
+                isPartialRender = isHtmxRequest(ctx)
+            )
+            render(ctx, "blog_overview", viewModel)
+        }
+    }
+
+    get("/rss.xml") { ctx ->
+        runBlocking {
+            val rssXml = rssGenerator.generateFeed(
+                siteTitle = siteTitle,
+                siteDescription = siteDescription,
+                siteUrl = siteUrl,
+                feedUrl = feedUrl
+            )
+            ctx.contentType("application/rss+xml")
+            ctx.result(rssXml)
+        }
+    }
+
+    private fun render(ctx: JavalinContext, template: String, viewModel: Any) {
+        val html = renderer.render(template, viewModel)
+        ctx.html(html)
+    }
+
+    private fun isHtmxRequest(ctx: JavalinContext): Boolean {
+        return ctx.header("HX-Request")?.lowercase() == "true"
+    }
+}
     }
 
     get("/page/{slug}") { ctx ->

@@ -51,6 +51,16 @@
             <artifactId>kotlinx-coroutines-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.micronaut.views</groupId>
+            <artifactId>micronaut-views-thymeleaf</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.andromeda</groupId>
+            <artifactId>fragments-rss-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>io.micronaut.test</groupId>
             <artifactId>micronaut-test-junit5</artifactId>
             <scope>test</scope>

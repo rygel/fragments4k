@@ -1,8 +1,8 @@
 package io.andromeda.fragments.http4k
 
-import io.andromeda.fragments.Fragment
-import io.andromeda.fragments.FragmentViewModel
+import io.andromeda.fragments.*
 import io.andromeda.fragments.blog.BlogEngine
+import io.andromeda.fragments.rss.RssGenerator
 import io.andromeda.fragments.static.StaticPageEngine
 import kotlinx.coroutines.runBlocking
 import org.http4k.core.*
@@ -16,7 +16,14 @@ import org.http4k.template.*
 class FragmentsHttp4kAdapter(
     private val staticEngine: StaticPageEngine,
     private val blogEngine: BlogEngine,
-    private val renderer: TemplateRenderer
+    private val renderer: TemplateRenderer,
+    private val rssGenerator: RssGenerator = RssGenerator(
+        repository = staticEngine.getRepository()
+    ),
+    private val siteTitle: String = "My Blog",
+    private val siteDescription: String = "My Awesome Blog",
+    private val siteUrl: String = "http://localhost:8080",
+    private val feedUrl: String = "$siteUrl/rss.xml"
 ) {
 
     fun createRoutes(): RoutingHttpHandler {
@@ -27,7 +34,8 @@ class FragmentsHttp4kAdapter(
             "/blog/page/{page}" bind GET to { request -> handleBlogOverview(request) },
             "/blog/{year}/{month}/{slug}" bind GET to { request -> handleBlogPost(request) },
             "/blog/tag/{tag}" bind GET to { request -> handleByTag(request) },
-            "/blog/category/{category}" bind GET to { request -> handleByCategory(request) }
+            "/blog/category/{category}" bind GET to { request -> handleByCategory(request) },
+            "/rss.xml" bind GET to { _ -> handleRss() }
         )
     }
 
@@ -108,11 +116,11 @@ class FragmentsHttp4kAdapter(
 
     private fun handleByCategory(request: Request): Response {
         val category = request.path("category") ?: return Response(Status.NOT_FOUND)
-        val page = request.query("page")?.toIntOrNull() ?: 1
         return runBlocking {
-            val pageResult = blogEngine.getByCategory(category, page)
-            val viewModel = BlogOverviewViewModel(
-                fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(request)) },
+            val pageResult = blogEngine.getByCategory(category, 1)
+            val viewModel = CategoryViewModel(
+                category = category,
+                fragments = pageResult.items.map { FragmentViewModel(it) },
                 currentPage = pageResult.currentPage,
                 totalPages = pageResult.totalPages,
                 hasNext = pageResult.hasNext,
@@ -121,6 +129,21 @@ class FragmentsHttp4kAdapter(
             )
             renderResponse(viewModel, "blog_overview")
         }
+    }
+
+    private fun handleRss(): Response {
+        return runBlocking {
+            val rssXml = rssGenerator.generateFeed(
+                siteTitle = siteTitle,
+                siteDescription = siteDescription,
+                siteUrl = siteUrl,
+                feedUrl = feedUrl
+            )
+            Response(Status.OK)
+                .header("Content-Type", "application/rss+xml; charset=utf-8")
+                .body(rssXml)
+        }
+    }
     }
 
     private fun isHtmxRequest(request: Request): Boolean {

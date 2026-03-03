@@ -24,7 +24,15 @@ fun main() {
         it.fileRenderer(JavalinPebble().prependTemplateLocation("templates"))
     }
 
-    app.fragmentsRoutes(staticEngine, blogEngine)
+    app.fragmentsRoutes(
+        staticEngine = staticEngine,
+        blogEngine = blogEngine,
+        renderer = app.fileRenderer(),
+        siteTitle = "Fragments4k Javalin Demo",
+        siteDescription = "A demo blog powered by Fragments4k with Javalin",
+        siteUrl = "http://localhost:8080",
+        feedUrl = "http://localhost:8080/rss.xml"
+    )
 
     app.exception(Exception::class.java) { e, ctx ->
         logger.error("Error handling request", e)
@@ -33,5 +41,6 @@ fun main() {
 
     val port = System.getProperty("server.port")?.toIntOrNull() ?: 8080
     logger.info("Starting Javalin demo server on port $port")
+    logger.info("RSS feed available at: http://localhost:$port/rss.xml")
     app.start(port)
 }

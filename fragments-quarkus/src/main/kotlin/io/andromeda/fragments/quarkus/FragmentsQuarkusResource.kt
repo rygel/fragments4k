@@ -3,6 +3,7 @@ package io.andromeda.fragments.quarkus
 import io.andromeda.fragments.Fragment
 import io.andromeda.fragments.FragmentViewModel
 import io.andromeda.fragments.blog.BlogEngine
+import io.andromeda.fragments.rss.RssGenerator
 import io.andromeda.fragments.static.StaticPageEngine
 import io.quarkus.qute.TemplateInstance
 import jakarta.inject.Inject
@@ -13,11 +14,19 @@ import jakarta.ws.rs.QueryParam
 import jakarta.ws.rs.core.Context
 import jakarta.ws.rs.core.HttpHeaders
 import jakarta.ws.rs.core.Response
+import jakarta.ws.rs.Produces
 
 @Path("/")
 class FragmentsQuarkusResource @Inject constructor(
     private val staticEngine: StaticPageEngine,
-    private val blogEngine: BlogEngine
+    private val blogEngine: BlogEngine,
+    private val rssGenerator: RssGenerator = RssGenerator(
+        repository = staticEngine.getRepository()
+    ),
+    private val siteTitle: String = "My Blog",
+    private val siteDescription: String = "My Awesome Blog",
+    private val siteUrl: String = "http://localhost:8080",
+    private val feedUrl: String = "http://localhost:8080/rss.xml"
 ) {
 
     @GET
@@ -138,6 +147,23 @@ class FragmentsQuarkusResource @Inject constructor(
     private fun isHtmxRequest(headers: HttpHeaders): Boolean {
         return headers.getHeaderString(FragmentViewModel.HTMX_REQUEST_HEADER)?.lowercase() == "true"
     }
+
+    @GET
+    @Path("/rss.xml")
+    @Produces("application/rss+xml")
+    suspend fun rss(): Response {
+        val rssXml = rssGenerator.generateFeed(
+            siteTitle = siteTitle,
+            siteDescription = siteDescription,
+            siteUrl = siteUrl,
+            feedUrl = feedUrl
+        )
+        return Response.ok()
+            .header("Content-Type", "application/rss+xml; charset=utf-8")
+            .entity(rssXml)
+            .build()
+    }
+}
 
     data class HomeViewModel(
         val fragments: List<FragmentViewModel>,

@@ -1,8 +1,8 @@
 package io.andromeda.fragments.demo.http4k
 
 import io.andromeda.fragments.FileSystemFragmentRepository
-import io.andromeda.fragments.blog.BlogEngine
 import io.andromeda.fragments.http4k.FragmentsHttp4kAdapter
+import io.andromeda.fragments.blog.BlogEngine
 import io.andromeda.fragments.static.StaticPageEngine
 import org.http4k.filter.ServerFilters.CatchAll
 import org.http4k.server.asServer
@@ -24,7 +24,14 @@ fun main() {
     val blogEngine = BlogEngine(repository)
 
     val renderer = PebbleTemplates().HotReload("src/main/resources/templates")
-    val adapter = FragmentsHttp4kAdapter(staticEngine, blogEngine, renderer)
+    val adapter = FragmentsHttp4kAdapter(
+        staticEngine = staticEngine,
+        blogEngine = blogEngine,
+        renderer = renderer,
+        siteTitle = "Fragments4k HTTP4k Demo",
+        siteDescription = "A demo blog powered by Fragments4k with HTTP4k",
+        siteUrl = "http://localhost:8080"
+    )
 
     val server = CatchAll { e ->
         logger.error("Error handling request", e)
@@ -32,6 +39,7 @@ fun main() {
     }.then(adapter.createRoutes()).asServer(Netty(8080))
 
     logger.info("Starting HTTP4k demo server on port 8080")
+    logger.info("RSS feed available at: http://localhost:8080/rss.xml")
     server.start()
     server.block()
 }

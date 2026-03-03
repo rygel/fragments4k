@@ -5,23 +5,24 @@ import io.andromeda.fragments.FragmentRepository
 import java.time.format.DateTimeFormatter
 
 class RssGenerator(
-    private val repository: FragmentRepository,
-    private val siteTitle: String,
-    private val siteDescription: String,
-    private val siteUrl: String,
-    private val feedUrl: String
+    private val repository: FragmentRepository
 ) {
 
-    suspend fun generateFeed(): String {
+    suspend fun generateFeed(
+        siteTitle: String = "My Blog",
+        siteDescription: String = "My Awesome Blog",
+        siteUrl: String = "http://localhost:8080",
+        feedUrl: String = "http://localhost:8080/rss.xml"
+    ): String {
         val fragments = repository.getAllVisible()
             .sortedByDescending { it.date }
             .take(20)
 
-        val lastBuildDate = fragments.firstOrNull()?.date?.format(formatter) 
+        val lastBuildDate = fragments.firstOrNull()?.date?.format(formatter)
             ?: java.time.LocalDateTime.now().format(formatter)
 
         val items = fragments.joinToString(separator = "\n") { fragment ->
-            renderItem(fragment)
+            renderItem(fragment, siteUrl)
         }
 
         return buildString {
@@ -39,10 +40,10 @@ class RssGenerator(
         }
     }
 
-    private fun renderItem(fragment: Fragment): String {
+    private fun renderItem(fragment: Fragment, siteUrl: String): String {
         val pubDate = fragment.date?.format(formatter) ?: ""
         val fullUrl = "$siteUrl/${fragment.slug}"
-        
+
         return buildString {
             appendLine("    <item>")
             appendLine("      <title>${escapeXml(fragment.title)}</title>")
@@ -50,15 +51,15 @@ class RssGenerator(
             appendLine("      <description>${escapeXml(fragment.previewTextOnly)}</description>")
             appendLine("      <pubDate>$pubDate</pubDate>")
             appendLine("      <guid>${escapeXml(fullUrl)}</guid>")
-            
+
             fragment.categories.forEach { category ->
                 appendLine("      <category>${escapeXml(category)}</category>")
             }
-            
+
             fragment.tags.forEach { tag ->
                 appendLine("      <category>${escapeXml(tag)}</category>")
             }
-            
+
             appendLine("    </item>")
         }
     }

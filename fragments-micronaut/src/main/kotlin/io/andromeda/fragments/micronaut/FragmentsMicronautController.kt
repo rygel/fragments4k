@@ -1,11 +1,12 @@
 package io.andromeda.fragments.micronaut
 
-import io.andromeda.fragments.Fragment
-import io.andromeda.fragments.FragmentViewModel
+import io.andromeda.fragments.*
 import io.andromeda.fragments.blog.BlogEngine
+import io.andromeda.fragments.rss.RssGenerator
 import io.andromeda.fragments.static.StaticPageEngine
 import io.micronaut.http.HttpHeaders
-import io.micronaut.http.HttpResponse
+import io.micronaut.http.HttpStatus
+import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Get
 import io.micronaut.http.annotation.QueryValue
@@ -14,7 +15,14 @@ import jakarta.inject.Inject
 @Controller("/")
 class FragmentsMicronautController @Inject constructor(
     private val staticEngine: StaticPageEngine,
-    private val blogEngine: BlogEngine
+    private val blogEngine: BlogEngine,
+    private val rssGenerator: RssGenerator = RssGenerator(
+        repository = staticEngine.getRepository()
+    ),
+    private val siteTitle: String = "My Blog",
+    private val siteDescription: String = "My Awesome Blog",
+    private val siteUrl: String = "http://localhost:8080",
+    private val feedUrl: String = "http://localhost:8080/rss.xml"
 ) {
 
     @Get("/")
@@ -123,6 +131,20 @@ class FragmentsMicronautController @Inject constructor(
     private fun isHtmxRequest(headers: HttpHeaders): Boolean {
         return headers.get(FragmentViewModel.HTMX_REQUEST_HEADER)?.lowercase() == "true"
     }
+
+    @Get(value = ["/rss.xml", "/feed.xml"], produces = [MediaType.APPLICATION_XML, "application/rss+xml"])
+    suspend fun rss(): HttpResponse<String> {
+        val rssXml = rssGenerator.generateFeed(
+            siteTitle = siteTitle,
+            siteDescription = siteDescription,
+            siteUrl = siteUrl,
+            feedUrl = feedUrl
+        )
+        return HttpResponse.ok()
+            .header("Content-Type", "application/rss+xml; charset=utf-8")
+            .body(rssXml)
+    }
+}
 
     data class HomeViewModel(
         val fragments: List<FragmentViewModel>,
