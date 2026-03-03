@@ -98,6 +98,7 @@ All 5 framework adapters now include:
    - Supports all 5 frameworks
    - Generates complete project structure
    - Creates templates, sample content, and configuration
+   - Comprehensive test coverage for project generation
 
 2. **Live Reload** - Development mode file watching
    - Automatic reload on content changes
@@ -105,6 +106,7 @@ All 5 framework adapters now include:
    - Kotlin coroutines support
    - CLI --watch flag for easy setup
    - Event-based notification system
+   - Comprehensive test coverage (file creation, modification, deletion, nested directories, errors)
 
 ## Remaining Work
 
