@@ -74,11 +74,22 @@ This is a port of the Fragments library from Pippo Java to Kotlin with a multi-f
 ## Phase 4: Advanced Features (COMPLETED)
 
 1. **RSS Generator** - XML feed generation with RSS 2.0 format
-2. **Lucene Search Engine**
-   - In-memory (for tests) or disk-based index
-   - Full-text search on content and preview
-   - Tag/category filtering
-   - Relevance scoring
+2. **Sitemap Generator** - XML sitemap generation for SEO
+3. **Lucene Search Engine**
+    - In-memory (for tests) or disk-based index
+    - Full-text search on content and preview
+    - Tag/category filtering
+    - Relevance scoring
+
+## Phase 5: Integration (COMPLETED)
+
+All 5 framework adapters now include:
+- RSS feed endpoints (`/rss.xml` and `/feed.xml`)
+- Sitemap endpoint (`/sitemap.xml`)
+- Full routing coverage (home, pages, blog, tags, categories)
+- HTMX support for partial rendering
+- Kotlin coroutines with suspend functions
+- Framework-specific DI integration
 
 ## Remaining Work
 
