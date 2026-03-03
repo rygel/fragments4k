@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog - Fragments4k Demo</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1, h2, h3 {
+            color: #333;
+        }
+        .nav {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .nav a {
+            margin-right: 15px;
+            color: #0066cc;
+            text-decoration: none;
+        }
+        .nav a:hover {
+            text-decoration: underline;
+        }
+        .post-list {
+            list-style: none;
+            padding: 0;
+        }
+        .post-list li {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+        .post-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .post-title a {
+            color: #333;
+            text-decoration: none;
+        }
+        .post-title a:hover {
+            color: #0066cc;
+        }
+        .post-meta {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+        .tag {
+            display: inline-block;
+            background: #007bff;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-right: 5px;
+            font-size: 0.8em;
+        }
+        .category {
+            display: inline-block;
+            background: #6c757d;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-right: 5px;
+            font-size: 0.8em;
+        }
+        .pagination {
+            margin-top: 30px;
+            text-align: center;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+        .pagination a {
+            display: inline-block;
+            padding: 8px 16px;
+            margin: 0 5px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            color: #333;
+            text-decoration: none;
+        }
+        .pagination a:hover {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        .pagination .disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <a href="/">Home</a>
+        <a href="/blog">Blog</a>
+    </nav>
+
+    <h1>Blog</h1>
+
+    <ul class="post-list">
+        {% for fragment in fragments %}
+        <li class="post">
+            <h2 class="post-title">
+                <a href="/blog/{{ fragment.year }}/{{ fragment.month }}/{{ fragment.slug }}">
+                    {{ fragment.title }}
+                </a>
+            </h2>
+            <div class="post-meta">
+                <p>
+                    <strong>Date:</strong> {{ fragment.formattedDate }}<br>
+                    {% if fragment.tags %}
+                    <strong>Tags:</strong>
+                    {% for tag in fragment.tags %}
+                    <span class="tag">{{ tag }}</span>
+                    {% endfor %}
+                    <br>
+                    {% endif %}
+                    {% if fragment.categories %}
+                    <strong>Categories:</strong>
+                    {% for category in fragment.categories %}
+                    <span class="category">{{ category }}</span>
+                    {% endfor %}
+                    {% endif %}
+                </p>
+            </div>
+            <p>{{ fragment.contentPreview }}</p>
+            <p><a href="/blog/{{ fragment.year }}/{{ fragment.month }}/{{ fragment.slug }}">Read more &rarr;</a></p>
+        </li>
+        {% endfor %}
+    </ul>
+
+    {% if totalPages > 1 %}
+    <div class="pagination">
+        {% if hasPrevious %}
+        <a href="/blog/page/{{ currentPage - 1 }}">&larr; Previous</a>
+        {% else %}
+        <a class="disabled">&larr; Previous</a>
+        {% endif %}
+
+        <span>Page {{ currentPage }} of {{ totalPages }}</span>
+
+        {% if hasNext %}
+        <a href="/blog/page/{{ currentPage + 1 }}">Next &rarr;</a>
+        {% else %}
+        <a class="disabled">Next &rarr;</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <footer>
+        <p>&copy; 2024 Fragments4k. Powered by <a href="https://github.com/rygel/fragments4k">Fragments4k</a></p>
+    </footer>
+</body>
+</html>

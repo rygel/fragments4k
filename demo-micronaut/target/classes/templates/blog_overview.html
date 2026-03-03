@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog - Fragments4k Demo</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1, h2, h3 {
+            color: #333;
+        }
+        .nav {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .nav a {
+            margin-right: 15px;
+            color: #0066cc;
+            text-decoration: none;
+        }
+        .nav a:hover {
+            text-decoration: underline;
+        }
+        .post-list {
+            list-style: none;
+            padding: 0;
+        }
+        .post-list li {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+        .post-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .post-title a {
+            color: #333;
+            text-decoration: none;
+        }
+        .post-title a:hover {
+            color: #0066cc;
+        }
+        .post-meta {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+        .tag {
+            display: inline-block;
+            background: #007bff;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-right: 5px;
+            font-size: 0.8em;
+        }
+        .category {
+            display: inline-block;
+            background: #6c757d;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-right: 5px;
+            font-size: 0.8em;
+        }
+        .pagination {
+            margin-top: 30px;
+            text-align: center;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+        .pagination a {
+            display: inline-block;
+            padding: 8px 16px;
+            margin: 0 5px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            color: #333;
+            text-decoration: none;
+        }
+        .pagination a:hover {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        .pagination .disabled {
+            opacity: 0.5;
+            pointer-events: none;
+            background: #eee;
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <a href="/">Home</a>
+        <a href="/blog">Blog</a>
+    </nav>
+
+    <h1>Blog</h1>
+
+    <ul class="post-list">
+        <li th:each="fragment : ${viewModel.fragments}">
+            <article class="post">
+                <h2 class="post-title">
+                    <a th:href="@{/blog/{year}/{month}/{slug}(year=${fragment.year}, month=${fragment.month}, slug=${fragment.slug})}"
+                       th:text="${fragment.title}">Post Title</a>
+                </h2>
+                <div class="post-meta">
+                    <p>
+                        <strong>Date:</strong> <span th:text="${fragment.formattedDate}">2024-03-03</span><br>
+                        <div th:if="${fragment.tags != null and !fragment.tags.empty}">
+                            <strong>Tags:</strong>
+                            <span th:each="tag : ${fragment.tags}" class="tag" th:text="${tag}">kotlin</span>
+                            <br>
+                        </div>
+                        <div th:if="${fragment.categories != null and !fragment.categories.empty}">
+                            <strong>Categories:</strong>
+                            <span th:each="category : ${fragment.categories}" class="category" th:text="${category}">tutorial</span>
+                        </div>
+                    </p>
+                </div>
+                <p th:utext="${fragment.contentPreview}">Content preview...</p>
+                <p><a th:href="@{/blog/{year}/{month}/{slug}(year=${fragment.year}, month=${fragment.month}, slug=${fragment.slug})}">Read more &rarr;</a></p>
+            </article>
+        </li>
+    </ul>
+
+    <div th:if="${viewModel.totalPages > 1}" class="pagination">
+        <a th:if="${viewModel.hasPrevious}"
+           th:href="@{/blog/page/{page}(page=${viewModel.currentPage - 1})}">&larr; Previous</a>
+        <a th:if="${!viewModel.hasPrevious}" class="disabled">&larr; Previous</a>
+
+        <span th:text="'Page ' + ${viewModel.currentPage} + ' of ' + ${viewModel.totalPages}">Page 1 of 1</span>
+
+        <a th:if="${viewModel.hasNext}"
+           th:href="@{/blog/page/{page}(page=${viewModel.currentPage + 1})}">Next &rarr;</a>
+        <a th:if="${!viewModel.hasNext}" class="disabled">Next &rarr;</a>
+    </div>
+
+    <footer>
+        <p>&copy; 2024 Fragments4k. Powered by <a href="https://github.com/rygel/fragments4k">Fragments4k</a></p>
+    </footer>
+</body>
+</html>

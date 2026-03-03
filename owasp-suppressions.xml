@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+    <!--
+    This file is used to suppress false positive security findings from OWASP dependency check.
+    
+    Each suppression entry should include:
+    - notes: Description of why this is a false positive
+    - filePath: Path to the affected artifact (can use regex)
+    - cve: CVE ID to suppress
+    
+    Example:
+    <suppress>
+        <notes>
+            This is a false positive because...
+        </notes>
+        <filePath regex="true">.*some-artifact.*</filePath>
+        <cve>CVE-XXXX-XXXXX</cve>
+    </suppress>
+    -->
+    
+    <!-- Add project-specific suppressions here as needed -->
+    
+</suppressions>
