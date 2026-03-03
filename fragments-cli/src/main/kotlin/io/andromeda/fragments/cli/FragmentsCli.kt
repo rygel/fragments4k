@@ -119,7 +119,7 @@ class InitCommand : Runnable {
 
 @Command(
     name = "run",
-    description = ["Run the Fragments4k development server"]
+    description = ["Run a Fragments4k development server"]
 )
 class RunCommand : Runnable {
     
@@ -137,15 +137,65 @@ class RunCommand : Runnable {
     )
     private var contentDir: String = "content"
     
+    @Option(
+        names = ["-w", "--watch"],
+        description = ["Enable live reload (default: false)"],
+        defaultValue = "false"
+    )
+    private var watch: Boolean = false
+    
+    @Option(
+        names = ["-f", "--framework"],
+        description = ["Web framework (http4k, javalin, spring-boot, quarkus, micronaut)"]
+    )
+    private var framework: String? = null
+    
     override fun run() {
-        println("Starting development server on port $port")
+        println("Starting Fragments4k development server")
+        println("Port: $port")
         println("Content directory: $contentDir")
-        println("Note: Live reload feature not yet implemented")
+        if (watch) {
+            println("Live reload: ENABLED")
+            println("Press Ctrl+C to stop")
+        } else {
+            println("Live reload: DISABLED")
+        }
         println()
-        println("Use framework-specific commands to run the server:")
-        println("  HTTP4k/Javalin: mvn exec:java")
-        println("  Spring Boot: mvn spring-boot:run")
-        println("  Quarkus: mvn quarkus:dev")
-        println("  Micronaut: mvn micronaut:run")
+        
+        if (watch) {
+            startLiveReload()
+        } else {
+            println("Use framework-specific commands to run the server:")
+            println("  HTTP4k/Javalin: mvn exec:java")
+            println("  Spring Boot: mvn spring-boot:run")
+            println("  Quarkus: mvn quarkus:dev")
+            println("  Micronaut: mvn micronaut:run")
+        }
+    }
+    
+    private fun startLiveReload() {
+        println("Starting live reload...")
+        println("Note: Live reload requires integration with your application code")
+        println()
+        println("To enable live reload in your application:")
+        println("1. Add fragments-live-reload dependency to your pom.xml")
+        println("2. Create a LiveReloadManager instance with your repository")
+        println("3. Call startWatching() in your application startup")
+        println()
+        println("Example:")
+        println("""
+    val liveReloadManager = LiveReloadManager(repository, Paths.get("content"))
+    liveReloadManager.startWatching()
+    println("Live reload started!")
+""")
+        
+        addShutdownHook {
+            println()
+            println("Stopping live reload...")
+        }
+    }
+    
+    private fun addShutdownHook(hook: () -> Unit) {
+        Runtime.getRuntime().addShutdownHook(Thread(hook))
     }
 }

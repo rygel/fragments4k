@@ -45,6 +45,7 @@
         <module>fragments-rss-core</module>
         <module>fragments-lucene-core</module>
         <module>fragments-sitemap-core</module>
+        <module>fragments-live-reload</module>
         <module>fragments-http4k</module>
         <module>fragments-javalin</module>
         <module>fragments-spring-boot</module>
@@ -208,6 +209,11 @@
             <dependency>
                 <groupId>io.andromeda</groupId>
                 <artifactId>fragments-sitemap-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.andromeda</groupId>
+                <artifactId>fragments-live-reload</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>
