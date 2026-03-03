@@ -44,12 +44,13 @@
         <module>fragments-blog-core</module>
         <module>fragments-rss-core</module>
         <module>fragments-lucene-core</module>
+        <module>fragments-sitemap-core</module>
         <module>fragments-http4k</module>
         <module>fragments-javalin</module>
         <module>fragments-spring-boot</module>
         <module>fragments-quarkus</module>
         <module>fragments-micronaut</module>
-        <module>fragments-sitemap-core</module>
+        <module>fragments-cli</module>
         <module>demo-http4k</module>
         <module>demo-spring-boot</module>
         <module>demo-javalin</module>
