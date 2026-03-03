@@ -182,9 +182,15 @@ Note: Full endpoint tests would require running servers and more complex test se
 ### Developer Experience
 
 13. **CLI scaffolding tool**
-   - `fragments init my-blog --framework=spring-boot`
-   - Generate project structure, templates, sample content
-   - Priority: High
+    - ✅ **Complete** - fragments-cli module with Picocli framework
+    - Command: `fragments init my-blog --framework=spring-boot`
+    - Supports all 5 frameworks: HTTP4k, Javalin, Spring Boot, Quarkus, Micronaut
+    - Generates complete project structure with Maven config, source files, templates, sample content
+    - Creates framework-specific templates (Pebble, Thymeleaf, Qute)
+    - Adds .gitignore and README.md to generated projects
+    - Provides framework-specific run instructions
+    - Status: Complete ✅
+    - Priority: High
 
 14. **Live reload in development**
    - Watch content directory for changes
