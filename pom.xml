@@ -49,6 +49,7 @@
         <module>fragments-spring-boot</module>
         <module>fragments-quarkus</module>
         <module>fragments-micronaut</module>
+        <module>fragments-sitemap-core</module>
         <module>demo-http4k</module>
         <module>demo-spring-boot</module>
         <module>demo-javalin</module>
