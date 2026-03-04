@@ -112,6 +112,46 @@
         .toc .toc-level-3 {
             margin-left: 15px;
         }
+        .related-posts {
+            margin-top: 40px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        .related-posts h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .related-posts ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .related-posts li {
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #eee;
+        }
+        .related-posts li:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+        .related-posts a {
+            color: #0066cc;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .related-posts a:hover {
+            text-decoration: underline;
+        }
+        .related-posts .post-date {
+            color: #666;
+            font-size: 0.85em;
+            margin-left: 10px;
+        }
     </style>
 </head>
 <body>
@@ -151,6 +191,17 @@
 
         <div class="content" th:utext="${viewModel.content}">
         </div>
+
+        <aside class="related-posts" th:if="${viewModel.relatedPosts != null and !viewModel.relatedPosts.empty}">
+            <h3>You might also like</h3>
+            <ul>
+                <li th:each="post : ${viewModel.relatedPosts}">
+                    <a th:href="@{/blog/{year}/{month}/{slug}(year=${post.date[0]}, month=${post.date[1]}, slug=${post.slug})}"
+                       th:text="${post.title}">Related Post Title</a>
+                    <span class="post-date" th:text="${post.formattedDate}">2024-03-03</span>
+                </li>
+            </ul>
+        </aside>
     </article>
 
     <footer>
