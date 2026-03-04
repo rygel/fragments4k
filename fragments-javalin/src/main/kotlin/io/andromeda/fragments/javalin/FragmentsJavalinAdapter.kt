@@ -1,6 +1,6 @@
 package io.andromeda.fragments.javalin
 
-import io.andromeda.fragments.FragmentViewModel
+import io.andromeda.fragments.*
 import io.andromeda.fragments.blog.BlogEngine
 import io.andromeda.fragments.lucene.LuceneSearchEngine
 import io.andromeda.fragments.rss.RssGenerator
@@ -43,7 +43,9 @@ fun Javalin.fragmentsRoutes(
             val fragments = staticEngine.getAllStaticPages()
             val viewModel = HomeViewModel(
                 fragments = fragments.map { FragmentViewModel(it) },
-                isPartialRender = isHtmxRequest(ctx)
+                isPartialRender = isHtmxRequest(ctx),
+                navigationMenu = NavigationMenuGenerator.generateMainMenu(),
+                footer = FooterGenerator.generate()
             )
             render(ctx, "index", viewModel)
         }
@@ -54,9 +56,12 @@ fun Javalin.fragmentsRoutes(
         runBlocking {
             val fragment = staticEngine.getPage(slug)
             if (fragment != null) {
+                val fragmentViewModel = FragmentViewModel(fragment, isHtmxRequest(ctx))
                 val viewModel = ContentViewModel(
-                    viewModel = FragmentViewModel(fragment, isHtmxRequest(ctx)),
-                    templateName = fragment.template
+                    viewModel = fragmentViewModel,
+                    templateName = fragment.template,
+                    navigationMenu = NavigationMenuGenerator.generateMainMenu(),
+                    footer = FooterGenerator.generate()
                 )
                 render(ctx, fragment.template, viewModel)
             } else {
@@ -74,7 +79,19 @@ fun Javalin.fragmentsRoutes(
                 totalPages = pageResult.totalPages,
                 hasNext = pageResult.hasNext,
                 hasPrevious = pageResult.hasPrevious,
-                isPartialRender = isHtmxRequest(ctx)
+                isPartialRender = isHtmxRequest(ctx),
+                navigationMenu = NavigationMenuGenerator.generateMainMenu(
+                    siteUrl = "/",
+                    blogUrl = "/blog",
+                    archiveUrl = "/blog/archive",
+                    searchUrl = "/search"
+                ),
+                pagination = PaginationGenerator.generateSimpleControls(
+                    currentPage = pageResult.currentPage,
+                    totalPages = pageResult.totalPages,
+                    basePath = "/blog"
+                ),
+                footer = FooterGenerator.generate()
             )
             render(ctx, "blog_overview", viewModel)
         }
@@ -90,7 +107,19 @@ fun Javalin.fragmentsRoutes(
                 totalPages = pageResult.totalPages,
                 hasNext = pageResult.hasNext,
                 hasPrevious = pageResult.hasPrevious,
-                isPartialRender = isHtmxRequest(ctx)
+                isPartialRender = isHtmxRequest(ctx),
+                navigationMenu = NavigationMenuGenerator.generateMainMenu(
+                    siteUrl = "/",
+                    blogUrl = "/blog",
+                    archiveUrl = "/blog/archive",
+                    searchUrl = "/search"
+                ),
+                pagination = PaginationGenerator.generateSimpleControls(
+                    currentPage = pageResult.currentPage,
+                    totalPages = pageResult.totalPages,
+                    basePath = "/blog"
+                ),
+                footer = FooterGenerator.generate()
             )
             render(ctx, "blog_overview", viewModel)
         }
@@ -103,9 +132,12 @@ fun Javalin.fragmentsRoutes(
         runBlocking {
             val fragment = blogEngine.getPost(year, month, slug)
             if (fragment != null) {
+                val fragmentViewModel = FragmentViewModel(fragment, isHtmxRequest(ctx))
                 val viewModel = ContentViewModel(
-                    viewModel = FragmentViewModel(fragment, isHtmxRequest(ctx)),
-                    templateName = fragment.template
+                    viewModel = fragmentViewModel,
+                    templateName = fragment.template,
+                    navigationMenu = NavigationMenuGenerator.generateMainMenu(),
+                    footer = FooterGenerator.generate()
                 )
                 render(ctx, fragment.template, viewModel)
             } else {
@@ -126,7 +158,19 @@ fun Javalin.fragmentsRoutes(
                 hasNext = pageResult.hasNext,
                 hasPrevious = pageResult.hasPrevious,
                 tag = tag,
-                isPartialRender = isHtmxRequest(ctx)
+                isPartialRender = isHtmxRequest(ctx),
+                navigationMenu = NavigationMenuGenerator.generateMainMenu(
+                    siteUrl = "/",
+                    blogUrl = "/blog",
+                    archiveUrl = "/blog/archive",
+                    searchUrl = "/search"
+                ),
+                pagination = PaginationGenerator.generateSimpleControls(
+                    currentPage = pageResult.currentPage,
+                    totalPages = pageResult.totalPages,
+                    basePath = "/blog"
+                ),
+                footer = FooterGenerator.generate()
             )
             render(ctx, "blog_overview", viewModel)
         }
@@ -144,7 +188,19 @@ fun Javalin.fragmentsRoutes(
                 totalPages = pageResult.totalPages,
                 hasNext = pageResult.hasNext,
                 hasPrevious = pageResult.hasPrevious,
-                isPartialRender = isHtmxRequest(ctx)
+                isPartialRender = isHtmxRequest(ctx),
+                navigationMenu = NavigationMenuGenerator.generateMainMenu(
+                    siteUrl = "/",
+                    blogUrl = "/blog",
+                    archiveUrl = "/blog/archive",
+                    searchUrl = "/search"
+                ),
+                pagination = PaginationGenerator.generateSimpleControls(
+                    currentPage = pageResult.currentPage,
+                    totalPages = pageResult.totalPages,
+                    basePath = "/blog"
+                ),
+                footer = FooterGenerator.generate()
             )
             render(ctx, "blog_overview", viewModel)
         }
@@ -163,7 +219,22 @@ fun Javalin.fragmentsRoutes(
                 type = "year",
                 year = year,
                 fragments = fragments.map { FragmentViewModel(it) },
-                siteTitle = siteTitle
+                siteTitle = siteTitle,
+                navigationMenu = NavigationMenuGenerator.generateMainMenu(
+                    siteUrl = "/",
+                    blogUrl = "/blog",
+                    archiveUrl = "/blog/archive",
+                    searchUrl = "/search"
+                ),
+                footer = FooterGenerator.generate(),
+                archiveYearLinks = ArchiveNavigationGenerator.generateYearLinks(
+                    baseUrl = "/blog/archive",
+                    availableYears = emptyList(),
+                    currentYear = yearInt
+                ),
+                archiveBreadcrumbs = ArchiveNavigationGenerator.generateBreadcrumbs(
+                    currentYear = yearInt
+                )
             )
             render(ctx, "archive", viewModel)
         }
@@ -174,7 +245,7 @@ fun Javalin.fragmentsRoutes(
         val month = ctx.pathParam("month")
         val yearInt = year.toIntOrNull()
         val monthInt = month.toIntOrNull()
-        
+
         if (yearInt == null) {
             ctx.status(400).result("Invalid year")
             return@get
@@ -183,7 +254,7 @@ fun Javalin.fragmentsRoutes(
             ctx.status(400).result("Invalid month")
             return@get
         }
-        
+
         runBlocking {
             val fragments = blogEngine.getByYearMonth(yearInt, monthInt)
             val viewModel = ArchiveViewModel(
@@ -191,7 +262,22 @@ fun Javalin.fragmentsRoutes(
                 year = year,
                 month = month,
                 fragments = fragments.map { FragmentViewModel(it) },
-                siteTitle = siteTitle
+                siteTitle = siteTitle,
+                navigationMenu = NavigationMenuGenerator.generateMainMenu(
+                    siteUrl = "/",
+                    blogUrl = "/blog",
+                    archiveUrl = "/blog/archive",
+                    searchUrl = "/search"
+                ),
+                footer = FooterGenerator.generate(),
+                archiveMonthLinks = ArchiveNavigationGenerator.generateMonthLinks(
+                    year = yearInt,
+                    currentMonth = monthInt
+                ),
+                archiveBreadcrumbs = ArchiveNavigationGenerator.generateBreadcrumbs(
+                    currentYear = yearInt,
+                    currentMonth = monthInt
+                )
             )
             render(ctx, "archive", viewModel)
         }
@@ -229,7 +315,21 @@ fun Javalin.fragmentsRoutes(
             val viewModel = SearchViewModel(
                 query = query,
                 results = results.map { FragmentViewModel(it.fragment) },
-                siteTitle = siteTitle
+                siteTitle = siteTitle,
+                navigationMenu = NavigationMenuGenerator.generateMainMenu(
+                    siteUrl = "/",
+                    blogUrl = "/blog",
+                    archiveUrl = "/blog/archive",
+                    searchUrl = null
+                ),
+                footer = FooterGenerator.generate(),
+                searchForm = SearchFormGenerator.generate(
+                    actionUrl = "/search",
+                    paramName = "q",
+                    placeholderText = "Search articles...",
+                    buttonText = "Search",
+                    method = "get"
+                )
             )
             render(ctx, "search", viewModel)
         }
@@ -239,13 +339,18 @@ fun Javalin.fragmentsRoutes(
 
 data class ContentViewModel(
     val viewModel: FragmentViewModel,
-    val templateName: String
+    val templateName: String,
+    val navigationMenu: List<NavigationLink>,
+    val footer: FooterConfig
 )
 
 data class SearchViewModel(
     val query: String,
     val results: List<FragmentViewModel>,
-    val siteTitle: String
+    val siteTitle: String,
+    val navigationMenu: List<NavigationLink>,
+    val footer: FooterConfig,
+    val searchForm: SearchFormConfig
 )
 
 data class ArchiveViewModel(
@@ -253,12 +358,19 @@ data class ArchiveViewModel(
     val year: String,
     val month: String? = null,
     val fragments: List<FragmentViewModel>,
-    val siteTitle: String
+    val siteTitle: String,
+    val navigationMenu: List<NavigationLink>,
+    val footer: FooterConfig,
+    val archiveYearLinks: List<ArchiveNavigationLink>? = null,
+    val archiveMonthLinks: List<ArchiveNavigationLink>? = null,
+    val archiveBreadcrumbs: List<ArchiveNavigationLink>? = null
 )
 
 data class HomeViewModel(
     val fragments: List<FragmentViewModel>,
-    val isPartialRender: Boolean = false
+    val isPartialRender: Boolean = false,
+    val navigationMenu: List<NavigationLink>,
+    val footer: FooterConfig
 )
 
 data class BlogOverviewViewModel(
@@ -269,7 +381,10 @@ data class BlogOverviewViewModel(
     val hasPrevious: Boolean = false,
     val tag: String? = null,
     val category: String? = null,
-    val isPartialRender: Boolean = false
+    val isPartialRender: Boolean = false,
+    val navigationMenu: List<NavigationLink>,
+    val pagination: PaginationInfo,
+    val footer: FooterConfig
 )
 
 data class TagViewModel(
@@ -289,7 +404,10 @@ data class CategoryViewModel(
     val totalPages: Int,
     val hasNext: Boolean = false,
     val hasPrevious: Boolean = false,
-    val isPartialRender: Boolean = false
+    val isPartialRender: Boolean = false,
+    val navigationMenu: List<NavigationLink>,
+    val pagination: PaginationInfo,
+    val footer: FooterConfig
 )
 
 interface TemplateRenderer {

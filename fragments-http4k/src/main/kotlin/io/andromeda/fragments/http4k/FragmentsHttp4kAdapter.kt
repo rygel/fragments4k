@@ -61,7 +61,16 @@ class FragmentsHttp4kAdapter(
                 currentPage = 1,
                 totalPages = 1,
                 templateName = "index",
-                isPartialRender = isHtmxRequest(request)
+                isPartialRender = isHtmxRequest(request),
+                navigationMenu = NavigationMenuGenerator.generateMainMenu(),
+                pagination = PaginationInfo(
+                    currentPage = 1,
+                    totalPages = 1,
+                    hasPrevious = false,
+                    hasNext = false,
+                    text = ""
+                ),
+                footer = FooterGenerator.generate()
             )
             renderResponse(viewModel)
         }
@@ -72,9 +81,17 @@ class FragmentsHttp4kAdapter(
         return runBlocking {
             val fragment = staticEngine.getPage(slug)
             if (fragment != null) {
+                val fragmentViewModel = FragmentViewModel(fragment, isHtmxRequest(request))
                 val viewModel = ContentViewModel(
-                    viewModel = FragmentViewModel(fragment, isHtmxRequest(request)),
-                    templateName = fragment.template
+                    viewModel = fragmentViewModel,
+                    templateName = fragment.template,
+                    navigationMenu = NavigationMenuGenerator.generateMainMenu(),
+                    footer = FooterGenerator.generate(
+                        copyrightText = "©",
+                        year = java.time.Year.now().value,
+                        poweredByName = "Fragments4k",
+                        poweredByUrl = "https://github.com/rygel/fragments4k"
+                    )
                 )
                 renderResponse(viewModel)
             } else {
@@ -94,7 +111,19 @@ class FragmentsHttp4kAdapter(
                 hasNext = pageResult.hasNext,
                 hasPrevious = pageResult.hasPrevious,
                 templateName = "blog_overview",
-                isPartialRender = isHtmxRequest(request)
+                isPartialRender = isHtmxRequest(request),
+                navigationMenu = NavigationMenuGenerator.generateMainMenu(
+                    siteUrl = "/",
+                    blogUrl = "/blog",
+                    archiveUrl = "/blog/archive",
+                    searchUrl = "/search"
+                ),
+                pagination = PaginationGenerator.generateSimpleControls(
+                    currentPage = pageResult.currentPage,
+                    totalPages = pageResult.totalPages,
+                    basePath = "/blog"
+                ),
+                footer = FooterGenerator.generate()
             )
             renderResponse(viewModel)
         }
@@ -104,13 +133,21 @@ class FragmentsHttp4kAdapter(
         val year = request.path("year") ?: return Response(Status.NOT_FOUND)
         val month = request.path("month") ?: return Response(Status.NOT_FOUND)
         val slug = request.path("slug") ?: return Response(Status.NOT_FOUND)
-        
+
         return runBlocking {
             val fragment = blogEngine.getPost(year, month, slug)
             if (fragment != null) {
+                val fragmentViewModel = FragmentViewModel(fragment, isHtmxRequest(request))
                 val viewModel = ContentViewModel(
-                    viewModel = FragmentViewModel(fragment, isHtmxRequest(request)),
-                    templateName = fragment.template
+                    viewModel = fragmentViewModel,
+                    templateName = fragment.template,
+                    navigationMenu = NavigationMenuGenerator.generateMainMenu(),
+                    footer = FooterGenerator.generate(
+                        copyrightText = "©",
+                        year = java.time.Year.now().value,
+                        poweredByName = "Fragments4k",
+                        poweredByUrl = "https://github.com/rygel/fragments4k"
+                    )
                 )
                 renderResponse(viewModel)
             } else {
@@ -131,7 +168,20 @@ class FragmentsHttp4kAdapter(
                 hasNext = pageResult.hasNext,
                 hasPrevious = pageResult.hasPrevious,
                 templateName = "blog_overview",
-                isPartialRender = isHtmxRequest(request)
+                isPartialRender = isHtmxRequest(request),
+                tag = tag,
+                navigationMenu = NavigationMenuGenerator.generateMainMenu(
+                    siteUrl = "/",
+                    blogUrl = "/blog",
+                    archiveUrl = "/blog/archive",
+                    searchUrl = "/search"
+                ),
+                pagination = PaginationGenerator.generateSimpleControls(
+                    currentPage = pageResult.currentPage,
+                    totalPages = pageResult.totalPages,
+                    basePath = "/blog"
+                ),
+                footer = FooterGenerator.generate()
             )
             renderResponse(viewModel)
         }
@@ -141,19 +191,30 @@ class FragmentsHttp4kAdapter(
         val category = request.path("category") ?: return Response(Status.NOT_FOUND)
         return runBlocking {
             val pageResult = blogEngine.getByCategory(category, 1)
-            val viewModel = CategoryViewModel(
-                category = category,
+            val viewModel = BlogOverviewViewModel(
                 fragments = pageResult.items.map { FragmentViewModel(it) },
                 currentPage = pageResult.currentPage,
                 totalPages = pageResult.totalPages,
                 hasNext = pageResult.hasNext,
                 hasPrevious = pageResult.hasPrevious,
                 templateName = "blog_overview",
-                isPartialRender = isHtmxRequest(request)
-            )
-            renderResponse(viewModel)
-        }
-    }
+                isPartialRender = isHtmxRequest(request),
+                navigationMenu = NavigationMenuGenerator.generateMainMenu(
+                    siteUrl = "/",
+                    blogUrl = "/blog",
+                    archiveUrl = "/blog/archive",
+                    searchUrl = "/search"
+                ),
+                pagination = PaginationGenerator.generateSimpleControls(
+                    currentPage = pageResult.currentPage,
+                     totalPages = pageResult.totalPages,
+                     basePath = "/blog"
+                 ),
+                 footer = FooterGenerator.generate()
+             )
+             renderResponse(viewModel)
+         }
+     }
 
     private fun handleRss(): Response {
         return runBlocking {
@@ -185,7 +246,21 @@ class FragmentsHttp4kAdapter(
             val viewModel = SearchViewModel(
                 query = query,
                 results = results.map { FragmentViewModel(it.fragment) },
-                siteTitle = siteTitle
+                siteTitle = siteTitle,
+                navigationMenu = NavigationMenuGenerator.generateMainMenu(
+                    siteUrl = "/",
+                    blogUrl = "/blog",
+                    archiveUrl = "/blog/archive",
+                    searchUrl = null
+                ),
+                footer = FooterGenerator.generate(),
+                searchForm = SearchFormGenerator.generate(
+                    actionUrl = "/search",
+                    paramName = "q",
+                    placeholderText = "Search articles...",
+                    buttonText = "Search",
+                    method = "get"
+                )
             )
             renderResponse(viewModel)
         }
@@ -200,7 +275,22 @@ class FragmentsHttp4kAdapter(
                 type = "year",
                 year = year,
                 fragments = fragments.map { FragmentViewModel(it) },
-                siteTitle = siteTitle
+                siteTitle = siteTitle,
+                navigationMenu = NavigationMenuGenerator.generateMainMenu(
+                    siteUrl = "/",
+                    blogUrl = "/blog",
+                    archiveUrl = "/blog/archive",
+                    searchUrl = "/search"
+                ),
+                footer = FooterGenerator.generate(),
+                archiveYearLinks = ArchiveNavigationGenerator.generateYearLinks(
+                    baseUrl = "/blog/archive",
+                    availableYears = emptyList(),
+                    currentYear = yearInt
+                ),
+                archiveBreadcrumbs = ArchiveNavigationGenerator.generateBreadcrumbs(
+                    currentYear = yearInt
+                )
             )
             renderResponse(viewModel)
         }
@@ -218,7 +308,22 @@ class FragmentsHttp4kAdapter(
                 year = year,
                 month = month,
                 fragments = fragments.map { FragmentViewModel(it) },
-                siteTitle = siteTitle
+                siteTitle = siteTitle,
+                navigationMenu = NavigationMenuGenerator.generateMainMenu(
+                    siteUrl = "/",
+                    blogUrl = "/blog",
+                    archiveUrl = "/blog/archive",
+                    searchUrl = "/search"
+                ),
+                footer = FooterGenerator.generate(),
+                archiveMonthLinks = ArchiveNavigationGenerator.generateMonthLinks(
+                    year = yearInt,
+                    currentMonth = monthInt
+                ),
+                archiveBreadcrumbs = ArchiveNavigationGenerator.generateBreadcrumbs(
+                    currentYear = yearInt,
+                    currentMonth = monthInt
+                )
             )
             renderResponse(viewModel)
         }
@@ -235,7 +340,9 @@ class FragmentsHttp4kAdapter(
 
     data class ContentViewModel(
         val viewModel: FragmentViewModel,
-        private val templateName: String
+        private val templateName: String,
+        val navigationMenu: List<NavigationLink>,
+        val footer: FooterConfig
     ) : ViewModel {
         override fun template(): String = templateName
     }
@@ -249,7 +356,10 @@ class FragmentsHttp4kAdapter(
         private val templateName: String = "blog_overview",
         val tag: String? = null,
         val category: String? = null,
-        val isPartialRender: Boolean = false
+        val isPartialRender: Boolean = false,
+        val navigationMenu: List<NavigationLink>,
+        val pagination: PaginationInfo,
+        val footer: FooterConfig
     ) : ViewModel {
         override fun template(): String = templateName
     }
@@ -262,7 +372,10 @@ class FragmentsHttp4kAdapter(
         val hasNext: Boolean = false,
         val hasPrevious: Boolean = false,
         private val templateName: String = "blog_overview",
-        val isPartialRender: Boolean = false
+        val isPartialRender: Boolean = false,
+        val navigationMenu: List<NavigationLink>,
+        val pagination: PaginationInfo,
+        val footer: FooterConfig
     ) : ViewModel {
         override fun template(): String = templateName
     }
@@ -271,7 +384,10 @@ class FragmentsHttp4kAdapter(
         val query: String,
         val results: List<FragmentViewModel>,
         val siteTitle: String,
-        private val templateName: String = "search"
+        private val templateName: String = "search",
+        val navigationMenu: List<NavigationLink>,
+        val footer: FooterConfig,
+        val searchForm: SearchFormConfig
     ) : ViewModel {
         override fun template(): String = templateName
     }
@@ -282,7 +398,12 @@ class FragmentsHttp4kAdapter(
         val month: String? = null,
         val fragments: List<FragmentViewModel>,
         val siteTitle: String,
-        private val templateName: String = "archive"
+        private val templateName: String = "archive",
+        val navigationMenu: List<NavigationLink>,
+        val footer: FooterConfig,
+        val archiveYearLinks: List<ArchiveNavigationLink>? = null,
+        val archiveMonthLinks: List<ArchiveNavigationLink>? = null,
+        val archiveBreadcrumbs: List<ArchiveNavigationLink>? = null
     ) : ViewModel {
         override fun template(): String = templateName
     }

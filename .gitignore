@@ -1,0 +1,37 @@
+# Compiled class files
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+*.kotlin_module
+
+# Maven target directory
+target/
+*/target/
+target-classes/
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+*.iws
+*.ipr
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.orig
