@@ -55,6 +55,10 @@
             font-size: 0.9em;
             margin-bottom: 10px;
         }
+        .reading-time {
+            color: #28a745;
+            font-weight: bold;
+        }
         .tag {
             display: inline-block;
             background: #007bff;
@@ -119,7 +123,8 @@
                 </h2>
                 <div class="post-meta">
                     <p>
-                        <strong>Date:</strong> <span th:text="${fragment.formattedDate}">2024-03-03</span><br>
+                        <strong>Date:</strong> <span th:text="${fragment.formattedDate}">2024-03-03</span>
+                        <span class="reading-time">&bull; <span th:text="${fragment.readingTime.text}">5m read</span></span><br>
                         <div th:if="${fragment.tags != null and !fragment.tags.empty}">
                             <strong>Tags:</strong>
                             <span th:each="tag : ${fragment.tags}" class="tag" th:text="${tag}">kotlin</span>

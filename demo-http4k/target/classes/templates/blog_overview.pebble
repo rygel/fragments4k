@@ -55,6 +55,10 @@
             font-size: 0.9em;
             margin-bottom: 10px;
         }
+        .reading-time {
+            color: #28a745;
+            font-weight: bold;
+        }
         .tag {
             display: inline-block;
             background: #007bff;
@@ -119,7 +123,8 @@
             </h2>
             <div class="post-meta">
                 <p>
-                    <strong>Date:</strong> {{ fragment.formattedDate }}<br>
+                    <strong>Date:</strong> {{ fragment.formattedDate }}
+                    <span class="reading-time">&bull; {{ fragment.readingTime.text }}</span><br>
                     {% if fragment.tags %}
                     <strong>Tags:</strong>
                     {% for tag in fragment.tags %}

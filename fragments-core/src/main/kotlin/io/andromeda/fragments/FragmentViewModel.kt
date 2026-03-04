@@ -51,6 +51,9 @@ data class FragmentViewModel(
     val readingTime: ReadingTime
         get() = calculateReadingTime()
 
+    val formattedReadingTime: String
+        get() = readingTime.text
+
     val tableOfContents: List<TableOfContentsItem>
         get() = extractTableOfContents()
 
