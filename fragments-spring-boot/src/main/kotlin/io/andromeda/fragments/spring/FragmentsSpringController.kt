@@ -5,6 +5,7 @@ import io.andromeda.fragments.blog.BlogEngine
 import io.andromeda.fragments.rss.RssGenerator
 import io.andromeda.fragments.sitemap.SitemapGenerator
 import io.andromeda.fragments.static.StaticPageEngine
+import io.andromeda.fragments.FragmentRepository
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.GetMapping
@@ -15,20 +16,19 @@ import org.springframework.http.MediaType
 
 @Controller
 class FragmentsSpringController(
-    private val staticEngine: StaticPageEngine,
+    private val repository: FragmentRepository,
     private val blogEngine: BlogEngine,
-    private val rssGenerator: RssGenerator = RssGenerator(
-        repository = staticEngine.getRepository()
-    ),
-    private val sitemapGenerator: SitemapGenerator = SitemapGenerator(
-        repository = staticEngine.getRepository(),
-        siteUrl = "http://localhost:8080",
-        lastModified = null
-    ),
+    private val rssGenerator: RssGenerator,
+    private val sitemapGenerator: SitemapGenerator,
     private val siteTitle: String = "My Blog",
     private val siteDescription: String = "My Awesome Blog",
     private val siteUrl: String = "http://localhost:8080",
     private val feedUrl: String = "http://localhost:8080/rss.xml"
+) {
+    init {
+        rssGenerator = RssGenerator(repository)
+        sitemapGenerator = SitemapGenerator(repository, siteUrl, lastModified = null)
+    }
 ) {
 
     @GetMapping("/")
@@ -36,7 +36,7 @@ class FragmentsSpringController(
         @RequestHeader(value = FragmentViewModel.HTMX_REQUEST_HEADER, required = false) htmxRequest: String?,
         model: Model
     ): String {
-        val fragments = staticEngine.getAllStaticPages()
+        val fragments = repository.getAllVisible()
         val isPartial = isHtmxRequest(htmxRequest)
         model.addAttribute("viewModel", HomeViewModel(
             fragments = fragments.map { FragmentViewModel(it, isPartial) },
@@ -51,7 +51,7 @@ class FragmentsSpringController(
         @RequestHeader(value = FragmentViewModel.HTMX_REQUEST_HEADER, required = false) htmxRequest: String?,
         model: Model
     ): String {
-        val fragment = staticEngine.getPage(slug)
+        val fragment = repository.getBySlug(slug)
         val isPartial = isHtmxRequest(htmxRequest)
         return if (fragment != null) {
             model.addAttribute("viewModel", FragmentViewModel(fragment, isPartial))
