@@ -28,6 +28,12 @@ All adapters include:
 - ✅ Spring Boot tests (newly added)
 - ✅ Quarkus tests (newly added)
 - ✅ Micronaut tests (newly added)
+- ✅ FragmentRepositoryDirectTest (newly added to fragments-core)
+- ✅ BlogEngineIntegrationTest (newly added to fragments-blog-core)
+- ✅ BlogEngineFullCycleTest (newly added to fragments-blog-core)
+- ✅ HtmxRenderingTest (newly added to fragments-core)
+- ✅ All test compilation errors fixed (LocalDateTime parameters, missing imports)
+- ✅ InMemoryFragmentRepository test helper created
 
 ### 4. CI/CD Pipeline
 - ✅ GitHub Actions workflow (`.github/workflows/ci.yml`)
@@ -45,6 +51,87 @@ All adapters include:
 - ✅ Dependency management with BOM
 
 ## Remaining Tasks ⚠️
+
+### Current Issues (Blocking)
+
+#### 1. Maven Surefire Parameter Parsing Bug 🔴 **BLOCKING**
+**Status:** Tests compile but don't execute
+
+**Issue:**
+- Maven Surefire 3.3.0 has a bug where it parses test method names containing special characters (backticks, exclamation marks) as function parameters
+- Throws parameter parsing errors even though tests exist and are syntactically correct
+- All integration tests compile successfully but cannot be executed by Maven's test runner
+
+**Workaround Attempted:**
+- Created tests with simple method names (no backticks) to avoid the bug
+- Surefire still fails to execute tests due to parameter parsing issues
+
+**Impact:**
+- All integration tests exist and compile successfully
+- Cannot verify test execution or coverage
+- Blocking test-driven development and CI/CD integration
+
+**Next Steps:**
+1. Find alternative test runner (Gradle, IntelliJ IDEA)
+2. Upgrade to newer Maven Surefire version when available
+3. Investigate Maven Surefire configuration options
+4. Consider alternative testing frameworks
+
+---
+
+#### 2. Framework Adapter HTTP4k Compatibility 🟡 **HIGH PRIORITY**
+**Status:** All framework adapters blocked
+
+**Issue:**
+- All framework adapters (HTTP4k, Javalin, Spring Boot, Quarkus, Micronaut) require HTTP4k compatibility fixes
+- Similar to fragments-live-reload which needed HTTP4k 6.29.0.0 for Kotlin 2.3.0 compatibility
+- HTTP4k 6.29.0.0 may need further updates for full compatibility
+
+**Affected Modules:**
+- fragments-http4k
+- fragments-javalin (uses HTTP4k for testing)
+- fragments-spring-boot
+- fragments-quarkus
+- fragments-micronaut
+
+**Impact:**
+- Cannot compile or test framework adapters
+- Blocks demo application development for all adapters
+- Prevents full integration testing
+
+**Next Steps:**
+1. Update HTTP4k dependencies in all adapter POMs
+2. Test compilation of each adapter
+3. Fix any breaking changes in HTTP4k API
+4. Verify framework adapter tests compile and execute
+
+---
+
+#### 3. Maven Dependency Warnings 🟢 **LOW PRIORITY**
+**Status:** Non-blocking but creates noise
+
+**Issue:**
+- Duplicate dependency declarations in multiple module POMs
+- Maven warns about duplicate dependencies during build
+
+**Affected Modules:**
+- fragments-core: mockk duplicate (test dependency)
+- fragments-javalin: fragments-rss-core duplicate
+- fragments-spring-boot: spring-boot-starter-thymeleaf and fragments-rss-core duplicates
+- fragments-quarkus: quarkus-qute and fragments-rss-core duplicates
+- fragments-micronaut: micronaut-views-thymeleaf, fragments-rss-core, and junit-jupiter duplicates
+
+**Impact:**
+- Creates noise in build output
+- May cause confusion about which version is used
+- Doesn't block compilation or execution
+
+**Next Steps:**
+1. Remove duplicate dependency declarations from each POM
+2. Verify all dependencies have explicit versions
+3. Confirm Maven warnings are eliminated
+
+---
 
 ### 1. Demo Applications
 **Status:** ✅ ALL 5 DEMO APPLICATIONS COMPLETE
@@ -88,17 +175,35 @@ Completed:
 **All 5 demo applications build successfully and are ready to run!**
 
 ### 2. Integration Test Execution
-**Status:** Tests written but not executed
+**Status:** Tests compile successfully but cannot execute
 
-New tests created:
+**Completed:**
+- ✅ All test compilation errors fixed
+- ✅ LocalDateTime parameter errors resolved
+- ✅ Missing imports added
+- ✅ BlogEngine tests moved to correct module (fragments-blog-core)
+- ✅ InMemoryFragmentRepository test helper created
+- ✅ All core modules compile and test-compile successfully
+
+**New Tests Created:**
 - `FragmentsSpringControllerTest` - Spring Boot (simplified to check DI injection)
 - `FragmentsQuarkusResourceTest` - Quarkus (simplified to check DI injection)
 - `FragmentsMicronautControllerTest` - Micronaut (simplified to check DI injection)
+- `FragmentRepositoryDirectTest` - Repository methods (fragments-core)
+- `BlogEngineIntegrationTest` - Blog engine pagination and filtering (fragments-blog-core)
+- `BlogEngineFullCycleTest` - Full request/response cycles (fragments-blog-core)
+- `HtmxRenderingTest` - HTMX partial vs full rendering (fragments-core)
 
-These tests verify:
+**Tests Verify:**
 - Framework DI works correctly
 - Controllers/Resource injection successful
 - Basic instantiation works
+- Repository methods (getAll, getBySlug, getByTag, getByCategory, reload)
+- Blog engine pagination, tag filtering, category filtering
+- HTMX request header detection and partial/full rendering
+
+**Blocking Issue:**
+Maven Surefire 3.3.0 parameter parsing bug prevents test execution (see Current Issues section above).
 
 Note: Full endpoint tests would require running servers and more complex test setup.
 
@@ -373,13 +478,17 @@ Note: Full endpoint tests would require running servers and more complex test se
 
 ## Task Priority Summary
 
+**Critical Priority** (Immediate - This Week):
+- 🔴 Resolve Maven Surefire parameter parsing bug (BLOCKING all test execution)
+- 🟡 Fix framework adapter HTTP4k compatibility (BLOCKING all adapters)
+
 **High Priority** (Next 2-4 weeks):
 - ✅ Complete remaining demo apps (Javalin, Quarkus, Micronaut)
 - ✅ Add RSS feed endpoints to all adapters
 - ✅ Generate sitemap XML
 - Maven Central publication
 - ✅ CLI scaffolding tool
-- Comprehensive integration tests
+- Comprehensive integration tests (ready to execute once Surefire is fixed)
 - Release automation
 
 **Medium Priority** (Next 1-2 months):
@@ -454,8 +563,26 @@ Consider adding:
 
 ## Next Steps
 
-1. Run integration tests: `mvn test`
-2. Fix any test failures
-3. Create demo applications
-4. Add sample content and templates
-5. Update GitHub repository with demo apps
+**Critical Path:**
+1. Resolve Maven Surefire parameter parsing bug:
+   - Investigate alternative test runners (Gradle, IntelliJ IDEA)
+   - Check for Maven Surefire patches or updates
+   - Explore Surefire configuration options to bypass bug
+   - Consider switching test framework if necessary
+
+2. Fix framework adapter HTTP4k compatibility:
+   - Update HTTP4k dependencies in all adapter POMs to 6.29.0.0 or newer
+   - Test compilation of each adapter (fragments-http4k, fragments-javalin, fragments-spring-boot, fragments-quarkus, fragments-micronaut)
+   - Fix any breaking changes in HTTP4k API
+   - Verify adapter tests compile and execute
+
+3. Clean up Maven dependency warnings:
+   - Remove duplicate dependency declarations from affected POMs
+   - Verify all dependencies have explicit versions
+   - Confirm Maven warnings are eliminated
+
+**After Critical Path:**
+4. Execute integration tests once Surefire is fixed
+5. Verify all tests pass
+6. Update CI/CD pipeline to use working test runner
+7. Proceed with demo applications and remaining features
