@@ -1,5 +1,23 @@
 # Implementation Status Report
 
+## Handoff Snapshot (2026-03-04)
+
+### Completed Since Previous Report
+- Surefire test execution blocker addressed by normalizing Kotlin test method names (removed backtick method identifiers).
+- `fragments-core` tests now execute and pass with Maven Surefire 3.3.0:
+  - command used: `mvn -pl fragments-core test -DskipITs`
+  - result: `Tests run: 24, Failures: 0, Errors: 0`
+- Duplicate dependency declarations removed from adapter/core POM files (core, javalin, spring-boot, quarkus, micronaut).
+- HTTP4k adapter compile fixes applied for current HTTP4k API usage.
+- `StaticPageEngine` now exposes `getRepository()` for adapter generator wiring.
+- Javalin adapter source file was rebuilt into a valid minimal implementation after discovering structural duplication/corruption.
+
+### Remaining Immediate Work
+1. Finalize `fragments-javalin` test compilation against current `javalin-testtools` API.
+2. Re-run full adapter test-compile chain after Javalin is green:
+   - `fragments-http4k`, `fragments-javalin`, `fragments-spring-boot`, `fragments-quarkus`, `fragments-micronaut`
+3. Re-run full Maven tests once adapter chain compiles.
+
 ## Summary
 This is a port of the Fragments library from Pippo Java to Kotlin with a multi-framework adapter architecture.
 

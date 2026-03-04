@@ -1,5 +1,25 @@
 # Fragments4k - Build and Integration Testing
 
+## Handoff Notes (2026-03-04)
+
+### Big Fixes Applied
+- Surefire execution unblocked by renaming Kotlin test methods with backticks to normal identifiers.
+- `fragments-core` tests now execute successfully with Surefire 3.3.0 (`24 passed`).
+- Duplicate Maven dependencies removed from:
+  - `fragments-core`, `fragments-javalin`, `fragments-spring-boot`, `fragments-quarkus`, `fragments-micronaut`.
+- HTTP4k adapter compile issues addressed (path extraction import/API, ViewModel rendering type alignment, missing category model).
+- `StaticPageEngine.getRepository()` added for adapter RSS/sitemap wiring.
+- `fragments-javalin` adapter source reconstructed into a valid minimal implementation (previous file was structurally duplicated/corrupt).
+
+### Remaining Blocker
+- `fragments-javalin` test compilation still fails due testtools/API mismatch in `FragmentsJavalinAdapterTest.kt`; this currently blocks full adapter-chain validation.
+
+### Continue With
+1. `mvn -pl fragments-javalin -am test-compile -DskipTests`
+2. Fix Javalin test API usage in `FragmentsJavalinAdapterTest.kt`.
+3. `mvn -pl fragments-http4k,fragments-javalin,fragments-spring-boot,fragments-quarkus,fragments-micronaut -am test-compile -DskipTests`
+4. `mvn test`
+
 ## Current Status
 
 ### Working

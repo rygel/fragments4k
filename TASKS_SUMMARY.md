@@ -1,5 +1,35 @@
 # Tasks Summary
 
+## Handoff Update (2026-03-04)
+
+### Big Fixes Completed
+- ✅ **Surefire execution unblocked:** renamed all Kotlin test methods using backticks to standard identifiers.
+- ✅ **Confirmed test execution:** `mvn -pl fragments-core test -DskipITs` now executes with Surefire 3.3.0 and passes (24 tests).
+- ✅ **Duplicate dependency cleanup completed** in:
+  - `fragments-core/pom.xml`
+  - `fragments-javalin/pom.xml`
+  - `fragments-spring-boot/pom.xml`
+  - `fragments-quarkus/pom.xml`
+  - `fragments-micronaut/pom.xml`
+- ✅ **HTTP4k adapter compatibility fixes applied** in `fragments-http4k`:
+  - added `org.http4k.routing.path` usage
+  - aligned rendering with `ViewModel` expectations
+  - added missing `CategoryViewModel`
+  - added `StaticPageEngine.getRepository()`
+- ✅ **Javalin adapter main source repaired** (file was structurally duplicated/corrupted and has been replaced with a clean route implementation).
+
+### Current Remaining Blockers
+1. `fragments-javalin` test compilation still failing:
+   - missing/changed Javalin test utilities API expectations
+   - `FragmentsJavalinAdapterTest.kt` still needs final adjustment to current `javalin-testtools` API usage
+2. Full adapter chain (`fragments-spring-boot`, `fragments-quarkus`, `fragments-micronaut`) has not yet been revalidated after Javalin test-compile failure stopped the reactor.
+
+### Exact Next Commands for Continuation
+1. `mvn -pl fragments-javalin -am test-compile -DskipTests`
+2. Fix `fragments-javalin/src/test/kotlin/io/andromeda/fragments/javalin/FragmentsJavalinAdapterTest.kt` to match current Javalin test API
+3. `mvn -pl fragments-http4k,fragments-javalin,fragments-spring-boot,fragments-quarkus,fragments-micronaut -am test-compile -DskipTests`
+4. `mvn test` (or targeted adapter test modules once compile is green)
+
 ## Completed Work ✅
 
 ### 1. Core Library Implementation
