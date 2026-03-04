@@ -430,16 +430,29 @@ Note: Full endpoint tests would require running servers and more complex test se
    - Priority: High
 
 29. **Multi-version testing**
-   - Test against multiple framework versions
-   - Matrix builds in CI
-   - Version compatibility matrix
-   - Priority: Medium
+    - Test against multiple framework versions
+    - Matrix builds in CI
+    - Version compatibility matrix
+    - Priority: Medium
 
-30. **Native image testing**
-   - Verify Quarkus native builds
-   - Test GraalVM native images
-   - Native image performance benchmarks
-   - Priority: Medium
+30. **Javalin 7 Support** 🔴 **BLOCKING**
+    - Javalin 7 has significant breaking API changes from version 6
+    - Routes must now be defined in `config.routes` block during `Javalin.create()`
+    - Extension function approach (`fun Javalin.fragmentsRoutes()`) is incompatible
+    - Requires complete rewrite of the adapter with new configuration-based API
+    - Jetty 12+ upgrade required
+    - Create new `fragments-javalin-v7` module alongside existing `fragments-javalin` (v6)
+    - Implement adapter using `JavalinConfig.routes { }` API
+    - Update demo application for Javalin 7
+    - Status: Not started - needs architectural design for v7 API
+    - Priority: High
+    - Impact: Cannot upgrade to Javalin 7 without this work
+
+31. **Native image testing**
+    - Verify Quarkus native builds
+    - Test GraalVM native images
+    - Native image performance benchmarks
+    - Priority: Medium
 
 31. **Artifact signing**
    - GPG sign Maven artifacts
