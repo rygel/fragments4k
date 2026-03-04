@@ -38,7 +38,7 @@ class LiveReloadManagerTest {
     }
     
     @Test
-    fun `should start watching`() = runBlocking {
+    fun shouldStartWatching() = runBlocking {
         // Create initial content
         val file = contentDir.resolve("test.md")
         Files.writeString(file, createMarkdown("Test"))
@@ -52,7 +52,7 @@ class LiveReloadManagerTest {
     }
     
     @Test
-    fun `should detect file creation`() = runBlocking {
+    fun shouldDetectFileCreation() = runBlocking {
         liveReloadManager.startWatching()
         
         // Wait for watch to start
@@ -78,7 +78,7 @@ class LiveReloadManagerTest {
     }
     
     @Test
-    fun `should detect file modification`() = runBlocking {
+    fun shouldDetectFileModification() = runBlocking {
         val file = contentDir.resolve("test.md")
         Files.writeString(file, createMarkdown("Initial"))
         testRepository.addFragment(createFragment("test", "Initial"))
@@ -107,7 +107,7 @@ class LiveReloadManagerTest {
     }
     
     @Test
-    fun `should stop watching`() = runBlocking {
+    fun shouldStopWatching() = runBlocking {
         liveReloadManager.startWatching()
         
         // Wait for watch to start
@@ -124,7 +124,7 @@ class LiveReloadManagerTest {
     }
     
     @Test
-    fun `should detect file deletion`() = runBlocking {
+    fun shouldDetectFileDeletion() = runBlocking {
         val file = contentDir.resolve("test.md")
         Files.writeString(file, createMarkdown("Test"))
         testRepository.addFragment(createFragment("test", "Test"))
@@ -153,7 +153,7 @@ class LiveReloadManagerTest {
     }
     
     @Test
-    fun `should detect changes in nested directories`() = runBlocking {
+    fun shouldDetectChangesInNestedDirectories() = runBlocking {
         val nestedDir = contentDir.resolve("blog").resolve("2024").resolve("03")
         Files.createDirectories(nestedDir)
         
@@ -186,7 +186,7 @@ class LiveReloadManagerTest {
     }
     
     @Test
-    fun `should handle multiple rapid changes`() = runBlocking {
+    fun shouldHandleMultipleRapidChanges() = runBlocking {
         liveReloadManager.startWatching()
         
         // Wait for watch to start
@@ -223,7 +223,7 @@ class LiveReloadManagerTest {
     }
     
     @Test
-    fun `should emit error event on reload failure`() = runBlocking {
+    fun shouldEmitErrorEventOnReloadFailure() = runBlocking {
         val errorRepository = ErrorFragmentRepository()
         val errorLiveReloadManager = LiveReloadManager(errorRepository, contentDir)
         
@@ -255,7 +255,7 @@ class LiveReloadManagerTest {
     }
     
     @Test
-    fun `should not watch non-existent directory`() = runBlocking {
+    fun shouldNotWatchNonExistentDirectory() = runBlocking {
         val nonExistentDir = tempDir.resolve("nonexistent")
         val liveReloadManager = LiveReloadManager(testRepository, nonExistentDir)
         
@@ -268,7 +268,7 @@ class LiveReloadManagerTest {
     }
     
     @Test
-    fun `should collect all events sequentially`() = runBlocking {
+    fun shouldCollectAllEventsSequentially() = runBlocking {
         liveReloadManager.startWatching()
         
         // Wait for watch to start

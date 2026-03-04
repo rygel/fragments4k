@@ -28,6 +28,33 @@
         .nav a:hover {
             text-decoration: underline;
         }
+        .search-box {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        .search-box button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .search-box button:hover {
+            background: #0056b3;
+        }
         .fragment-list {
             list-style: none;
             padding: 0;
@@ -54,6 +81,13 @@
         <a href="/">Home</a>
         <a href="/blog">Blog</a>
     </nav>
+
+    <div class="search-box">
+        <form action="/search" method="get">
+            <input type="text" name="q" placeholder="Search articles..." th:value="${query}">
+            <button type="submit">Search</button>
+        </form>
+    </div>
 
     <div th:if="${viewModel.fragments != null}">
         <ul class="fragment-list">

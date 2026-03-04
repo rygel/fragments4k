@@ -24,6 +24,5 @@ class DemoApplication {
 
         logger.info("Starting Micronaut Fragments Demo")
         logger.info("Loading fragments from: $fragmentsPath")
-        logger.info("Application started: ${micronaut.applicationProperties.name}")
     }
 }

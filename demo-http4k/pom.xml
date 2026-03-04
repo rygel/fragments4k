@@ -16,14 +16,30 @@
 
     <properties>
         <java.version>17</java.version>
-        <kotlin.version>2.0.21</kotlin.version>
+        <http4k.version>6.29.0.0</http4k.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.http4k</groupId>
+                <artifactId>http4k-bom</artifactId>
+                <version>${http4k.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>
             <groupId>io.andromeda</groupId>
             <artifactId>fragments-http4k</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.http4k</groupId>
+            <artifactId>http4k-server-netty</artifactId>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>

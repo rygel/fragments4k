@@ -212,12 +212,11 @@ class HtmxRenderingTest {
             content = "This is the main content",
             preview = "Preview text",
             date = LocalDateTime.of(2024, 3, 1, 10, 0),
-            frontMatter = mapOf(
-                "tags" to listOf("kotlin", "testing"),
-                "categories" to listOf("programming", " tutorials")
-            ),
+            frontMatter = emptyMap(),
             visible = true,
-            template = "blog_post"
+            template = "blog_post",
+            tags = listOf("kotlin", "testing"),
+            categories = listOf("programming", " tutorials")
         )
 
         val viewModel = FragmentViewModel(fragment, isPartialRender = true)

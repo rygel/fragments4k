@@ -18,18 +18,13 @@ import org.springframework.http.MediaType
 class FragmentsSpringController(
     private val repository: FragmentRepository,
     private val blogEngine: BlogEngine,
-    private val rssGenerator: RssGenerator,
-    private val sitemapGenerator: SitemapGenerator,
     private val siteTitle: String = "My Blog",
     private val siteDescription: String = "My Awesome Blog",
     private val siteUrl: String = "http://localhost:8080",
     private val feedUrl: String = "http://localhost:8080/rss.xml"
 ) {
-    init {
-        rssGenerator = RssGenerator(repository)
-        sitemapGenerator = SitemapGenerator(repository, siteUrl, lastModified = null)
-    }
-) {
+    private val rssGenerator: RssGenerator by lazy { RssGenerator(repository) }
+    private val sitemapGenerator: SitemapGenerator by lazy { SitemapGenerator(repository, siteUrl, lastModified = null) }
 
     @GetMapping("/")
     suspend fun home(

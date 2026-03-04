@@ -10,26 +10,22 @@ import io.micronaut.http.HttpStatus
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Get
+import io.micronaut.http.annotation.Produces
 import io.micronaut.http.annotation.QueryValue
+import io.micronaut.http.HttpResponse
 import jakarta.inject.Inject
 
 @Controller("/")
 class FragmentsMicronautController @Inject constructor(
     private val staticEngine: StaticPageEngine,
     private val blogEngine: BlogEngine,
-    private val rssGenerator: RssGenerator = RssGenerator(
-        repository = staticEngine.getRepository()
-    ),
-    private val sitemapGenerator: SitemapGenerator = SitemapGenerator(
-        repository = staticEngine.getRepository(),
-        siteUrl = "http://localhost:8080",
-        lastModified = null
-    ),
     private val siteTitle: String = "My Blog",
     private val siteDescription: String = "My Awesome Blog",
     private val siteUrl: String = "http://localhost:8080",
     private val feedUrl: String = "http://localhost:8080/rss.xml"
 ) {
+    private val rssGenerator: RssGenerator by lazy { RssGenerator(repository = staticEngine.getRepository()) }
+    private val sitemapGenerator: SitemapGenerator by lazy { SitemapGenerator(repository = staticEngine.getRepository(), siteUrl = siteUrl, lastModified = null) }
 
     @Get("/")
     suspend fun home(headers: HttpHeaders): HttpResponse<Any> {
@@ -135,10 +131,11 @@ class FragmentsMicronautController @Inject constructor(
     }
 
     private fun isHtmxRequest(headers: HttpHeaders): Boolean {
-        return headers.get(FragmentViewModel.HTMX_REQUEST_HEADER)?.lowercase() == "true"
+        return headers.get(FragmentViewModel.HTMX_REQUEST_HEADER)?.firstOrNull()?.lowercase() == "true"
     }
 
-    @Get(value = ["/rss.xml", "/feed.xml"], produces = [MediaType.APPLICATION_XML, "application/rss+xml"])
+    @Get("/rss.xml")
+    @Produces(value = ["application/rss+xml;charset=utf-8"])
     suspend fun rss(): HttpResponse<String> {
         val rssXml = rssGenerator.generateFeed(
             siteTitle = siteTitle,
@@ -146,19 +143,17 @@ class FragmentsMicronautController @Inject constructor(
             siteUrl = siteUrl,
             feedUrl = feedUrl
         )
-        return HttpResponse.ok()
+        return HttpResponse.ok(rssXml)
             .header("Content-Type", "application/rss+xml; charset=utf-8")
-            .body(rssXml)
     }
 
-    @Get(value = ["/sitemap.xml"], produces = [MediaType.APPLICATION_XML])
+    @Get("/sitemap.xml")
+    @Produces("application/xml;charset=utf-8")
     suspend fun sitemap(): HttpResponse<String> {
         val sitemapXml = sitemapGenerator.generateSitemap()
-        return HttpResponse.ok()
+        return HttpResponse.ok(sitemapXml)
             .header("Content-Type", "application/xml; charset=utf-8")
-            .body(sitemapXml)
     }
-}
 
     data class HomeViewModel(
         val fragments: List<FragmentViewModel>,

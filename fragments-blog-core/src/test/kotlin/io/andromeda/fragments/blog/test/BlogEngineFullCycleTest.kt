@@ -19,9 +19,10 @@ class BlogEngineFullCycleTest {
             content = "This is test content",
             preview = "Test preview",
             date = LocalDateTime.of(2024, 3, 10, 10, 0),
-            frontMatter = mapOf("tags" to listOf("blog")),
+            frontMatter = emptyMap(),
             visible = true,
-            template = "blog_post"
+            template = "blog",
+            tags = listOf("blog")
         )
 
         val fragment2 = Fragment(
@@ -30,9 +31,10 @@ class BlogEngineFullCycleTest {
             content = "This is related content",
             preview = "Related preview",
             date = LocalDateTime.of(2024, 3, 15, 10, 0),
-            frontMatter = mapOf("tags" to listOf("blog")),
+            frontMatter = emptyMap(),
             visible = true,
-            template = "blog_post"
+            template = "blog",
+            tags = listOf("blog")
         )
 
         repository.addFragment(fragment1)
@@ -48,7 +50,7 @@ class BlogEngineFullCycleTest {
         assertEquals("related-post", overview.items[0].slug)
         assertEquals("Related Post", overview.items[0].title)
 
-        val post = blogEngine.getPost("2024", "03", "test-post")
+        val post = blogEngine.getPost("2024", "3", "test-post")
         assertNotNull(post)
         assertEquals("test-post", post?.slug)
         assertEquals("This is test content", post?.content)
@@ -65,9 +67,10 @@ class BlogEngineFullCycleTest {
             content = "Content about Kotlin",
             preview = "Kotlin preview",
             date = LocalDateTime.of(2024, 3, 7, 10, 0),
-            frontMatter = mapOf("tags" to listOf("kotlin", "blog")),
+            frontMatter = emptyMap(),
             visible = true,
-            template = "blog_post"
+            template = "blog",
+            tags = listOf("kotlin", "blog")
         )
 
         val fragment2 = Fragment(
@@ -76,9 +79,10 @@ class BlogEngineFullCycleTest {
             content = "Content about Java",
             preview = "Java preview",
             date = LocalDateTime.of(2024, 3, 8, 10, 0),
-            frontMatter = mapOf("tags" to listOf("java", "blog")),
+            frontMatter = emptyMap(),
             visible = true,
-            template = "blog_post"
+            template = "blog",
+            tags = listOf("java", "blog")
         )
 
         val fragment3 = Fragment(
@@ -87,9 +91,10 @@ class BlogEngineFullCycleTest {
             content = "More content about Kotlin",
             preview = "Another Kotlin preview",
             date = LocalDateTime.of(2024, 3, 9, 10, 0),
-            frontMatter = mapOf("tags" to listOf("kotlin", "blog")),
+            frontMatter = emptyMap(),
             visible = true,
-            template = "blog_post"
+            template = "blog",
+            tags = listOf("kotlin", "blog")
         )
 
         repository.addFragment(fragment1)
@@ -118,9 +123,10 @@ class BlogEngineFullCycleTest {
             content = "Content for blog",
             preview = "Blog preview",
             date = LocalDateTime.of(2024, 3, 9, 10, 0),
-            frontMatter = mapOf("categories" to listOf("blog")),
+            frontMatter = emptyMap(),
             visible = true,
-            template = "blog_post"
+            template = "blog",
+            categories = listOf("blog")
         )
 
         val fragment2 = Fragment(
@@ -129,9 +135,10 @@ class BlogEngineFullCycleTest {
             content = "More content for blog",
             preview = "Another blog preview",
             date = LocalDateTime.of(2024, 3, 10, 10, 0),
-            frontMatter = mapOf("categories" to listOf("blog")),
+            frontMatter = emptyMap(),
             visible = true,
-            template = "blog_post"
+            template = "blog",
+            categories = listOf("blog")
         )
 
         val fragment3 = Fragment(
@@ -140,9 +147,10 @@ class BlogEngineFullCycleTest {
             content = "Tutorial content",
             preview = "Tutorial preview",
             date = LocalDateTime.of(2024, 3, 11, 10, 0),
-            frontMatter = mapOf("categories" to listOf("tutorial")),
+            frontMatter = emptyMap(),
             visible = true,
-            template = "blog_post"
+            template = "blog",
+            categories = listOf("tutorial")
         )
 
         repository.addFragment(fragment1)

@@ -12,7 +12,7 @@ import kotlin.io.path.*
 class FragmentRepositoryDirectTest {
 
     @Test
-    fun `simple getAll works`() = runBlocking {
+    fun simpleGetAllWorks() = runBlocking {
         val repository = InMemoryFragmentRepository()
 
         val fragment1 = Fragment(
@@ -37,7 +37,7 @@ class FragmentRepositoryDirectTest {
     }
 
     @Test
-    fun `simple getBySlug works`() = runBlocking {
+    fun simpleGetBySlugWorks() = runBlocking {
         val repository = InMemoryFragmentRepository()
 
         val fragment1 = Fragment(
@@ -61,7 +61,7 @@ class FragmentRepositoryDirectTest {
     }
 
     @Test
-    fun `simple getByTag works`() = runBlocking {
+    fun simpleGetByTagWorks() = runBlocking {
         val repository = InMemoryFragmentRepository()
 
         val fragment1 = Fragment(
@@ -70,9 +70,10 @@ class FragmentRepositoryDirectTest {
             content = "Test content",
             preview = "Test preview",
             date = LocalDateTime.of(2024, 3, 7, 10, 0),
-            frontMatter = mapOf("tags" to listOf("test")),
+            frontMatter = emptyMap(),
             visible = true,
-            template = "blog_post"
+            template = "blog_post",
+            tags = listOf("test")
         )
 
         repository.addFragment(fragment1)
@@ -85,7 +86,7 @@ class FragmentRepositoryDirectTest {
     }
 
     @Test
-    fun `simple getByCategory works`() = runBlocking {
+    fun simpleGetByCategoryWorks() = runBlocking {
         val repository = InMemoryFragmentRepository()
 
         val fragment1 = Fragment(
@@ -94,9 +95,10 @@ class FragmentRepositoryDirectTest {
             content = "Test content",
             preview = "Test preview",
             date = LocalDateTime.of(2024, 3, 9, 10, 0),
-            frontMatter = mapOf("categories" to listOf("blog")),
+            frontMatter = emptyMap(),
             visible = true,
-            template = "blog_post"
+            template = "blog_post",
+            categories = listOf("blog")
         )
 
         repository.addFragment(fragment1)
@@ -108,7 +110,7 @@ class FragmentRepositoryDirectTest {
     }
 
     @Test
-    fun `simple reload works`() = runBlocking {
+    fun simpleReloadWorks() = runBlocking {
         val repository = InMemoryFragmentRepository()
 
         val fragment1 = Fragment(

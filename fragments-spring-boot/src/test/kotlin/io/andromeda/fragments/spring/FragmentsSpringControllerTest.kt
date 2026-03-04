@@ -5,79 +5,80 @@ import io.andromeda.fragments.blog.BlogEngine
 import io.andromeda.fragments.static.StaticPageEngine
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
+import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.Import
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 
-@WebMvcTest(FragmentsSpringController::class)
-@Import(TestConfig::class)
+@SpringBootTest
+@AutoConfigureMockMvc
 class FragmentsSpringControllerTest {
 
     @Autowired
     private lateinit var mockMvc: MockMvc
 
     @Test
-    fun `home endpoint returns 200`() {
+    fun homeEndpointReturns200() {
         mockMvc.perform(get("/"))
             .andExpect(status().isOk)
     }
 
     @Test
-    fun `non-existent page returns 404`() {
+    fun nonExistentPageReturns404() {
         mockMvc.perform(get("/page/non-existent"))
             .andExpect(status().isNotFound)
     }
 
     @Test
-    fun `blog overview returns 200`() {
+    fun blogOverviewReturns200() {
         mockMvc.perform(get("/blog"))
             .andExpect(status().isOk)
     }
 
     @Test
-    fun `blog post with valid path returns 404 when not found`() {
+    fun blogPostWithValidPathReturns404WhenNotFound() {
         mockMvc.perform(get("/blog/2024/01/test-post"))
             .andExpect(status().isNotFound)
     }
 
     @Test
-    fun `blog overview with pagination returns 200`() {
+    fun blogOverviewWithPaginationReturns200() {
         mockMvc.perform(get("/blog?page=1"))
             .andExpect(status().isOk)
     }
 
     @Test
-    fun `blog tag route returns 200`() {
+    fun blogTagRouteReturns200() {
         mockMvc.perform(get("/blog/tag/kotlin"))
             .andExpect(status().isOk)
     }
 
     @Test
-    fun `blog category route returns 200`() {
+    fun blogCategoryRouteReturns200() {
         mockMvc.perform(get("/blog/category/programming"))
             .andExpect(status().isOk)
     }
+}
 
-    @TestConfiguration
-    class TestConfig {
-        @Bean
-        fun fragmentRepository(): FragmentRepository = InMemoryFragmentRepository()
+@SpringBootApplication
+open class TestApplication {
+    @Bean
+    open fun fragmentRepository(): FragmentRepository = InMemoryFragmentRepository()
 
-        @Bean
-        fun staticPageEngine(repository: FragmentRepository): StaticPageEngine = 
-            StaticPageEngine(repository)
+    @Bean
+    open fun staticPageEngine(repository: FragmentRepository): StaticPageEngine =
+        StaticPageEngine(repository)
 
-        @Bean
-        fun blogEngine(repository: FragmentRepository): BlogEngine = 
-            BlogEngine(repository)
+    @Bean
+    open fun blogEngine(repository: FragmentRepository): BlogEngine =
+        BlogEngine(repository)
 
-        @Bean
-        fun fragmentsController(staticEngine: StaticPageEngine, blogEngine: BlogEngine): FragmentsSpringController =
-            FragmentsSpringController(staticEngine, blogEngine)
-    }
+    @Bean
+    open fun fragmentsController(repository: FragmentRepository, blogEngine: BlogEngine): FragmentsSpringController =
+        FragmentsSpringController(repository, blogEngine)
 }
 
 class InMemoryFragmentRepository : FragmentRepository {

@@ -19,9 +19,10 @@ class BlogEngineIntegrationTest {
             content = "This is my first post with markdown content",
             preview = "First post preview",
             date = LocalDateTime.of(2024, 3, 10, 10, 0),
-            frontMatter = mapOf("tags" to listOf("blog")),
+            frontMatter = emptyMap(),
             visible = true,
-            template = "blog_post"
+            template = "blog",
+            tags = listOf("blog")
         )
 
         val fragment2 = Fragment(
@@ -30,9 +31,10 @@ class BlogEngineIntegrationTest {
             content = "This is my second post with more markdown content",
             preview = "Second post preview",
             date = LocalDateTime.of(2024, 3, 15, 10, 0),
-            frontMatter = mapOf("tags" to listOf("blog")),
+            frontMatter = emptyMap(),
             visible = true,
-            template = "blog_post"
+            template = "blog",
+            tags = listOf("blog")
         )
 
         val fragment3 = Fragment(
@@ -41,9 +43,10 @@ class BlogEngineIntegrationTest {
             content = "This is my third post",
             preview = "Third post preview",
             date = LocalDateTime.of(2024, 3, 20, 10, 0),
-            frontMatter = mapOf("tags" to listOf("blog")),
+            frontMatter = emptyMap(),
             visible = true,
-            template = "blog_post"
+            template = "blog",
+            tags = listOf("blog")
         )
 
         repository.addFragment(fragment1)
@@ -70,9 +73,10 @@ class BlogEngineIntegrationTest {
             content = "Content about Kotlin",
             preview = "Kotlin preview",
             date = LocalDateTime.of(2024, 3, 7, 10, 0),
-            frontMatter = mapOf("tags" to listOf("kotlin", "programming")),
+            frontMatter = emptyMap(),
             visible = true,
-            template = "blog_post"
+            template = "blog",
+            tags = listOf("kotlin", "programming")
         )
 
         val fragment2 = Fragment(
@@ -81,9 +85,10 @@ class BlogEngineIntegrationTest {
             content = "Content about Java",
             preview = "Java preview",
             date = LocalDateTime.of(2024, 3, 8, 10, 0),
-            frontMatter = mapOf("tags" to listOf("java", "maven")),
+            frontMatter = emptyMap(),
             visible = true,
-            template = "blog_post"
+            template = "blog",
+            tags = listOf("java", "maven")
         )
 
         repository.addFragment(fragment1)
@@ -108,9 +113,10 @@ class BlogEngineIntegrationTest {
             content = "Content about tutorials",
             preview = "Tutorial preview",
             date = LocalDateTime.of(2024, 3, 5, 10, 0),
-            frontMatter = mapOf("categories" to listOf("tutorial")),
+            frontMatter = emptyMap(),
             visible = true,
-            template = "blog_post"
+            template = "blog",
+            categories = listOf("tutorial")
         )
 
         val fragment2 = Fragment(
@@ -119,9 +125,10 @@ class BlogEngineIntegrationTest {
             content = "Content for blog",
             preview = "Blog preview",
             date = LocalDateTime.of(2024, 3, 6, 10, 0),
-            frontMatter = mapOf("categories" to listOf("blog")),
+            frontMatter = emptyMap(),
             visible = true,
-            template = "blog_post"
+            template = "blog",
+            categories = listOf("blog")
         )
 
         repository.addFragment(fragment1)

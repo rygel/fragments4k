@@ -19,21 +19,15 @@ import jakarta.ws.rs.Produces
 
 @Path("/")
 class FragmentsQuarkusResource @Inject constructor(
-    private val staticEngine: StaticPageEngine,
-    private val blogEngine: BlogEngine,
-    private val rssGenerator: RssGenerator = RssGenerator(
-        repository = staticEngine.getRepository()
-    ),
-    private val sitemapGenerator: SitemapGenerator = SitemapGenerator(
-        repository = staticEngine.getRepository(),
-        siteUrl = "http://localhost:8080",
-        lastModified = null
-    ),
+    val staticEngine: StaticPageEngine,
+    val blogEngine: BlogEngine,
     private val siteTitle: String = "My Blog",
     private val siteDescription: String = "My Awesome Blog",
     private val siteUrl: String = "http://localhost:8080",
     private val feedUrl: String = "http://localhost:8080/rss.xml"
 ) {
+    private val rssGenerator: RssGenerator by lazy { RssGenerator(repository = staticEngine.getRepository()) }
+    private val sitemapGenerator: SitemapGenerator by lazy { SitemapGenerator(repository = staticEngine.getRepository(), siteUrl = siteUrl, lastModified = null) }
 
     @GET
     suspend fun home(@Context headers: HttpHeaders): Response {
@@ -49,7 +43,7 @@ class FragmentsQuarkusResource @Inject constructor(
     @GET
     @Path("/page/{slug}")
     suspend fun page(
-        @PathParam slug: String,
+        @PathParam("slug") slug: String,
         @Context headers: HttpHeaders
     ): Response {
         val fragment = staticEngine.getPage(slug)
@@ -84,7 +78,7 @@ class FragmentsQuarkusResource @Inject constructor(
     @GET
     @Path("/blog/page/{page}")
     suspend fun blogOverviewByPath(
-        @PathParam page: Int,
+        @PathParam("page") page: Int,
         @Context headers: HttpHeaders
     ): Response {
         return blogOverview(page, headers)
@@ -93,9 +87,9 @@ class FragmentsQuarkusResource @Inject constructor(
     @GET
     @Path("/blog/{year}/{month}/{slug}")
     suspend fun blogPost(
-        @PathParam year: String,
-        @PathParam month: String,
-        @PathParam slug: String,
+        @PathParam("year") year: String,
+        @PathParam("month") month: String,
+        @PathParam("slug") slug: String,
         @Context headers: HttpHeaders
     ): Response {
         val fragment = blogEngine.getPost(year, month, slug)
@@ -111,7 +105,7 @@ class FragmentsQuarkusResource @Inject constructor(
     @GET
     @Path("/blog/tag/{tag}")
     suspend fun byTag(
-        @PathParam tag: String,
+        @PathParam("tag") tag: String,
         @QueryParam("page") page: Int?,
         @Context headers: HttpHeaders
     ): Response {
@@ -132,7 +126,7 @@ class FragmentsQuarkusResource @Inject constructor(
     @GET
     @Path("/blog/category/{category}")
     suspend fun byCategory(
-        @PathParam category: String,
+        @PathParam("category") category: String,
         @QueryParam("page") page: Int?,
         @Context headers: HttpHeaders
     ): Response {
@@ -180,7 +174,6 @@ class FragmentsQuarkusResource @Inject constructor(
             .entity(sitemapXml)
             .build()
     }
-}
 
     data class HomeViewModel(
         val fragments: List<FragmentViewModel>,

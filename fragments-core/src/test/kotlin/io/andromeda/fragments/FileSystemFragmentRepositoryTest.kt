@@ -21,13 +21,13 @@ class FileSystemFragmentRepositoryTest {
     }
 
     @Test
-    fun `getAll returns empty list when no files exist`() = runBlocking {
+    fun getAllReturnsEmptyListWhenNoFilesExist() = runBlocking {
         val result = repository.getAll()
         assertTrue(result.isEmpty())
     }
 
     @Test
-    fun `getAllVisible excludes invisible fragments`() = runBlocking {
+    fun getAllVisibleExcludesInvisibleFragments() = runBlocking {
         createTestFile("visible.md", """
             ---
             title: Visible
@@ -52,7 +52,7 @@ class FileSystemFragmentRepositoryTest {
     }
 
     @Test
-    fun `getBySlug returns correct fragment`() = runBlocking {
+    fun getBySlugReturnsCorrectFragment() = runBlocking {
         createTestFile("test-post.md", """
             ---
             title: Test Post
@@ -71,13 +71,13 @@ class FileSystemFragmentRepositoryTest {
     }
 
     @Test
-    fun `getBySlug returns null for non-existent slug`() = runBlocking {
+    fun getBySlugReturnsNullForNonExistentSlug() = runBlocking {
         val result = repository.getBySlug("non-existent")
         assertNull(result)
     }
 
     @Test
-    fun `parseFrontMatter extracts all fields correctly`() = runBlocking {
+    fun parseFrontMatterExtractsAllFieldsCorrectly() = runBlocking {
         createTestFile("full-post.md", """
             ---
             title: Full Post
@@ -117,7 +117,7 @@ class FileSystemFragmentRepositoryTest {
     }
 
     @Test
-    fun `getByTag returns fragments with matching tag`() = runBlocking {
+    fun getByTagReturnsFragmentsWithMatchingTag() = runBlocking {
         createTestFile("kotlin-post.md", """
             ---
             title: Kotlin Post
@@ -144,7 +144,7 @@ class FileSystemFragmentRepositoryTest {
     }
 
     @Test
-    fun `getByCategory returns fragments with matching category`() = runBlocking {
+    fun getByCategoryReturnsFragmentsWithMatchingCategory() = runBlocking {
         createTestFile("tech-post.md", """
             ---
             title: Tech Post
@@ -171,7 +171,7 @@ class FileSystemFragmentRepositoryTest {
     }
 
     @Test
-    fun `content is converted to HTML`() = runBlocking {
+    fun contentIsConvertedToHtml() = runBlocking {
         createTestFile("markdown.md", """
             ---
             title: Markdown
@@ -190,7 +190,7 @@ class FileSystemFragmentRepositoryTest {
     }
 
     @Test
-    fun `preview is extracted from more tag`() = runBlocking {
+    fun previewIsExtractedFromMoreTag() = runBlocking {
         createTestFile("with-more.md", """
             ---
             title: With More Tag

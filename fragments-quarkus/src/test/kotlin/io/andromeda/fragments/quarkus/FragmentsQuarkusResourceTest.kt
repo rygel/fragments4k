@@ -14,17 +14,17 @@ class FragmentsQuarkusResourceTest {
     lateinit var resource: FragmentsQuarkusResource
 
     @Test
-    fun `resource is instantiated`() {
+    fun resourceIsInstantiated() {
         assert(resource is FragmentsQuarkusResource)
     }
 
     @Test
-    fun `static engine is injected`() {
+    fun staticEngineIsInjected() {
         assert(resource.staticEngine is StaticPageEngine)
     }
 
     @Test
-    fun `blog engine is injected`() {
+    fun blogEngineIsInjected() {
         assert(resource.blogEngine is BlogEngine)
     }
 }

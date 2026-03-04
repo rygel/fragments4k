@@ -5,6 +5,8 @@ import io.andromeda.fragments.FragmentRepository
 
 class StaticPageEngine(private val repository: FragmentRepository) {
 
+    fun getRepository(): FragmentRepository = repository
+
     suspend fun getPage(slug: String): Fragment? {
         return repository.getBySlug(slug)
     }

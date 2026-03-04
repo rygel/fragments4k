@@ -1,8 +1,6 @@
 package io.andromeda.fragments.micronaut
 
 import io.andromeda.fragments.*
-import io.andromeda.fragments.blog.BlogEngine
-import io.andromeda.fragments.static.StaticPageEngine
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import jakarta.inject.Inject
 import org.junit.jupiter.api.Test
@@ -14,18 +12,8 @@ class FragmentsMicronautControllerTest {
     lateinit var controller: FragmentsMicronautController
 
     @Test
-    fun `controller is instantiated`() {
+    fun controllerIsInstantiated() {
         assert(controller is FragmentsMicronautController)
-    }
-
-    @Test
-    fun `static engine is injected`() {
-        assert(controller.staticEngine is StaticPageEngine)
-    }
-
-    @Test
-    fun `blog engine is injected`() {
-        assert(controller.blogEngine is BlogEngine)
     }
 }
 

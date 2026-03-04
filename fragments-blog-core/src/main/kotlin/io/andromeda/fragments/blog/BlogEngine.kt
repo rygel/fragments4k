@@ -33,6 +33,25 @@ class BlogEngine(
         return Page.create(categorizedPosts, page, pageSize)
     }
 
+    suspend fun getByYear(year: Int): List<Fragment> {
+        return repository.getAllVisible()
+            .filter { 
+                (it.template == "blog" || it.template.isEmpty()) &&
+                it.date?.year == year
+            }
+            .sortedByDescending { it.date }
+    }
+
+    suspend fun getByYearMonth(year: Int, month: Int): List<Fragment> {
+        return repository.getAllVisible()
+            .filter { 
+                (it.template == "blog" || it.template.isEmpty()) &&
+                it.date?.year == year &&
+                it.date?.monthValue == month
+            }
+            .sortedByDescending { it.date }
+    }
+
     suspend fun getAllTags(): Map<String, Int> {
         return repository.getAllVisible()
             .flatMap { it.tags }
