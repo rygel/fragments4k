@@ -48,6 +48,9 @@ data class FragmentViewModel(
     val categories
         get() = fragment.categories
 
+    val author: String?
+        get() = fragment.author
+
     val readingTime: ReadingTime
         get() = calculateReadingTime()
 

@@ -15,7 +15,8 @@ data class Fragment(
     val tags: List<String> = emptyList(),
     val order: Int = 0,
     val language: String = "en",
-    val languages: Map<String, String> = emptyMap()
+    val languages: Map<String, String> = emptyMap(),
+    val author: String? = null
 ) {
     val hasMoreTag: Boolean
         get() = content.contains("<!--more-->", ignoreCase = true) ||
