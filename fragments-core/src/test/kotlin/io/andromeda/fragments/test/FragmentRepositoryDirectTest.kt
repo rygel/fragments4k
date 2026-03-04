@@ -20,7 +20,7 @@ class FragmentRepositoryDirectTest {
             title = "Test Post",
             content = "Test content",
             preview = "Test preview",
-            date = LocalDateTime.of(2024, 3, 10),
+            date = LocalDateTime.of(2024, 3, 10, 10, 0),
             frontMatter = mapOf("tags" to listOf("test")),
             visible = true,
             template = "blog_post"
@@ -45,7 +45,7 @@ class FragmentRepositoryDirectTest {
             title = "Test Post",
             content = "Test content",
             preview = "Test preview",
-            date = LocalDateTime.of(2024, 3, 10),
+            date = LocalDateTime.of(2024, 3, 10, 10, 0),
             frontMatter = mapOf("tags" to listOf("test")),
             visible = true,
             template = "blog_post"
@@ -69,7 +69,7 @@ class FragmentRepositoryDirectTest {
             title = "Test Post",
             content = "Test content",
             preview = "Test preview",
-            date = LocalDateTime.of(2024, 3, 7),
+            date = LocalDateTime.of(2024, 3, 7, 10, 0),
             frontMatter = mapOf("tags" to listOf("test")),
             visible = true,
             template = "blog_post"
@@ -93,7 +93,7 @@ class FragmentRepositoryDirectTest {
             title = "Test Post",
             content = "Test content",
             preview = "Test preview",
-            date = LocalDateTime.of(2024, 3, 9),
+            date = LocalDateTime.of(2024, 3, 9, 10, 0),
             frontMatter = mapOf("categories" to listOf("blog")),
             visible = true,
             template = "blog_post"
@@ -116,7 +116,7 @@ class FragmentRepositoryDirectTest {
             title = "Test Post",
             content = "Test content",
             preview = "No backticks",
-            date = LocalDateTime.of(2024, 3, 12),
+            date = LocalDateTime.of(2024, 3, 12, 10, 0),
             frontMatter = mapOf("tags" to listOf("simple")),
             visible = true,
             template = "blog_post"
