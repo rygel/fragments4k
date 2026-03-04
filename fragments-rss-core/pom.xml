@@ -18,10 +18,11 @@
     </properties>
 
     <dependencies>
-        <dependency>
-            <groupId>io.andromeda</groupId>
-            <artifactId>fragments-core</artifactId>
-        </dependency>
+         <dependency>
+             <groupId>io.andromeda</groupId>
+             <artifactId>fragments-core</artifactId>
+             <version>${project.version}</version>
+         </dependency>
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-stdlib</artifactId>
