@@ -60,6 +60,26 @@ data class FragmentViewModel(
     val relatedPosts: List<Fragment>
         get() = findRelatedPosts()
 
+    /**
+     * Generates SEO metadata for this fragment
+     */
+    fun generateSeoMetadata(
+        siteUrl: String,
+        siteName: String? = null,
+        pagePath: String? = null,
+        author: String? = null,
+        imageUrl: String? = null
+    ): SeoMetadata {
+        return SeoMetadata.fromFragment(
+            fragment = fragment,
+            siteUrl = siteUrl,
+            siteName = siteName,
+            pagePath = pagePath,
+            author = author,
+            imageUrl = imageUrl
+        )
+    }
+
     data class ReadingTime(
         val minutes: Int,
         val seconds: Int,
