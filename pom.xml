@@ -30,11 +30,17 @@
         <junit.version>5.11.0</junit.version>
         <mockk.version>1.13.11</mockk.version>
         <rest-assured.version>5.4.0</rest-assured.version>
-        <ktlint.version>1.2.1</ktlint.version>
+        <ktlint.version>3.5.0</ktlint.version>
+
+        <!-- Plugin Versions -->
+        <maven-jar-plugin.version>3.4.2</maven-jar-plugin.version>
+        <maven-shade-plugin.version>3.6.0</maven-shade-plugin.version>
+        <exec-maven-plugin.version>3.5.0</exec-maven-plugin.version>
+        <jacoco.version>0.8.12</jacoco.version>
 
         <spring-boot.version>3.3.2</spring-boot.version>
-        <quarkus.version>3.13.3</quarkus.version>
-        <micronaut.version>4.5.1</micronaut.version>
+        <quarkus.version>3.32.1</quarkus.version>
+        <micronaut.version>4.11.6</micronaut.version>
     </properties>
 
     <modules>
@@ -226,15 +232,30 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.13.0</version>
+                    <version>3.15.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>3.3.0</version>
+                    <version>3.5.5</version>
                     <configuration>
                         <useSystemClassLoader>false</useSystemClassLoader>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>${maven-jar-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-shade-plugin</artifactId>
+                    <version>${maven-shade-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>exec-maven-plugin</artifactId>
+                    <version>${exec-maven-plugin.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>io.quarkus.platform</groupId>
@@ -274,7 +295,7 @@
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.8.12</version>
+                    <version>${jacoco.version}</version>
                     <executions>
                         <execution>
                             <id>prepare-agent</id>

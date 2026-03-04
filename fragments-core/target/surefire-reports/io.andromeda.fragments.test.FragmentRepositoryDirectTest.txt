@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: io.andromeda.fragments.test.FragmentRepositoryDirectTest
 -------------------------------------------------------------------------------
-Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.033 s -- in io.andromeda.fragments.test.FragmentRepositoryDirectTest
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.054 s -- in io.andromeda.fragments.test.FragmentRepositoryDirectTest

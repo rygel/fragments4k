@@ -2,6 +2,7 @@ package io.andromeda.fragments.demo.javalin
 
 import io.andromeda.fragments.FileSystemFragmentRepository
 import io.andromeda.fragments.blog.BlogEngine
+import io.andromeda.fragments.javalin.fragmentsRoutes
 import io.andromeda.fragments.lucene.LuceneSearchEngine
 import io.andromeda.fragments.static.StaticPageEngine
 import io.javalin.Javalin
