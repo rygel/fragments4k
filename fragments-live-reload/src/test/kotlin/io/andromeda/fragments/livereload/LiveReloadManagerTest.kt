@@ -2,19 +2,15 @@ package io.andromeda.fragments.livereload
 
 import io.andromeda.fragments.Fragment
 import io.andromeda.fragments.FragmentRepository
-import io.andromeda.fragments.Visibility
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.LocalDateTime
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
-import kotlin.test.assertFalse
 
 class LiveReloadManagerTest {
     
@@ -325,8 +321,8 @@ This is test content.
             content = "Content for $title",
             preview = "Preview for $title",
             date = LocalDateTime.now(),
-            modifiedDate = LocalDateTime.now(),
-            visible = Visibility.PUBLIC,
+            frontMatter = emptyMap(),
+            visible = true,
             template = "blog_post"
         )
     }
@@ -334,27 +330,45 @@ This is test content.
 
 class InMemoryFragmentRepository : FragmentRepository {
     private val fragments = mutableListOf<Fragment>()
-    
+
     override suspend fun getAll(): List<Fragment> = fragments.toList()
-    
-    override suspend fun getAllVisible(): List<Fragment> = 
-        fragments.filter { it.visible == Visibility.PUBLIC }
-    
-    override suspend fun getBySlug(slug: String): Fragment? = 
+
+    override suspend fun getAllVisible(): List<Fragment> =
+        fragments.filter { it.visible }
+
+    override suspend fun getBySlug(slug: String): Fragment? =
         fragments.find { it.slug == slug }
-    
-    override suspend fun addFragment(fragment: Fragment) {
+
+    override suspend fun getByYearMonthAndSlug(year: String, month: String, slug: String): Fragment? {
+        return fragments.find {
+            it.slug == slug &&
+            it.date?.year == year.toIntOrNull() &&
+            it.date?.monthValue == month.toIntOrNull()
+        }
+    }
+
+    override suspend fun getByTag(tag: String): List<Fragment> =
+        fragments.filter { it.tags.contains(tag) }
+
+    override suspend fun getByCategory(category: String): List<Fragment> =
+        fragments.filter { it.categories.contains(category) }
+
+    override suspend fun reload() {
+        // Do nothing for in-memory repository
+    }
+
+    suspend fun addFragment(fragment: Fragment) {
         fragments.add(fragment)
     }
-    
-    override suspend fun updateFragment(fragment: Fragment) {
+
+    suspend fun updateFragment(fragment: Fragment) {
         val index = fragments.indexOfFirst { it.slug == fragment.slug }
         if (index >= 0) {
             fragments[index] = fragment
         }
     }
-    
-    override suspend fun deleteFragment(slug: String) {
+
+    suspend fun deleteFragment(slug: String) {
         fragments.removeIf { it.slug == slug }
     }
 }
@@ -363,24 +377,28 @@ class ErrorFragmentRepository : FragmentRepository {
     override suspend fun getAll(): List<Fragment> {
         throw RuntimeException("Simulated repository error")
     }
-    
+
     override suspend fun getAllVisible(): List<Fragment> {
         throw RuntimeException("Simulated repository error")
     }
-    
+
     override suspend fun getBySlug(slug: String): Fragment? {
         throw RuntimeException("Simulated repository error")
     }
-    
-    override suspend fun addFragment(fragment: Fragment) {
+
+    override suspend fun getByYearMonthAndSlug(year: String, month: String, slug: String): Fragment? {
         throw RuntimeException("Simulated repository error")
     }
-    
-    override suspend fun updateFragment(fragment: Fragment) {
+
+    override suspend fun getByTag(tag: String): List<Fragment> {
         throw RuntimeException("Simulated repository error")
     }
-    
-    override suspend fun deleteFragment(slug: String) {
+
+    override suspend fun getByCategory(category: String): List<Fragment> {
+        throw RuntimeException("Simulated repository error")
+    }
+
+    override suspend fun reload() {
         throw RuntimeException("Simulated repository error")
     }
 }

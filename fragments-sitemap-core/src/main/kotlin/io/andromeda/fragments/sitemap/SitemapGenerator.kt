@@ -16,13 +16,14 @@ class SitemapGenerator(
     suspend fun generateSitemap(): String {
         return withContext(Dispatchers.IO) {
             val fragments = repository.getAllVisible()
-            val lastModDate = lastModified ?: fragments.maxOfOrNull { it.modifiedDate } ?: LocalDateTime.now()
+            val lastModDate = lastModified ?: fragments.mapNotNull { it.date }.maxOrNull() ?: LocalDateTime.now()
             val lastModDateFormatted = lastModDate.format(formatter)
 
             val urls = fragments.joinToString(separator = "\n") { fragment ->
                 val url = "$siteUrl/${fragment.slug}"
-                val modDate = fragment.modifiedDate?.format(formatter) ?: lastModDateFormatted
-                val changeFreq = if (fragment.modifiedDate != null && fragment.modifiedDate > lastModified.minusMonths(1)) "always" else "monthly"
+                val modDate = fragment.date?.format(formatter) ?: lastModDateFormatted
+                val fragmentDate = fragment.date
+                val changeFreq = if (fragmentDate != null && lastModified != null && fragmentDate > lastModified.minusMonths(1)) "always" else "monthly"
 
                 """
                 <url>
@@ -33,7 +34,7 @@ class SitemapGenerator(
                 """
             }
 
-            return """
+            """
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>

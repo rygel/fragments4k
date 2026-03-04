@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory
 import java.nio.file.*
 import java.nio.file.StandardWatchEventKinds.*
 import java.util.concurrent.TimeUnit
+import java.io.IOException
 
 class LiveReloadManager(
     private val repository: FragmentRepository,
@@ -39,34 +40,32 @@ class LiveReloadManager(
         
         watchJob = coroutineScope.launch {
             logger.info("Live reload started for: $contentDir")
-            
+
             while (isActive) {
                 try {
                     val key = watchService.poll(1, TimeUnit.SECONDS)
-                    
+                    val changedFiles = mutableListOf<Path>()
+
                     if (key != null) {
-                        val changedFiles = mutableListOf<Path>()
-                        
                         for (event in key.pollEvents()) {
                             val context = event.context() as Path
-                            val fullPath = key.watchable() as Path.resolve(context)
-                            
-                            if (event.kind() == ENTRY_CREATE || 
-                                event.kind() == ENTRY_MODIFY || 
+                            val fullPath = (key.watchable() as Path).resolve(context)
+
+                            if (event.kind() == ENTRY_CREATE ||
+                                event.kind() == ENTRY_MODIFY ||
                                 event.kind() == ENTRY_DELETE) {
                                 changedFiles.add(fullPath)
                                 logger.debug("File changed: $fullPath (${event.kind()})")
                             }
                         }
-                        
+
                         if (!key.reset()) {
                             logger.warn("Watch key for ${key.watchable()} could not be reset")
-                            // Re-register the watch
                             val path = key.watchable() as Path
                             registerWatchRecursively(path, watchService, watchKeys)
                         }
                     }
-                    
+
                     if (changedFiles.isNotEmpty()) {
                         handleChanges(changedFiles)
                     }
@@ -82,7 +81,7 @@ class LiveReloadManager(
             }
         }
     }
-    
+
     private fun registerWatchRecursively(
         dir: Path,
         watchService: WatchService,
@@ -162,7 +161,6 @@ class LiveReloadManager(
     fun stopWatching() {
         logger.info("Stopping live reload")
         watchJob?.cancel()
-        watchJob?.join()
         watchJob = null
     }
     
