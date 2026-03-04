@@ -21,14 +21,14 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <flexmark.version>0.64.8</flexmark.version>
-        <snakeyaml.version>2.2</snakeyaml.version>
+        <snakeyaml.version>2.6</snakeyaml.version>
         <slf4j.version>2.0.13</slf4j.version>
-        <logback.version>1.4.14</logback.version>
-        <jte.version>3.1.12</jte.version>
+        <logback.version>1.5.32</logback.version>
+        <jte.version>3.2.3</jte.version>
         <lucene.version>9.11.1</lucene.version>
 
         <junit.version>5.11.0</junit.version>
-        <mockk.version>1.13.11</mockk.version>
+        <mockk.version>1.14.9</mockk.version>
         <rest-assured.version>5.4.0</rest-assured.version>
         <ktlint.version>3.5.0</ktlint.version>
 
