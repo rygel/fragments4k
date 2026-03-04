@@ -282,6 +282,9 @@
             <p>
                 <strong>Date:</strong> {{ viewModel.formattedDate }}
                 <span class="reading-time">&bull; {{ viewModel.readingTime.text }}</span><br>
+                {% if viewModel.author %}
+                <strong>Author:</strong> {{ viewModel.author }}<br>
+                {% endif %}
                 {% if viewModel.tags %}
                 <strong>Tags:</strong>
                 {% for tag in viewModel.tags %}

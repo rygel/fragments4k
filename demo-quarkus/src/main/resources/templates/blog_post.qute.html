@@ -152,6 +152,57 @@
             font-size: 0.85em;
             margin-left: 10px;
         }
+        .share-buttons {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+        .share-buttons h3 {
+            margin: 0 0 10px 0;
+            font-size: 1em;
+            color: #333;
+        }
+        .share-buttons a {
+            display: inline-block;
+            margin-right: 10px;
+            padding: 8px 16px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        .share-buttons a:hover {
+            transform: translateY(-2px);
+        }
+        .share-twitter {
+            background: #1da1f2;
+            color: white;
+        }
+        .share-twitter:hover {
+            background: #0d95e8;
+        }
+        .share-facebook {
+            background: #1877f2;
+            color: white;
+        }
+        .share-facebook:hover {
+            background: #145dbf;
+        }
+        .share-linkedin {
+            background: #0077b5;
+            color: white;
+        }
+        .share-linkedin:hover {
+            background: #005582;
+        }
+        .share-email {
+            background: #6c757d;
+            color: white;
+        }
+        .share-email:hover {
+            background: #545b62;
+        }
     </style>
 </head>
 <body>
@@ -162,6 +213,14 @@
 
     <article class="post">
         <h1>{viewModel.title}</h1>
+
+        <div class="share-buttons">
+            <h3>Share this post:</h3>
+            <a href="https://twitter.com/intent/tweet?text={viewModel.title}&amp;url=http://localhost:8080/blog/{viewModel.date[0]}/{#if viewModel.date[1] < 10}0{/if}{viewModel.date[1]}/{viewModel.slug}" class="share-twitter" target="_blank">Twitter</a>
+            <a href="https://www.facebook.com/sharer/sharer.php?u=http://localhost:8080/blog/{viewModel.date[0]}/{#if viewModel.date[1] < 10}0{/if}{viewModel.date[1]}/{viewModel.slug}" class="share-facebook" target="_blank">Facebook</a>
+            <a href="https://www.linkedin.com/sharing/share-offsite/?url=http://localhost:8080/blog/{viewModel.date[0]}/{#if viewModel.date[1] < 10}0{/if}{viewModel.date[1]}/{viewModel.slug}" class="share-linkedin" target="_blank">LinkedIn</a>
+            <a href="mailto:?subject={viewModel.title}&amp;body=Check out this article: http://localhost:8080/blog/{viewModel.date[0]}/{#if viewModel.date[1] < 10}0{/if}{viewModel.date[1]}/{viewModel.slug}" class="share-email">Email</a>
+        </div>
 
         <div class="post-meta">
             <p>
