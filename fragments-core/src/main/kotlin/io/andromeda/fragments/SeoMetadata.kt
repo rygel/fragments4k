@@ -24,9 +24,6 @@ data class SeoMetadata(
     val locale: String = "en_US",
     val robots: String = "index, follow"
 ) {
-    /**
-     * Generates OpenGraph meta tags as a list of HTML meta tag strings
-     */
     fun generateOpenGraphTags(): List<String> {
         val tags = mutableListOf<String>()
         
@@ -38,7 +35,6 @@ data class SeoMetadata(
         ogSiteName?.let { tags.add("""<meta property="og:site_name" content="${escapeHtml(it)}">""") }
         ogImage?.let { tags.add("""<meta property="og:image" content="$it">""") }
         
-        // Article specific tags
         if (ogType == "article") {
             author?.let { tags.add("""<meta property="article:author" content="${escapeHtml(it)}">""") }
             publishedDate?.let { tags.add("""<meta property="article:published_time" content="$it">""") }
@@ -53,9 +49,6 @@ data class SeoMetadata(
         return tags
     }
     
-    /**
-     * Generates Twitter Card meta tags as a list of HTML meta tag strings
-     */
     fun generateTwitterCardTags(): List<String> {
         val tags = mutableListOf<String>()
         
@@ -68,9 +61,6 @@ data class SeoMetadata(
         return tags
     }
     
-    /**
-     * Generates standard meta tags
-     */
     fun generateStandardMetaTags(): List<String> {
         val tags = mutableListOf<String>()
         
@@ -88,9 +78,6 @@ data class SeoMetadata(
         return tags
     }
     
-    /**
-     * Generates JSON-LD structured data for the fragment
-     */
     fun generateJsonLd(): String {
         val jsonBuilder = StringBuilder()
         jsonBuilder.append("""
@@ -127,9 +114,6 @@ data class SeoMetadata(
         return jsonBuilder.toString()
     }
     
-    /**
-     * Generates all SEO meta tags as a single string
-     */
     fun generateAllMetaTags(): String {
         return buildString {
             appendLine("<!-- Standard Meta Tags -->")
@@ -168,9 +152,6 @@ data class SeoMetadata(
     }
     
     companion object {
-        /**
-         * Creates SEO metadata from a Fragment and site configuration
-         */
         fun fromFragment(
             fragment: Fragment,
             siteUrl: String,
@@ -209,9 +190,6 @@ data class SeoMetadata(
             )
         }
         
-        /**
-         * Creates SEO metadata for a page (non-article)
-         */
         fun forPage(
             title: String,
             description: String,
