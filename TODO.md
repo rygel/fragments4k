@@ -90,12 +90,51 @@ This document outlines planned features and enhancements for the Fragments proje
   - Technical: Introduce `Site` entity, site-scoped repositories, site routing
   - Estimation: 4-6 weeks
 
-- [ ] **Content Series Management**
+- [x] **Content Series Management** ✅
   - Current: Individual fragments with no series support
   - Goal: Organize related content into series (e.g., multi-part tutorials)
   - Impact: Improves content organization and user navigation
   - Technical: Create `ContentSeries` entity, series relationships in Fragment, series routing
   - Estimation: 2-3 weeks
+  - Status: Completed 2026-03-05
+  - Implementation:
+    - Added ContentSeries data class with SeriesStatus enum (ACTIVE, INACTIVE, DRAFT)
+    - Added SeriesPart data class for individual series parts
+    - Added SeriesNavigation data class for navigating through series
+    - Added series fields to Fragment (seriesSlug, seriesPart, seriesTitle)
+    - Added isInSeries and seriesPartTitle computed properties
+    - Added ContentSeriesRepository interface with full CRUD and navigation
+    - Implemented InMemoryContentSeriesRepository for testing
+    - Implemented FileSystemContentSeriesRepository (YAML file storage)
+    - Series navigation (previous/next part, progress tracking, first/last detection)
+    - Series filtering by tag and category
+    - 19 comprehensive tests covering all series scenarios
+    - Front matter parsing for series fields in FileSystemFragmentRepository
+
+- [ ] **Author Profiles**
+  - Current: Single `author` string field
+  - Goal: Support multiple authors with profiles, bylines, and author pages
+  - Impact: Essential for multi-author blogs and publications
+  - Technical: Create `Author` entity, author metadata, author-specific views, content filtering by author
+  - Estimation: 2-3 weeks
+
+- [x] **Content Relationships** ✅
+  - Current: No support for linking related content
+  - Goal: Define relationships between fragments (previous/next posts, related content, translations)
+  - Impact: Improves content discovery and SEO
+  - Technical: Add relationship metadata, implement relationship APIs, update navigation to use relationships
+  - Estimation: 2-3 weeks
+  - Status: Completed 2026-03-05
+  - Implementation:
+    - Added ContentRelationshipGenerator for finding related content
+    - Added ContentRelationships data class with relationship types
+    - Added RelationshipConfig for customizing relationship matching
+    - Added FragmentViewModel with relationship properties
+    - Support for previous/next posts by date
+    - Related content by tags, categories, and content references
+    - Translation support for multi-language content
+    - 12 comprehensive tests in ContentRelationshipTest
+    - Framework-agnostic relationship generation
 
 - [ ] **Author Profiles**
   - Current: Single `author` string field
