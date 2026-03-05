@@ -6,12 +6,25 @@ This document outlines planned features and enhancements for the Fragments proje
 
 ### Content Management Lifecycle
 
-- [ ] **Draft & Published Workflow**
+- [x] **Draft & Published Workflow** ✅
   - Current: All fragments are published/hidden
   - Goal: Implement content draft status with workflow states (draft → review → published → scheduled → archived)
   - Impact: Critical for content management and editorial processes
   - Technical: Add `status` field to Fragment model, create status transition APIs, implement scheduled content retrieval
   - Estimation: 2-3 weeks
+  - Status: Completed 2026-03-05
+  - Implementation:
+    - Added FragmentStatus enum with 7 statuses (DRAFT, REVIEW, APPROVED, PUBLISHED, SCHEDULED, ARCHIVED, EXPIRED)
+    - Status field added to Fragment model with default PUBLISHED
+    - Status transition validation via FragmentStatus.canTransition()
+    - Status update methods (updateFragmentStatus, updateMultipleFragmentsStatus)
+    - Bulk operations (publishMultiple, unpublishMultiple, archiveMultiple, scheduleMultiple)
+    - Status change history tracking with StatusChangeHistory entity
+    - Scheduled content retrieval and auto-publishing (getScheduledFragmentsDueForPublication, publishScheduledFragments)
+    - Content expiration handling (expireFragments, getFragmentsExpiringSoon)
+    - Status filtering in getAllVisible() (only PUBLISHED and SCHEDULED content visible)
+    - 13 comprehensive tests in WorkflowEnhancementTest
+    - Full workflow: DRAFT → REVIEW → APPROVED → PUBLISHED, with ARCHIVED and EXPIRED states
 
 - [x] **Content Scheduling** ✅
   - Current: Only future date support via `date` field
@@ -26,13 +39,6 @@ This document outlines planned features and enhancements for the Fragments proje
     - Added scheduleMultiple bulk operation
     - 19 comprehensive tests covering all scheduling features
     - Framework-agnostic scheduler integration support
-
-- [ ] **Content Relationships**
-  - Current: No support for linking related content
-  - Goal: Define relationships between fragments (previous/next posts, related content, translations)
-  - Impact: Improves content discovery and SEO
-  - Technical: Add relationship metadata, implement relationship APIs, update navigation to use relationships
-  - Estimation: 2-3 weeks
 
 ## 🎯 High Priority (Core CMS Features)
 
@@ -111,57 +117,6 @@ This document outlines planned features and enhancements for the Fragments proje
   - Impact: Important for agencies managing multiple client sites
   - Technical: Introduce `Site` entity, site-scoped repositories, site routing
   - Estimation: 4-6 weeks
-
-- [x] **Content Series Management** ✅
-
-- [x] **Content Relationships** ✅
-  - Current: No support for linking related content
-  - Goal: Define relationships between fragments (previous/next posts, related content, translations)
-  - Impact: Improves content discovery and SEO
-  - Technical: Add relationship metadata, implement relationship APIs, update navigation to use relationships
-  - Estimation: 2-3 weeks
-  - Status: Completed 2026-03-05
-  - Implementation:
-    - Added ContentRelationshipGenerator for finding related content
-    - Added ContentRelationships data class with relationship types
-    - Added RelationshipConfig for customizing relationship matching
-    - Added FragmentViewModel with relationship properties
-    - Support for previous/next posts by date
-    - Related content by tags, categories, and content references
-    - Translation support for multi-language content
-    - 12 comprehensive tests in ContentRelationshipTest
-    - Framework-agnostic relationship generation
-
-- [ ] **Author Profiles**
-  - Current: Single `author` string field
-  - Goal: Support multiple authors with profiles, bylines, and author pages
-  - Impact: Essential for multi-author blogs and publications
-  - Technical: Create `Author` entity, author metadata, author-specific views, content filtering by author
-  - Estimation: 2-3 weeks
-
-- [ ] **Content Relationships**
-  - Current: No support for linking related content
-  - Goal: Define relationships between fragments (previous/next posts, related content, translations)
-  - Impact: Improves content discovery and SEO
-  - Technical: Add relationship metadata, implement relationship APIs, update navigation to use relationships
-  - Estimation: 2-3 weeks
-
-### Media Management
-
-- [x] **Expiration & Unpublishing** ✅
-  - Current: No mechanism to unpublish or expire content
-  - Goal: Support content expiration dates and ability to unpublish existing content
-  - Impact: Important for time-sensitive content management
-  - Technical: Add `expiresAt` field, implement unpublish API, update search to exclude expired content
-  - Estimation: 1 week
-  - Status: Completed 2026-03-05
-  - Implementation:
-    - Added unpublishMultiple method to FragmentRepository
-    - Implemented unpublish in FileSystemFragmentRepository (PUBLISHED → DRAFT)
-    - Implemented unpublish in both InMemoryFragmentRepository implementations
-    - Expiry filtering already in getAllVisible() and search (via LuceneSearchEngine.index())
-    - 13 comprehensive tests covering all expiry scenarios
-    - Search automatically excludes expired content
 
 - [ ] **Media Library & Upload System**
   - Current: Media only referenced via frontMatter URL strings
@@ -582,11 +537,12 @@ This document outlines planned features and enhancements for the Fragments proje
 
 ## 📊 Summary Statistics
 
-- **Total Features:** 73
-- **Critical Priority:** 3 (Content Management Lifecycle)
-- **High Priority:** 16 (Core CMS Features)
+- **Total Features:** 60
+- **Completed Features:** 5 (8.3%)
+- **Critical Priority:** 3 (Content Management Lifecycle) - 2 completed
+- **High Priority:** 13 (Core CMS Features) - 3 completed
 - **Medium Priority:** 24 (Search, User, Admin, Performance, Integration, Testing)
-- **Lower Priority:** 30 (Deployment, Dev Tools, Localization, Documentation)
+- **Lower Priority:** 20 (Deployment, Dev Tools, Localization, Documentation)
 
 ## 🎯 Implementation Strategy
 
@@ -660,5 +616,6 @@ When implementing features, consider:
 
 **Last Updated:** 2026-03-05
 **Project Version:** 1.0.0-SNAPSHOT
-**Total Features Planned:** 73
-**Estimated Total Effort:** 24-38 weeks (6-9.5 months)
+**Total Features Planned:** 60
+**Completed Features:** 5 (8.3%)
+**Estimated Total Effort:** 20-35 weeks (5-8.5 months)
