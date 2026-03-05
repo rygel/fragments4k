@@ -5,7 +5,9 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.io.File
 import javax.imageio.ImageIO
 
@@ -24,37 +26,20 @@ class BasicImageOptimizerTest {
     @Test
     fun optimizeCreatesOptimizedImage() = runBlocking {
         val testImage = createTestImage(800, 600)
-        val outputPath = File(tempDir, "optimized.jpg").absolutePath
+        val imagePath = testImage.absolutePath
         
-        val inputStream = testImage.inputStream()
-        val result = optimizer.optimize(inputStream, outputPath, ImageResizeOptions(maxWidth = 400))
+        val result = optimizer.optimize(imagePath, ImageResizeOptions(maxWidth = 400))
         
         assertTrue(result.isSuccess)
         val optimizedImage = result.getOrNull()!!
         
         assertNotNull(optimizedImage.originalPath)
-        assertNotNull(optimizedImage.optimizedPath)
+        assertTrue(File(optimizedImage.optimizedPath).exists())
         assertTrue(optimizedImage.optimizedSize > 0)
         assertTrue(optimizedImage.optimizedSize < optimizedImage.originalSize)
         assertTrue(optimizedImage.width <= 400)
         assertTrue(optimizedImage.height <= 400)
         assertTrue(optimizedImage.compressionRatio <= 1.0f)
-    }
-
-    @Test
-    fun optimizeWithFilePath() = runBlocking {
-        val testImage = createTestImage(800, 600)
-        val imagePath = File(tempDir, "test.jpg").absolutePath
-        
-        testImage.writeBytes(createImageData(800, 600))
-        
-        val result = optimizer.optimize(imagePath, ImageResizeOptions(maxWidth = 400, maxHeight = 400))
-        
-        assertTrue(result.isSuccess)
-        val optimizedImage = result.getOrNull()!!
-        
-        assertTrue(File(optimizedImage.optimizedPath).exists())
-        assertTrue(optimizedImage.sizeReduction > 0)
     }
 
     @Test
@@ -190,11 +175,11 @@ class BasicImageOptimizerTest {
 
     @Test
     fun optimizeWithPresetOptions() = runBlocking {
-        val testImage = createTestImage(1920, 1080)
-        val outputPath = File(tempDir, "thumbnail.jpg").absolutePath
+        val testImage = createTestImage(800, 600)
+        val testImageFile = File(tempDir, "test-preset.jpg")
+        testImageFile.writeBytes(createImageData(800, 600))
         
-        val inputStream = testImage.inputStream()
-        val result = optimizer.optimize(inputStream, outputPath, ImageResizeOptions.THUMBNAIL)
+        val result = optimizer.optimize(testImageFile.absolutePath, ImageResizeOptions.THUMBNAIL)
         
         assertTrue(result.isSuccess)
         val optimizedImage = result.getOrNull()!!
@@ -229,7 +214,9 @@ class BasicImageOptimizerTest {
     }
 
     private fun createTestImage(width: Int, height: Int): File {
-        return File(tempDir, "test-image.jpg")
+        val file = File(tempDir, "test-image.jpg")
+        file.writeBytes(createImageData(width, height))
+        return file
     }
 
     private fun createImageData(width: Int, height: Int): ByteArray {

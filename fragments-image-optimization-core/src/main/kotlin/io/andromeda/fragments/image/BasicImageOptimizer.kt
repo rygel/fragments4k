@@ -76,11 +76,9 @@ class BasicImageOptimizer : ImageOptimizer {
             return@withContext Result.failure(IllegalArgumentException("File not found: $filePath"))
         }
         
-        FileInputStream(filePath).use { inputStream ->
-            val fileName = getOptimizedFileName(filePath, options.format)
-            val outputPath = file.parent + File.separator + fileName
-            return@withContext optimize(inputStream, outputPath, options)
-        }
+        val fileName = getOptimizedFileName(filePath, options.format)
+        val outputPath = file.parent + File.separator + fileName
+        return@withContext optimize(file.inputStream(), outputPath, options)
     }
     
     override suspend fun generateResponsiveVariants(imagePath: String, variants: List<ImageResizeOptions>): Result<List<ResponsiveVariant>> = withContext(Dispatchers.IO) {
