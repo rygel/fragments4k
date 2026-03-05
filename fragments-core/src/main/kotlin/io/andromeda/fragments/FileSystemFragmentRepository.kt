@@ -15,7 +15,8 @@ import java.time.format.DateTimeFormatter
 
 class FileSystemFragmentRepository(
     private val basePath: String,
-    private val extension: String = ".md"
+    private val extension: String = ".md",
+    private val revisionRepository: FragmentRevisionRepository = FileSystemFragmentRevisionRepository(basePath)
 ) : FragmentRepository {
 
     private val logger = LoggerFactory.getLogger(FileSystemFragmentRepository::class.java)
@@ -509,6 +510,63 @@ class FileSystemFragmentRepository(
                 allFragments = allFragments,
                 config = config
             )
+        }
+    }
+
+    override suspend fun createRevision(slug: String, changedBy: String?, reason: String?): Result<FragmentRevision> = withContext(Dispatchers.IO) {
+        val fragment = getBySlug(slug)
+        if (fragment == null) {
+            return@withContext Result.failure(IllegalArgumentException("Fragment not found: $slug"))
+        }
+        try {
+            val revision = revisionRepository.saveRevision(fragment, changedBy, reason)
+            Result.success(revision)
+        } catch (e: Exception) {
+            logger.error("Failed to create revision for fragment: $slug", e)
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getFragmentRevisions(slug: String): List<FragmentRevision> = withContext(Dispatchers.IO) {
+        revisionRepository.getRevisions(slug)
+    }
+
+    override suspend fun revertToRevision(slug: String, revisionId: String, changedBy: String?, reason: String?): Result<Fragment> = withContext(Dispatchers.IO) {
+        val fragment = getBySlug(slug)
+        if (fragment == null) {
+            return@withContext Result.failure(IllegalArgumentException("Fragment not found: $slug"))
+        }
+
+        val revertedFragment = revisionRepository.revertToRevision(slug, revisionId, changedBy, reason)
+        if (revertedFragment.isFailure) {
+            return@withContext Result.failure(revertedFragment.exceptionOrNull() ?: Exception("Revert failed"))
+        }
+
+        val result = revertedFragment.getOrNull() ?: return@withContext Result.failure(Exception("Revert failed"))
+        try {
+            val file = getFragmentFile(slug) ?: return@withContext Result.failure(IllegalArgumentException("Fragment file not found: $slug"))
+            
+            val content = file.readText()
+            val parsed = parser.parse(content)
+            val updatedFrontMatter = parsed.frontMatter.toMutableMap()
+            updatedFrontMatter["title"] = result.title
+            
+            val newContent = buildString {
+                append("---\n")
+                dumpFrontMatter(updatedFrontMatter, this)
+                append("---\n")
+                append(result.content)
+            }
+            
+            file.writeText(newContent)
+            
+            val updatedFragment = parseFragmentFile(file)
+            cacheUpdatedFragment(updatedFragment)
+            
+            Result.success(updatedFragment)
+        } catch (e: Exception) {
+            logger.error("Failed to revert fragment: $slug", e)
+            Result.failure(e)
         }
     }
 }

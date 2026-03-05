@@ -24,4 +24,7 @@ interface FragmentRepository {
     suspend fun getFragmentsExpiringSoon(threshold: LocalDateTime = LocalDateTime.now().plusDays(7)): List<Fragment>
     suspend fun reload()
     suspend fun getRelationships(slug: String, config: RelationshipConfig = RelationshipConfig()): ContentRelationships?
+    suspend fun createRevision(slug: String, changedBy: String? = null, reason: String? = null): Result<FragmentRevision>
+    suspend fun getFragmentRevisions(slug: String): List<FragmentRevision>
+    suspend fun revertToRevision(slug: String, revisionId: String, changedBy: String? = null, reason: String? = null): Result<Fragment>
 }

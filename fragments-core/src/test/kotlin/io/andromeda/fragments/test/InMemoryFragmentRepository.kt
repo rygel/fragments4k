@@ -10,6 +10,7 @@ import java.time.LocalDateTime
 
 class InMemoryFragmentRepository : FragmentRepository {
     private val fragments = mutableListOf<Fragment>()
+    private val revisionRepository = io.andromeda.fragments.test.InMemoryFragmentRevisionRepository()
 
     suspend fun addFragment(fragment: Fragment) {
         fragments.add(fragment)
@@ -227,5 +228,37 @@ class InMemoryFragmentRepository : FragmentRepository {
             allFragments = allFragments,
             config = config
         )
+    }
+
+    override suspend fun createRevision(slug: String, changedBy: String?, reason: String?): Result<io.andromeda.fragments.FragmentRevision> {
+        val fragment = getBySlug(slug)
+        if (fragment == null) {
+            return Result.failure(IllegalArgumentException("Fragment not found: $slug"))
+        }
+        return Result.success(revisionRepository.saveRevision(fragment, changedBy, reason))
+    }
+
+    override suspend fun getFragmentRevisions(slug: String): List<io.andromeda.fragments.FragmentRevision> {
+        return revisionRepository.getRevisions(slug)
+    }
+
+    override suspend fun revertToRevision(slug: String, revisionId: String, changedBy: String?, reason: String?): Result<Fragment> {
+        val fragment = getBySlug(slug)
+        if (fragment == null) {
+            return Result.failure(IllegalArgumentException("Fragment not found: $slug"))
+        }
+
+        val result = revisionRepository.revertToRevision(slug, revisionId, changedBy, reason)
+        if (result.isFailure) {
+            return result
+        }
+
+        val revertedFragment = result.getOrNull() ?: return Result.failure(Exception("Revert failed"))
+        val index = fragments.indexOfFirst { it.slug == slug }
+        if (index >= 0) {
+            fragments[index] = revertedFragment
+        }
+
+        return Result.success(revertedFragment)
     }
 }
