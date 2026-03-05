@@ -102,12 +102,26 @@ This document outlines planned features and enhancements for the Fragments proje
     - Author filtering in FragmentRepository (getByAuthor, getByAuthors)
     - Front matter parsing support in FileSystemFragmentRepository
 
-- [ ] **Revision History & Versioning**
+- [x] **Revision History & Versioning** ✅
   - Current: No content versioning or revision tracking
   - Goal: Track content changes with revision history, ability to revert to previous versions
   - Impact: Critical for editorial processes and content integrity
   - Technical: Create `FragmentRevision` entity, implement version storage with diff tracking
   - Estimation: 3-4 weeks
+  - Status: Completed 2026-03-05
+  - Implementation:
+    - Added FragmentRevision data class with version tracking
+    - Added FragmentRevisionRepository interface with full CRUD and revert operations
+    - InMemoryFragmentRevisionRepository for testing with in-memory storage
+    - FileSystemFragmentRevisionRepository for production (JSON file storage in .revisions/)
+    - Revision methods added to FragmentRepository (createRevision, getFragmentRevisions, revertToRevision)
+    - Revision tracking in InMemoryFragmentRepository and FileSystemFragmentRepository
+    - Diff generation for content changes (simple line-by-line diff)
+    - Revert to previous version functionality
+    - Revision cleanup (deleteRevisions, deleteRevisionsBefore)
+    - 16 comprehensive tests in FragmentRevisionTest
+    - Version incrementing and previous revision linking
+    - Timestamp-based revision deletion
 
 ### Advanced Content Organization
 
