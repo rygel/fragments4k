@@ -1,0 +1,148 @@
+name: Security & Code Quality
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    - cron: '0 2 * * *'  # Run daily at 2 AM UTC
+
+jobs:
+  dependency-scan:
+    name: OWASP Dependency Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+      
+      - name: Run OWASP Dependency Check
+        run: mvn org.owasp:dependency-check:check
+        continue-on-error: false
+      
+      - name: Upload Dependency Report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: owasp-dependency-check-report
+          path: target/dependency-check-report.html
+
+  security-scan:
+    name: SpotBugs Security Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+      
+      - name: Run SpotBugs
+        run: mvn spotbugs:check
+        continue-on-error: false
+      
+      - name: Upload SpotBugs Report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spotbugs-report
+          path: target/spotbugsXml.xml
+
+  code-quality:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+      
+      - name: Run KtLint
+        run: mvn ktlint:check
+        continue-on-error: false
+      
+      - name: Upload KtLint Report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ktlint-report
+          path: target/ktlint-report.html
+
+  coverage:
+    name: Code Coverage Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+      
+      - name: Build with coverage
+        run: mvn clean test jacoco:report
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./target/site/jacoco/jacoco.xml
+          flags: unittests
+          name: codecov-umbrella
+      
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: target/site/jacoco
+
+  performance:
+    name: Performance Profiling
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+      
+      - name: Build JMH benchmarks
+        run: mvn clean install
+      
+      - name: Run performance benchmarks
+        run: mvn test -Dtest=PerformanceTest
+        continue-on-error: false
+      
+      - name: Upload performance results
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-results
+          path: target/benchmarks

@@ -1,0 +1,120 @@
+[INFO] Scanning for projects...
+[WARNING] 
+[WARNING] Some problems were encountered while building the effective model for io.andromeda:fragments-core:jar:1.0.0-SNAPSHOT
+[WARNING] 'build.pluginManagement.plugins.plugin.(groupId:artifactId)' must be unique but found duplicate declaration of plugin org.apache.maven.plugins:maven-surefire-plugin @ io.andromeda:fragments-parent:1.0.0-SNAPSHOT, C:\Develop\Claude\projects\fragments\pom.xml, line 341, column 25
+[WARNING] 'build.pluginManagement.plugins.plugin.(groupId:artifactId)' must be unique but found duplicate declaration of plugin org.apache.maven.plugins:maven-jar-plugin @ io.andromeda:fragments-parent:1.0.0-SNAPSHOT, C:\Develop\Claude\projects\fragments\pom.xml, line 411, column 25
+[WARNING] 'build.pluginManagement.plugins.plugin.(groupId:artifactId)' must be unique but found duplicate declaration of plugin org.apache.maven.plugins:maven-surefire-plugin @ io.andromeda:fragments-parent:1.0.0-SNAPSHOT, C:\Develop\Claude\projects\fragments\pom.xml, line 426, column 25
+[WARNING] 
+[WARNING] Some problems were encountered while building the effective model for io.andromeda:fragments-parent:pom:1.0.0-SNAPSHOT
+[WARNING] 'build.pluginManagement.plugins.plugin.(groupId:artifactId)' must be unique but found duplicate declaration of plugin org.apache.maven.plugins:maven-surefire-plugin @ line 341, column 25
+[WARNING] 'build.pluginManagement.plugins.plugin.(groupId:artifactId)' must be unique but found duplicate declaration of plugin org.apache.maven.plugins:maven-jar-plugin @ line 411, column 25
+[WARNING] 'build.pluginManagement.plugins.plugin.(groupId:artifactId)' must be unique but found duplicate declaration of plugin org.apache.maven.plugins:maven-surefire-plugin @ line 426, column 25
+[WARNING] 
+[WARNING] It is highly recommended to fix these problems because they threaten the stability of your build.
+[WARNING] 
+[WARNING] For this reason, future Maven versions might no longer support building such malformed projects.
+[WARNING] 
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] Fragments Parent                                                   [pom]
+[INFO] Fragments Core                                                     [jar]
+[INFO] Fragments Static Core                                              [jar]
+[INFO] Fragments Blog Core                                                [jar]
+[INFO] Fragments RSS Core                                                 [jar]
+[INFO] Fragments Lucene Core                                              [jar]
+[INFO] Fragments Sitemap Core                                             [jar]
+[INFO] Fragments Live Reload                                              [jar]
+[INFO] Fragments HTTP4k Adapter                                           [jar]
+[INFO] Fragments Javalin Adapter                                          [jar]
+[INFO] Fragments Spring Boot Adapter                                      [jar]
+[INFO] Fragments Quarkus Adapter                                          [jar]
+[INFO] Fragments Micronaut Adapter                                        [jar]
+[INFO] Fragments CLI                                                      [jar]
+[INFO] HTTP4k Demo Application                                            [jar]
+[INFO] Spring Boot Demo Application                                       [jar]
+[INFO] Javalin Demo Application                                           [jar]
+[INFO] Quarkus Demo Application                                           [jar]
+[INFO] Micronaut Demo Application                                         [jar]
+[INFO] 
+[INFO] -------------------< io.andromeda:fragments-parent >--------------------
+[INFO] Building Fragments Parent 1.0.0-SNAPSHOT                          [1/19]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ fragments-parent ---
+[INFO] 
+[INFO] --- kotlin:2.3.0:compile (compile) @ fragments-parent ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --------------------< io.andromeda:fragments-core >---------------------
+[INFO] Building Fragments Core 1.0.0-SNAPSHOT                            [2/19]
+[INFO]   from fragments-core\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ fragments-core ---
+[INFO] Deleting C:\Develop\Claude\projects\fragments\fragments-core\target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ fragments-core ---
+[INFO] skip non existing resourceDirectory C:\Develop\Claude\projects\fragments\fragments-core\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.15.0:compile (default-compile) @ fragments-core ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- kotlin:2.3.0:compile (compile) @ fragments-core ---
+[INFO] Options for KOTLIN DAEMON: CompilationOptions(compilerMode=NON_INCREMENTAL_COMPILER, targetPlatform=JVM, reportCategories=[0, 3], reportSeverity=2, requestedCompilationResults=[], kotlinScriptExtensions=null)
+[ERROR] file:///C:/Develop/Claude/projects/fragments/fragments-core/src/main/kotlin/io/andromeda/fragments/FileSystemFragmentRepository.kt:63:63 Too many arguments for 'fun parseFragmentFile(file: File): Fragment'.
+[ERROR] file:///C:/Develop/Claude/projects/fragments/fragments-core/src/main/kotlin/io/andromeda/fragments/FileSystemFragmentRepository.kt:86:28 No 'set' operator method providing array access.
+[ERROR] file:///C:/Develop/Claude/projects/fragments/fragments-core/src/main/kotlin/io/andromeda/fragments/FileSystemFragmentRepository.kt:92:13 Suspend function 'suspend fun reload(): Unit' can only be called from a coroutine or another suspend function.
+[ERROR] file:///C:/Develop/Claude/projects/fragments/fragments-core/src/main/kotlin/io/andromeda/fragments/FileSystemFragmentRepository.kt:149:13 No value passed for parameter 'publishDate'.
+[ERROR] file:///C:/Develop/Claude/projects/fragments/fragments-core/src/main/kotlin/io/andromeda/fragments/Fragment.kt:13:12 Redeclaration:
+data class Fragment : Any
+[ERROR] file:///C:/Develop/Claude/projects/fragments/fragments-core/src/main/kotlin/io/andromeda/fragments/FragmentViewModel.kt:5:12 Redeclaration:
+data class Fragment : Any
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for Fragments Parent 1.0.0-SNAPSHOT:
+[INFO] 
+[INFO] Fragments Parent ................................... SUCCESS [  0.576 s]
+[INFO] Fragments Core ..................................... FAILURE [  2.623 s]
+[INFO] Fragments Static Core .............................. SKIPPED
+[INFO] Fragments Blog Core ................................ SKIPPED
+[INFO] Fragments RSS Core ................................. SKIPPED
+[INFO] Fragments Lucene Core .............................. SKIPPED
+[INFO] Fragments Sitemap Core ............................. SKIPPED
+[INFO] Fragments Live Reload .............................. SKIPPED
+[INFO] Fragments HTTP4k Adapter ........................... SKIPPED
+[INFO] Fragments Javalin Adapter .......................... SKIPPED
+[INFO] Fragments Spring Boot Adapter ...................... SKIPPED
+[INFO] Fragments Quarkus Adapter .......................... SKIPPED
+[INFO] Fragments Micronaut Adapter ........................ SKIPPED
+[INFO] Fragments CLI ...................................... SKIPPED
+[INFO] HTTP4k Demo Application ............................ SKIPPED
+[INFO] Spring Boot Demo Application ....................... SKIPPED
+[INFO] Javalin Demo Application ........................... SKIPPED
+[INFO] Quarkus Demo Application ........................... SKIPPED
+[INFO] Micronaut Demo Application ......................... SKIPPED
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  3.837 s
+[INFO] Finished at: 2026-03-05T12:44:31+02:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.jetbrains.kotlin:kotlin-maven-plugin:2.3.0:compile (compile) on project fragments-core: Compilation failure: Compilation failure: 
+[ERROR] file:///C:/Develop/Claude/projects/fragments/fragments-core/src/main/kotlin/io/andromeda/fragments/FileSystemFragmentRepository.kt:63:63 Too many arguments for 'fun parseFragmentFile(file: File): Fragment'.
+[ERROR] file:///C:/Develop/Claude/projects/fragments/fragments-core/src/main/kotlin/io/andromeda/fragments/FileSystemFragmentRepository.kt:86:28 No 'set' operator method providing array access.
+[ERROR] file:///C:/Develop/Claude/projects/fragments/fragments-core/src/main/kotlin/io/andromeda/fragments/FileSystemFragmentRepository.kt:92:13 Suspend function 'suspend fun reload(): Unit' can only be called from a coroutine or another suspend function.
+[ERROR] file:///C:/Develop/Claude/projects/fragments/fragments-core/src/main/kotlin/io/andromeda/fragments/FileSystemFragmentRepository.kt:149:13 No value passed for parameter 'publishDate'.
+[ERROR] file:///C:/Develop/Claude/projects/fragments/fragments-core/src/main/kotlin/io/andromeda/fragments/Fragment.kt:13:12 Redeclaration:
+[ERROR] data class Fragment : Any
+[ERROR] file:///C:/Develop/Claude/projects/fragments/fragments-core/src/main/kotlin/io/andromeda/fragments/FragmentViewModel.kt:5:12 Redeclaration:
+[ERROR] data class Fragment : Any
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+[ERROR] 
+[ERROR] After correcting the problems, you can resume the build with the command
+[ERROR]   mvn <args> -rf :fragments-core
