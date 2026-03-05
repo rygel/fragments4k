@@ -74,6 +74,28 @@ This document outlines planned features and enhancements for the Fragments proje
     - 19 comprehensive tests covering all series scenarios
     - Front matter parsing for series fields in FileSystemFragmentRepository
 
+- [x] **Author Profiles** ✅
+  - Current: Single `author` string field
+  - Goal: Support multiple authors with profiles, bylines, and author pages
+  - Impact: Essential for multi-author blogs and publications
+  - Technical: Create `Author` entity, author metadata, author-specific views, content filtering by author
+  - Estimation: 2-3 weeks
+  - Status: Completed 2026-03-05
+  - Implementation:
+    - Comprehensive Author data class with profile fields
+    - Personal info (id, name, slug, email, bio, avatar, location, company, role)
+    - Social links (twitter, github, linkedin, website, custom socialLinks map)
+    - Joined date tracking
+    - Computed properties (displayName, shortBio, allSocialLinks)
+    - AuthorRepository interface (getAll, getById, getByName, getBySlug, getBySlugOrId)
+    - CRUD operations (register, remove, clear, count)
+    - InMemoryAuthorRepository for testing
+    - FileSystemAuthorRepository for production (YAML file storage in /authors)
+    - AuthorViewModel for template rendering (postCount)
+    - 10 comprehensive tests across 3 test classes
+    - Author filtering in FragmentRepository (getByAuthor, getByAuthors)
+    - Front matter parsing support in FileSystemFragmentRepository
+
 - [ ] **Revision History & Versioning**
   - Current: No content versioning or revision tracking
   - Goal: Track content changes with revision history, ability to revert to previous versions
@@ -91,32 +113,6 @@ This document outlines planned features and enhancements for the Fragments proje
   - Estimation: 4-6 weeks
 
 - [x] **Content Series Management** ✅
-  - Current: Individual fragments with no series support
-  - Goal: Organize related content into series (e.g., multi-part tutorials)
-  - Impact: Improves content organization and user navigation
-  - Technical: Create `ContentSeries` entity, series relationships in Fragment, series routing
-  - Estimation: 2-3 weeks
-  - Status: Completed 2026-03-05
-  - Implementation:
-    - Added ContentSeries data class with SeriesStatus enum (ACTIVE, INACTIVE, DRAFT)
-    - Added SeriesPart data class for individual series parts
-    - Added SeriesNavigation data class for navigating through series
-    - Added series fields to Fragment (seriesSlug, seriesPart, seriesTitle)
-    - Added isInSeries and seriesPartTitle computed properties
-    - Added ContentSeriesRepository interface with full CRUD and navigation
-    - Implemented InMemoryContentSeriesRepository for testing
-    - Implemented FileSystemContentSeriesRepository (YAML file storage)
-    - Series navigation (previous/next part, progress tracking, first/last detection)
-    - Series filtering by tag and category
-    - 19 comprehensive tests covering all series scenarios
-    - Front matter parsing for series fields in FileSystemFragmentRepository
-
-- [ ] **Author Profiles**
-  - Current: Single `author` string field
-  - Goal: Support multiple authors with profiles, bylines, and author pages
-  - Impact: Essential for multi-author blogs and publications
-  - Technical: Create `Author` entity, author metadata, author-specific views, content filtering by author
-  - Estimation: 2-3 weeks
 
 - [x] **Content Relationships** ✅
   - Current: No support for linking related content
