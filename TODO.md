@@ -157,12 +157,26 @@ This document outlines planned features and enhancements for the Fragments proje
 
 ### Advanced Search
 
-- [ ] **Full-Text Search Improvements**
+- [x] **Full-Text Search Improvements** ✅
   - Current: Basic Lucene-based search without advanced features
   - Goal: Implement phrase search, fuzzy matching, autocomplete, search suggestions
   - Impact: Significantly improves search UX and content discovery
   - Technical: Enhance Lucene query parser, implement autocomplete API, add search analytics
   - Estimation: 2-3 weeks
+  - Status: Completed 2026-03-05
+  - Implementation:
+    - Added SearchOptions data class with advanced search parameters
+    - Added SearchSuggestion data class for autocomplete/suggestions
+    - Enhanced LuceneSearchEngine with phrase search (using PhraseQuery with slop)
+    - Added fuzzy matching with Levenshtein distance (FuzzyQuery)
+    - Implemented autocomplete/suggestions API with title, tag, and category suggestions
+    - Added buildQuery method supporting standard, phrase, and fuzzy queries
+    - Added autocomplete method returning SearchSuggestion list
+    - Added getSuggestions method for suggestion retrieval
+    - Updated SearchResult to support SearchOptions
+    - Fully backward compatible with existing search(String, Int) method
+    - Framework-agnostic implementation
+    - 5 comprehensive tests covering all new features
 
 - [ ] **Faceted Search**
   - Current: Basic filtering by tags and categories only
@@ -584,10 +598,10 @@ This document outlines planned features and enhancements for the Fragments proje
 ## 📊 Summary Statistics
 
 - **Total Features:** 64
-- **Completed Features:** 9 (14.1%)
+- **Completed Features:** 10 (15.6%)
 - **Critical Priority:** 3 (Content Management Lifecycle) - 2 completed
-- **High Priority:** 13 (Core CMS Features) - 6 completed
-- **Medium Priority:** 24 (Search, User, Admin, Performance, Integration, Testing) - 1 completed
+- **High Priority:** 13 (Core CMS Features) - 7 completed
+- **Medium Priority:** 24 (Search, User, Admin, Performance, Integration, Testing) - 2 completed
 - **Lower Priority:** 24 (Deployment, Dev Tools, Localization, Documentation)
 
 ## 🎯 Implementation Strategy
@@ -663,5 +677,5 @@ When implementing features, consider:
 **Last Updated:** 2026-03-05
 **Project Version:** 1.0.0-SNAPSHOT
 **Total Features Planned:** 64
-**Completed Features:** 9 (14.1%)
-**Estimated Total Effort:** 18-30 weeks (4.5-7.5 months)
+**Completed Features:** 10 (15.6%)
+**Estimated Total Effort:** 17-28 weeks (4.2-7 months)
