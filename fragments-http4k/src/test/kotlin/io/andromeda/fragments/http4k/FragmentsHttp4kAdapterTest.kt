@@ -29,33 +29,42 @@ class FragmentsHttp4kAdapterTest {
     private lateinit var searchEngine: LuceneSearchEngine
 
     @BeforeEach
-    fun setup() = runBlocking {
+    fun setup() {
         repo = InMemoryFragmentRepository()
         val staticEngine = StaticPageEngine(repo)
         val blogEngine = BlogEngine(repo)
-        val renderer = PebbleTemplates().HotReload("src/main/resources/templates")
+        val renderer = StubTemplateRenderer()
         val tempIndexPath = Files.createTempDirectory("lucene-test")
-        searchEngine = LuceneSearchEngine(repo, tempIndexPath)
-        searchEngine.index()
+        
+        runBlocking {
+            searchEngine = LuceneSearchEngine(repo, tempIndexPath)
+            searchEngine.index()
 
-        val adapter = FragmentsHttp4kAdapter(
-            staticEngine = staticEngine,
-            blogEngine = blogEngine,
-            renderer = renderer,
-            searchEngine = searchEngine,
-            siteTitle = "Test Blog",
-            siteDescription = "Test Description",
-            siteUrl = "http://localhost:8080"
-        )
+            val adapter = FragmentsHttp4kAdapter(
+                staticEngine = staticEngine,
+                blogEngine = blogEngine,
+                renderer = renderer,
+                searchEngine = searchEngine,
+                siteTitle = "Test Blog",
+                siteDescription = "Test Description",
+                siteUrl = "http://localhost:8080"
+            )
 
-        server = adapter.createRoutes().asServer(SunHttp(0))
-        server.start()
+            server = adapter.createRoutes().asServer(SunHttp(0))
+            server.start()
+        }
     }
 
     @AfterEach
     fun tearDown() {
         server.stop()
         searchEngine.close()
+    }
+
+    class StubTemplateRenderer : (Any) -> String {
+        override fun invoke(viewModel: Any): String {
+            return "Stub template"
+        }
     }
 
     @Test

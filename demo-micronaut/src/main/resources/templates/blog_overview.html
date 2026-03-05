@@ -108,8 +108,9 @@
 </head>
 <body>
     <nav class="nav">
-        <a href="/">Home</a>
-        <a href="/blog">Blog</a>
+        <a th:each="item : ${viewModel.navigationMenu}"
+           th:href="${item.url}"
+           th:text="${item.label}">Home</a>
     </nav>
 
     <h1>Blog</h1>
@@ -143,15 +144,15 @@
     </ul>
 
     <div th:if="${viewModel.totalPages > 1}" class="pagination">
-        <a th:if="${viewModel.hasPrevious}"
-           th:href="@{/blog/page/{page}(page=${viewModel.currentPage - 1})}">&larr; Previous</a>
-        <a th:if="${!viewModel.hasPrevious}" class="disabled">&larr; Previous</a>
+        <a th:if="${viewModel.pagination.hasPrevious}"
+           th:href="${viewModel.pagination.previousUrl}">&larr; Previous</a>
+        <a th:if="${!viewModel.pagination.hasPrevious}" class="disabled">&larr; Previous</a>
 
-        <span th:text="'Page ' + ${viewModel.currentPage} + ' of ' + ${viewModel.totalPages}">Page 1 of 1</span>
+        <span th:text="${viewModel.pagination.text}">Page 1 of 1</span>
 
-        <a th:if="${viewModel.hasNext}"
-           th:href="@{/blog/page/{page}(page=${viewModel.currentPage + 1})}">Next &rarr;</a>
-        <a th:if="${!viewModel.hasNext}" class="disabled">Next &rarr;</a>
+        <a th:if="${viewModel.pagination.hasNext}"
+           th:href="${viewModel.pagination.nextUrl}">Next &rarr;</a>
+        <a th:if="${!viewModel.pagination.hasNext}" class="disabled">Next &rarr;</a>
     </div>
 
     <footer>

@@ -2,6 +2,7 @@ package io.andromeda.fragments.static
 
 import io.andromeda.fragments.Fragment
 import io.andromeda.fragments.FragmentRepository
+import io.andromeda.fragments.FragmentStatus
 
 class StaticPageEngine(private val repository: FragmentRepository) {
 
@@ -11,8 +12,13 @@ class StaticPageEngine(private val repository: FragmentRepository) {
         return repository.getBySlug(slug)
     }
 
-    suspend fun getAllStaticPages(): List<Fragment> {
-        return repository.getAllVisible()
+    suspend fun getAllStaticPages(includeDrafts: Boolean = false): List<Fragment> {
+        val allFragments = if (includeDrafts) {
+            repository.getAll()
+        } else {
+            repository.getAllVisible()
+        }
+        return allFragments
             .filter { it.template == "static" || it.template.isEmpty() || it.template == "default" }
     }
 }

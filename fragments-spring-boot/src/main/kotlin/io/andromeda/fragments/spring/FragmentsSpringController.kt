@@ -62,7 +62,7 @@ class FragmentsSpringController(
         @RequestHeader(value = FragmentViewModel.HTMX_REQUEST_HEADER, required = false) htmxRequest: String?,
         model: Model
     ): String {
-        val pageResult = blogEngine.getOverview(page)
+        val pageResult = blogEngine.getOverview(includeDrafts = false, page = page)
         val isPartial = isHtmxRequest(htmxRequest)
         model.addAttribute("viewModel", BlogOverviewViewModel(
             fragments = pageResult.items.map { FragmentViewModel(it, isPartial) },

@@ -107,8 +107,9 @@
 </head>
 <body>
     <nav class="nav">
-        <a href="/">Home</a>
-        <a href="/blog">Blog</a>
+        {% for item in viewModel.navigationMenu %}
+        <a href="{{ item.url }}"{% if item.cssClass %} class="{{ item.cssClass }}"{% endif %}>{{ item.label }}</a>
+        {% endfor %}
     </nav>
 
     <h1>Blog</h1>
@@ -148,16 +149,16 @@
 
     {% if totalPages > 1 %}
     <div class="pagination">
-        {% if hasPrevious %}
-        <a href="/blog/page/{{ currentPage - 1 }}">&larr; Previous</a>
+        {% if pagination.hasPrevious %}
+        <a href="{{ pagination.previousUrl }}">&larr; Previous</a>
         {% else %}
         <a class="disabled">&larr; Previous</a>
         {% endif %}
 
-        <span>Page {{ currentPage }} of {{ totalPages }}</span>
+        <span>{{ pagination.text }}</span>
 
-        {% if hasNext %}
-        <a href="/blog/page/{{ currentPage + 1 }}">Next &rarr;</a>
+        {% if pagination.hasNext %}
+        <a href="{{ pagination.nextUrl }}">Next &rarr;</a>
         {% else %}
         <a class="disabled">Next &rarr;</a>
         {% endif %}
@@ -165,7 +166,7 @@
     {% endif %}
 
     <footer>
-        <p>&copy; 2024 Fragments4k. Powered by <a href="https://github.com/rygel/fragments4k">Fragments4k</a></p>
+        <p>&copy; {{ footer.year }} {{ footer.copyrightText }} {{ footer.poweredByText }}</p>
     </footer>
 </body>
 </html>

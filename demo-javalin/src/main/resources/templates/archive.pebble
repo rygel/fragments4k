@@ -40,7 +40,67 @@
         }
         .archive-count {
             color: #666;
+            margin-bottom: 20px;
             font-style: italic;
+        }
+        .archive-breadcrumbs {
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+        .archive-breadcrumbs a {
+            color: #0066cc;
+            text-decoration: none;
+            margin: 0 5px;
+        }
+        .archive-breadcrumbs a.active {
+            color: #333;
+            font-weight: bold;
+        }
+        .archive-breadcrumbs a:hover {
+            text-decoration: underline;
+        }
+        .archive-years, .archive-months {
+            margin-bottom: 30px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+        .archive-years h3, .archive-months h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .archive-year-list, .archive-month-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .archive-year-list li, .archive-month-list li {
+            display: inline;
+        }
+        .archive-year-list a, .archive-month-list a {
+            color: #0066cc;
+            text-decoration: none;
+            padding: 5px 10px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+        .archive-year-list a:hover, .archive-month-list a:hover {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        .archive-year-list a.active, .archive-month-list a.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+            font-weight: bold;
         }
         .archive-item {
             margin-bottom: 20px;
@@ -84,12 +144,43 @@
 </head>
 <body>
     <nav class="nav">
-        <a href="/">Home</a>
-        <a href="/blog">Blog</a>
+        {% for item in viewModel.navigationMenu %}
+        <a href="{{ item.url }}"{% if item.cssClass %} class="{{ item.cssClass }}"{% endif %}>{{ item.label }}</a>
+        {% endfor %}
     </nav>
 
     <div class="archive-header">
         <h1>Archive{% if month %}: {{ month }}/{% endif %} {{ year }}</h1>
+
+    {% if archiveBreadcrumbs %}
+    <div class="archive-breadcrumbs">
+        {% for crumb in archiveBreadcrumbs %}
+        <a href="{{ crumb.url }}"{% if crumb.isActive %} class="active"{% endif %}>{{ crumb.label }}</a>{% if not loop.last %} &rarr; {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if archiveYearLinks %}
+    <div class="archive-years">
+        <h3>Years</h3>
+        <ul class="archive-year-list">
+            {% for yearLink in archiveYearLinks %}
+            <li><a href="{{ yearLink.url }}"{% if yearLink.isActive %} class="active"{% endif %}>{{ yearLink.label }}</a></li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {% if archiveMonthLinks %}
+    <div class="archive-months">
+        <h3>Months</h3>
+        <ul class="archive-month-list">
+            {% for monthLink in archiveMonthLinks %}
+            <li><a href="{{ monthLink.url }}"{% if monthLink.isActive %} class="active"{% endif %}>{{ monthLink.label }}</a></li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
         <p class="archive-count">{% if fragments %}{{ fragments|length }} post{% if fragments|length != 1 %}s{% endif %}{% else %}No posts{% endif %} in this period</p>
     </div>
 
@@ -115,7 +206,7 @@
 
     <footer>
         <p><a href="/blog">&larr; Back to blog</a></p>
-        <p>&copy; 2024 Fragments4k. Powered by <a href="https://github.com/rygel/fragments4k">Fragments4k</a></p>
+        <p>&copy; {{ footer.year }} {{ footer.copyrightText }} {{ footer.poweredByText }}</p>
     </footer>
 </body>
 </html>

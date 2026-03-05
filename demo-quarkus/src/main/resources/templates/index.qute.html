@@ -78,8 +78,9 @@
 </head>
 <body>
     <nav class="nav">
-        <a href="/">Home</a>
-        <a href="/blog">Blog</a>
+        {#for item in navigationMenu}
+        <a href="{item.url}">{item.label}</a>
+        {/for}
     </nav>
 
     <div class="search-box">

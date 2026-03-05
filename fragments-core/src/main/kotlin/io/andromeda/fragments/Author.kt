@@ -1,5 +1,7 @@
 package io.andromeda.fragments
 
+import java.time.LocalDateTime
+
 /**
  * Represents an author of content in the Fragments system.
  * Authors can be associated with fragments for multi-author blog support.
@@ -7,6 +9,7 @@ package io.andromeda.fragments
 data class Author(
     val id: String,
     val name: String,
+    val slug: String,
     val email: String? = null,
     val bio: String? = null,
     val avatar: String? = null,
@@ -17,7 +20,8 @@ data class Author(
     val location: String? = null,
     val company: String? = null,
     val role: String? = null,
-    val socialLinks: Map<String, String> = emptyMap()
+    val socialLinks: Map<String, String> = emptyMap(),
+    val joinedDate: LocalDateTime = LocalDateTime.now()
 ) {
     /**
      * Gets the display name for the author
@@ -30,15 +34,6 @@ data class Author(
      */
     val shortBio: String?
         get() = bio?.take(200)?.let { if (bio.length > 200) "$it..." else it }
-
-    /**
-     * Generates a URL-safe slug from the author name
-     */
-    val slug: String
-        get() = name.lowercase()
-            .replace(Regex("[^a-z0-9\\s-]"), "")
-            .replace(Regex("\\s+"), "-")
-            .trim('-')
 
     /**
      * Gets all social links as a list of pairs (platform, url)
@@ -68,6 +63,7 @@ data class Author(
             return Author(
                 id = id,
                 name = authorName,
+                slug = frontMatter["author_slug"] as? String ?: authorName.slugify(),
                 email = frontMatter["author_email"] as? String,
                 bio = frontMatter["author_bio"] as? String,
                 avatar = frontMatter["author_avatar"] as? String,
@@ -91,70 +87,18 @@ data class Author(
 }
 
 /**
- * Repository for managing authors
+ * Repository interface for managing authors
  */
-class AuthorRepository {
-    private val authors = mutableMapOf<String, Author>()
-
-    /**
-     * Registers an author
-     */
-    fun register(author: Author) {
-        authors[author.id] = author
-    }
-
-    /**
-     * Gets an author by ID
-     */
-    fun getById(id: String): Author? = authors[id]
-
-    /**
-     * Gets an author by name
-     */
-    fun getByName(name: String): Author? {
-        return authors.values.find { it.name.equals(name, ignoreCase = true) }
-    }
-
-    /**
-     * Gets an author by slug
-     */
-    fun getBySlug(slug: String): Author? {
-        return authors.values.find { it.slug == slug }
-    }
-
-    /**
-     * Gets all registered authors
-     */
-    fun getAll(): List<Author> = authors.values.toList()
-
-    /**
-     * Gets authors sorted by name
-     */
-    fun getAllSorted(): List<Author> = authors.values.sortedBy { it.name }
-
-    /**
-     * Checks if an author exists
-     */
-    fun exists(id: String): Boolean = authors.containsKey(id)
-
-    /**
-     * Removes an author
-     */
-    fun remove(id: String) {
-        authors.remove(id)
-    }
-
-    /**
-     * Clears all authors
-     */
-    fun clear() {
-        authors.clear()
-    }
-
-    /**
-     * Gets the count of registered authors
-     */
-    fun count(): Int = authors.size
+interface AuthorRepository {
+    suspend fun getAll(): List<Author>
+    suspend fun getById(id: String): Author?
+    suspend fun getByName(name: String): Author?
+    suspend fun getBySlug(slug: String): Author?
+    suspend fun getBySlugOrId(identifier: String): Author?
+    suspend fun register(author: Author)
+    suspend fun remove(id: String): Boolean
+    suspend fun clear()
+    suspend fun count(): Int
 }
 
 /**

@@ -105,16 +105,17 @@
 </head>
 <body>
     <nav class="nav">
-        <a href="/">Home</a>
-        <a href="/blog">Blog</a>
+        <a th:each="item : ${viewModel.navigationMenu}"
+           th:href="${item.url}"
+           th:text="${item.label}">Home</a>
     </nav>
 
     <h1 th:text="'Search Results for &quot;' + ${query} + '&quot;'"></h1>
 
     <div class="search-box">
-        <form action="/search" method="get">
-            <input type="text" name="q" placeholder="Search articles..." th:value="${query}">
-            <button type="submit">Search</button>
+        <form th:action="${searchForm.actionUrl}" th:method="${searchForm.method}">
+            <input type="text" th:name="${searchForm.paramName}" th:placeholder="${searchForm.placeholderText}" th:value="${query}">
+            <button type="submit" th:text="${searchForm.buttonText}">Search</button>
         </form>
     </div>
 

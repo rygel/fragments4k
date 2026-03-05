@@ -207,8 +207,9 @@
 </head>
 <body>
     <nav class="nav">
-        <a href="/">Home</a>
-        <a href="/blog">Blog</a>
+        {% for item in viewModel.navigationMenu %}
+        <a href="{{ item.url }}"{% if item.cssClass %} class="{{ item.cssClass }}"{% endif %}>{{ item.label }}</a>
+        {% endfor %}
     </nav>
 
     <article class="post">
@@ -216,10 +217,9 @@
 
         <div class="share-buttons">
             <h3>Share this post:</h3>
-            <a href="https://twitter.com/intent/tweet?text={{ viewModel.title|url_encode }}&url=http://localhost:8080/blog/{% for date in viewModel.date %}{{ date.year }}/{% if date.monthValue < 10 %}0{% endif %}{{ date.monthValue }}/{% endfor %}{{ viewModel.slug }}" class="share-twitter" target="_blank">Twitter</a>
-            <a href="https://www.facebook.com/sharer/sharer.php?u=http://localhost:8080/blog/{% for date in viewModel.date %}{{ date.year }}/{% if date.monthValue < 10 %}0{% endif %}{{ date.monthValue }}/{% endfor %}{{ viewModel.slug }}" class="share-facebook" target="_blank">Facebook</a>
-            <a href="https://www.linkedin.com/sharing/share-offsite/?url=http://localhost:8080/blog/{% for date in viewModel.date %}{{ date.year }}/{% if date.monthValue < 10 %}0{% endif %}{{ date.monthValue }}/{% endfor %}{{ viewModel.slug }}" class="share-linkedin" target="_blank">LinkedIn</a>
-            <a href="mailto:?subject={{ viewModel.title|url_encode }}&body=Check out this article: http://localhost:8080/blog/{% for date in viewModel.date %}{{ date.year }}/{% if date.monthValue < 10 %}0{% endif %}{{ date.monthValue }}/{% endfor %}{{ viewModel.slug }}" class="share-email">Email</a>
+            {% for link in viewModel.socialShareLinks %}
+            <a href="{{ link.url }}" class="{{ link.cssClass }}"{% if link.opensInNewTab %} target="_blank"{% endif %}>{{ link.label }}</a>
+            {% endfor %}
         </div>
 
         <div class="post-meta">
@@ -276,7 +276,7 @@
 
     <footer>
         <p><a href="/blog">&larr; Back to blog</a></p>
-        <p>&copy; 2024 Fragments4k. Powered by <a href="https://github.com/rygel/fragments4k">Fragments4k</a></p>
+        <p>{{ footer.fullCopyrightText }}</p>
     </footer>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>

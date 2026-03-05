@@ -55,7 +55,7 @@ class FragmentsMicronautController @Inject constructor(
         @QueryValue(defaultValue = "1") page: Int,
         headers: HttpHeaders
     ): HttpResponse<Any> {
-        val pageResult = blogEngine.getOverview(page)
+        val pageResult = blogEngine.getOverview(includeDrafts = false, page = page)
         val isPartial = isHtmxRequest(headers)
         val viewModel = BlogOverviewViewModel(
             fragments = pageResult.items.map { FragmentViewModel(it, isPartial) },

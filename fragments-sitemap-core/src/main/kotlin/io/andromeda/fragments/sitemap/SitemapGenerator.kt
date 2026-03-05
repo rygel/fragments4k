@@ -49,6 +49,6 @@ class SitemapGenerator(
     }
 
     companion object {
-        private val formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME
+        private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
     }
 }

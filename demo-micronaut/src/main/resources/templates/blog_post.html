@@ -207,8 +207,9 @@
 </head>
 <body>
     <nav class="nav">
-        <a href="/">Home</a>
-        <a href="/blog">Blog</a>
+        <a th:each="item : ${viewModel.navigationMenu}"
+           th:href="${item.url}"
+           th:text="${item.label}">Home</a>
     </nav>
 
     <article class="post">
@@ -216,14 +217,11 @@
 
         <div class="share-buttons">
             <h3>Share this post:</h3>
-            <a th:href="'https://twitter.com/intent/tweet?text=' + ${viewModel.title} + '&amp;url=http://localhost:8080/blog/' + ${#strings.format('%04d', viewModel.date[0])} + '/' + ${#strings.format('%02d', viewModel.date[1])} + '/' + ${viewModel.slug}"
-               class="share-twitter" target="_blank">Twitter</a>
-            <a th:href="'https://www.facebook.com/sharer/sharer.php?u=http://localhost:8080/blog/' + ${#strings.format('%04d', viewModel.date[0])} + '/' + ${#strings.format('%02d', viewModel.date[1])} + '/' + ${viewModel.slug}"
-               class="share-facebook" target="_blank">Facebook</a>
-            <a th:href="'https://www.linkedin.com/sharing/share-offsite/?url=http://localhost:8080/blog/' + ${#strings.format('%04d', viewModel.date[0])} + '/' + ${#strings.format('%02d', viewModel.date[1])} + '/' + ${viewModel.slug}"
-               class="share-linkedin" target="_blank">LinkedIn</a>
-            <a th:href="'mailto:?subject=' + ${viewModel.title} + '&amp;body=Check out this article: http://localhost:8080/blog/' + ${#strings.format('%04d', viewModel.date[0])} + '/' + ${#strings.format('%02d', viewModel.date[1])} + '/' + ${viewModel.slug}"
-               class="share-email">Email</a>
+            <a th:each="link : ${viewModel.socialShareLinks}"
+               th:href="${link.url}"
+               th:class="${link.cssClass}"
+               th:target="${link.opensInNewTab ? '_blank' : null}"
+               th:text="${link.label}">Platform</a>
         </div>
 
         <div class="post-meta">

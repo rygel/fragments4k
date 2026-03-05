@@ -72,7 +72,7 @@ fun Javalin.fragmentsRoutes(
 
     get("/blog") { ctx ->
         runBlocking {
-            val pageResult = blogEngine.getOverview(1)
+            val pageResult = blogEngine.getOverview(includeDrafts = false, page = 1)
             val viewModel = BlogOverviewViewModel(
                 fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(ctx)) },
                 currentPage = pageResult.currentPage,
@@ -100,7 +100,7 @@ fun Javalin.fragmentsRoutes(
     get("/blog/page/{page}") { ctx ->
         val page = ctx.pathParam("page").toIntOrNull() ?: 1
         runBlocking {
-            val pageResult = blogEngine.getOverview(page)
+            val pageResult = blogEngine.getOverview(includeDrafts = false, page = page)
             val viewModel = BlogOverviewViewModel(
                 fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(ctx)) },
                 currentPage = pageResult.currentPage,

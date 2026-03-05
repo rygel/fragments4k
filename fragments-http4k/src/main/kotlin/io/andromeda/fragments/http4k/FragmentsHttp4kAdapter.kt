@@ -103,7 +103,7 @@ class FragmentsHttp4kAdapter(
     private fun handleBlogOverview(request: Request): Response {
         val page = request.path("page")?.toIntOrNull() ?: 1
         return runBlocking {
-            val pageResult = blogEngine.getOverview(page)
+            val pageResult = blogEngine.getOverview(includeDrafts = false, page = page)
             val viewModel = BlogOverviewViewModel(
                 fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(request)) },
                 currentPage = pageResult.currentPage,

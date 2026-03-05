@@ -1,18 +1,35 @@
 package io.andromeda.fragments.blog
 
+import io.andromeda.fragments.ContentRelationships
 import io.andromeda.fragments.Fragment
 import io.andromeda.fragments.FragmentRepository
+import io.andromeda.fragments.FragmentStatus
+import io.andromeda.fragments.RelationshipConfig
 
 class BlogEngine(
     private val repository: FragmentRepository,
-    private val pageSize: Int = 10
+    private val pageSize: Int = 10,
+    private val relationshipConfig: RelationshipConfig = RelationshipConfig()
 ) {
 
-    suspend fun getOverview(page: Int): Page<Fragment> {
-        val blogPosts = repository.getAllVisible()
+    suspend fun getOverview(includeDrafts: Boolean = false, page: Int): Page<Fragment> {
+        val allFragments = if (includeDrafts) {
+            repository.getAll()
+        } else {
+            repository.getAllVisible()
+        }
+        val blogPosts = allFragments
             .filter { it.template == "blog" || it.template.isEmpty() }
             .sortedByDescending { it.date }
         return Page.create(blogPosts, page, pageSize)
+    }
+
+    suspend fun getDrafts(page: Int): Page<Fragment> {
+        val draftFragments = repository.getAll()
+            .filter { it.template == "blog" || it.template.isEmpty() }
+            .filter { it.status == FragmentStatus.DRAFT }
+            .sortedByDescending { it.date }
+        return Page.create(draftFragments, page, pageSize)
     }
 
     suspend fun getPost(year: String, month: String, slug: String): Fragment? {
@@ -64,5 +81,11 @@ class BlogEngine(
             .flatMap { it.categories }
             .groupingBy { it }
             .eachCount()
+    }
+
+    suspend fun getPostWithRelationships(year: String, month: String, slug: String): Pair<Fragment?, ContentRelationships?> {
+        val fragment = getPost(year, month, slug)
+        val relationships = repository.getRelationships(slug, relationshipConfig)
+        return Pair(fragment, relationships)
     }
 }

@@ -1,8 +1,13 @@
 package io.andromeda.fragments
 
+import io.andromeda.fragments.Fragment
+import io.andromeda.fragments.FragmentRepository
+import io.andromeda.fragments.FragmentStatus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
+import org.yaml.snakeyaml.DumperOptions
+import org.yaml.snakeyaml.Yaml
 import java.io.File
 import java.io.FileNotFoundException
 import java.time.LocalDateTime
@@ -23,21 +28,36 @@ class FileSystemFragmentRepository(
     }
 
     override suspend fun getAllVisible(): List<Fragment> = withContext(Dispatchers.IO) {
-        loadFragments().filter { it.visible }.sortedByDescending { it.date }
+        val now = LocalDateTime.now()
+        loadFragments()
+            .filter { fragment ->
+                fragment.visible && when (fragment.status) {
+                    FragmentStatus.PUBLISHED -> {
+                        fragment.expiryDate == null || !fragment.expiryDate.isBefore(now)
+                    }
+                    FragmentStatus.SCHEDULED -> {
+                        fragment.publishDate != null && !fragment.publishDate.isAfter(now) &&
+                        (fragment.expiryDate == null || !fragment.expiryDate.isBefore(now))
+                    }
+                    FragmentStatus.DRAFT, FragmentStatus.REVIEW, FragmentStatus.APPROVED, FragmentStatus.ARCHIVED, FragmentStatus.EXPIRED -> false
+                }
+            }
+            .sortedByDescending { it.date }
     }
 
     override suspend fun getBySlug(slug: String): Fragment? = withContext(Dispatchers.IO) {
         loadFragments().find { it.slug == slug || it.slug == "/$slug" }
     }
 
-    override suspend fun getByYearMonthAndSlug(year: String, month: String, slug: String): Fragment? = 
-        withContext(Dispatchers.IO) {
-            loadFragments().find { 
-                it.slug == slug && 
-                it.date?.year == year.toIntOrNull() && 
+    override suspend fun getByYearMonthAndSlug(year: String, month: String, slug: String): Fragment? {
+        return withContext(Dispatchers.IO) {
+            loadFragments().find {
+                it.slug == slug &&
+                it.date?.year == year.toIntOrNull() &&
                 it.date?.monthValue == month.toIntOrNull()
             }
         }
+    }
 
     override suspend fun getByTag(tag: String): List<Fragment> = withContext(Dispatchers.IO) {
         loadFragments().filter { it.tags.contains(tag.lowercase()) }
@@ -47,6 +67,93 @@ class FileSystemFragmentRepository(
         loadFragments().filter { it.categories.contains(category.lowercase()) }
     }
 
+    override suspend fun getByStatus(status: FragmentStatus): List<Fragment> = withContext(Dispatchers.IO) {
+        loadFragments().filter { it.status == status }
+    }
+
+    override suspend fun getByAuthor(authorId: String): List<Fragment> = withContext(Dispatchers.IO) {
+        loadFragments().filter { it.authorIds.contains(authorId) || it.author == authorId }
+    }
+
+    override suspend fun getByAuthors(authorIds: List<String>): List<Fragment> = withContext(Dispatchers.IO) {
+        loadFragments().filter { fragment ->
+            authorIds.any { authorId ->
+                fragment.authorIds.contains(authorId) || fragment.author == authorId
+            }
+        }
+    }
+
+    override suspend fun updateFragmentStatus(slug: String, status: FragmentStatus, force: Boolean, changedBy: String?, reason: String?): Result<Fragment> {
+        return withContext(Dispatchers.IO) {
+            val file = getFragmentFile(slug)
+            if (file == null || !file.exists()) {
+                logger.warn("Fragment file not found for slug: $slug")
+                return@withContext Result.failure(IllegalArgumentException("Fragment not found: $slug"))
+            }
+
+            val currentFragment = parseFragmentFile(file)
+            if (!force && !FragmentStatus.canTransition(currentFragment.status, status)) {
+                logger.warn("Invalid status transition: ${currentFragment.status} -> $status")
+                return@withContext Result.failure(
+                    IllegalStateException(
+                        "Cannot transition from ${currentFragment.status} to $status. " +
+                        "Valid transitions: ${FragmentStatus.getValidTransitions(currentFragment.status)}"
+                    )
+                )
+            }
+
+            try {
+                val content = file.readText()
+                val parsed = parser.parse(content)
+                val updatedFrontMatter = parsed.frontMatter.toMutableMap()
+                updatedFrontMatter["status"] = status.name
+
+                val statusChange = StatusChangeHistory(
+                    fromStatus = currentFragment.status,
+                    toStatus = status,
+                    changedBy = changedBy,
+                    reason = reason
+                )
+
+                val existingHistory = parseStatusChangeHistory(currentFragment.statusChangeHistory)
+                val updatedHistory = existingHistory + statusChange
+
+                updatedFrontMatter["statusChangeHistory"] = updatedHistory.map { history ->
+                    mapOf(
+                        "fromStatus" to history.fromStatus.name,
+                        "toStatus" to history.toStatus.name,
+                        "changedAt" to history.changedAt.toString(),
+                        "changedBy" to history.changedBy,
+                        "reason" to history.reason
+                    )
+                }
+
+                val newContent = buildString {
+                    append("---\n")
+                    dumpFrontMatter(updatedFrontMatter, this)
+                    append("---\n")
+                    append(parsed.content)
+                }
+
+                file.writeText(newContent)
+
+                val updatedFragment = parseFragmentFile(file)
+                cacheUpdatedFragment(updatedFragment)
+
+                logger.info("Updated fragment status: $slug -> $status (by: $changedBy, reason: $reason)")
+                Result.success(updatedFragment)
+            } catch (e: Exception) {
+                logger.error("Failed to update fragment status: $slug", e)
+                Result.failure(e)
+            }
+        }
+    }
+
+    private fun parseStatusChangeHistory(history: List<StatusChangeHistory>): List<StatusChangeHistory> {
+        return history
+    }
+
+    @Suppress("INVISIBLE_MEMBER")
     override suspend fun reload() {
         withContext(Dispatchers.IO) {
             cachedFragments = loadFragmentsFromDisk()
@@ -54,11 +161,26 @@ class FileSystemFragmentRepository(
         }
     }
 
-    private suspend fun loadFragments(): List<Fragment> {
-        if (cachedFragments.isEmpty() || lastLoaded == LocalDateTime.MIN) {
-            reload()
+    private fun getFragmentFile(slug: String): File? {
+        val files = File(basePath).listFiles { file -> file.extension == extension.removePrefix(".") }
+            ?: return null
+
+        return files.find { file -> file.nameWithoutExtension == slug }
+    }
+
+    private fun cacheUpdatedFragment(fragment: Fragment) {
+        val index = cachedFragments.indexOfFirst { it.slug == fragment.slug }
+        if (index >= 0) {
+            cachedFragments = cachedFragments.toMutableList().apply { this[index] = fragment }
         }
-        return cachedFragments
+    }
+
+    private fun loadFragments(): List<Fragment> {
+        return if (cachedFragments.isEmpty() || lastLoaded == LocalDateTime.MIN) {
+            loadFragmentsFromDisk()
+        } else {
+            cachedFragments
+        }
     }
 
     private fun loadFragmentsFromDisk(): List<Fragment> {
@@ -68,12 +190,11 @@ class FileSystemFragmentRepository(
             return emptyList()
         }
 
-        val files = directory.listFiles { file -> file.extension == extension.removePrefix(".") }
-            ?: return emptyList()
+        val files = directory.listFiles { file -> file.extension == extension.removePrefix(".") } ?: return emptyList()
 
         return files.mapNotNull { file ->
             try {
-                parseFile(file)
+                parseFragmentFile(file)
             } catch (e: Exception) {
                 logger.error("Error parsing fragment file: ${file.absolutePath}", e)
                 null
@@ -81,7 +202,7 @@ class FileSystemFragmentRepository(
         }.sortedBy { it.order }
     }
 
-    private fun parseFile(file: File): Fragment {
+    private fun parseFragmentFile(file: File): Fragment {
         val content = file.readText()
         val parsed = parser.parse(content)
         val frontMatter = parsed.frontMatter
@@ -89,20 +210,41 @@ class FileSystemFragmentRepository(
         val title = frontMatter["title"]?.toString() ?: file.nameWithoutExtension
         val slug = frontMatter["slug"]?.toString() ?: generateSlug(file.nameWithoutExtension)
         val date = MarkdownParser.parseDate(frontMatter["date"])
+        
+        val statusString = frontMatter["status"]?.toString()
+        val status = try {
+            FragmentStatus.valueOf(statusString ?: "PUBLISHED")
+        } catch (e: Exception) {
+            logger.error("Failed to parse status '$statusString' for file ${file.name}, defaulting to PUBLISHED", e)
+            FragmentStatus.PUBLISHED
+        }
+        
         val visible = frontMatter["visible"]?.toString()?.toBooleanStrictOrNull() ?: true
         val template = frontMatter["template"]?.toString() ?: "default"
         val preview = frontMatter["preview"]?.toString() ?: extractPreview(parsed.content)
         val order = frontMatter["order"]?.toString()?.toIntOrNull() ?: 0
+        val publishDate = frontMatter["publishDate"]?.toString()?.let {
+            LocalDateTime.parse(it)
+        }
+        val expiryDate = frontMatter["expiryDate"]?.toString()?.let {
+            LocalDateTime.parse(it)
+        }
 
         val categories = parseStringList(frontMatter["categories"])
         val tags = parseStringList(frontMatter["tags"])
         val language = frontMatter["language"]?.toString() ?: "en"
         val languages = parseLanguagesMap(frontMatter)
+        val author = frontMatter["author"]?.toString()
+        val authorIds = parseStringList(frontMatter["authorIds"])
+        val statusChangeHistory = parseStatusChangeHistory(frontMatter)
 
         return Fragment(
             title = title,
             slug = slug,
+            status = status,
             date = date,
+            publishDate = publishDate,
+            expiryDate = expiryDate,
             preview = preview,
             content = parsed.htmlContent,
             frontMatter = frontMatter,
@@ -112,7 +254,10 @@ class FileSystemFragmentRepository(
             tags = tags,
             order = order,
             language = language,
-            languages = languages
+            languages = languages,
+            author = author,
+            authorIds = authorIds,
+            statusChangeHistory = statusChangeHistory
         )
     }
 
@@ -124,11 +269,10 @@ class FileSystemFragmentRepository(
     }
 
     private fun extractPreview(content: String): String {
-        val moreTagIndex = content.indexOf("<!--more-->", ignoreCase = true)
-        val moreTagIndex2 = content.indexOf("<!-- more -->", ignoreCase = true)
+        val moreTagPattern = Regex("<!--\\s*more\\s*-->", RegexOption.IGNORE_CASE)
+        val moreTagIndex = moreTagPattern.find(content)
         return when {
-            moreTagIndex >= 0 -> content.substring(0, moreTagIndex)
-            moreTagIndex2 >= 0 -> content.substring(0, moreTagIndex2)
+            moreTagIndex != null -> content.substring(0, moreTagIndex.range.first)
             content.length > 200 -> content.substring(0, 200) + "..."
             else -> content
         }
@@ -147,10 +291,150 @@ class FileSystemFragmentRepository(
     private fun parseLanguagesMap(frontMatter: Map<String, Any>): Map<String, String> {
         val languagesField = frontMatter["languages"]
         return when (languagesField) {
-            is Map<*, *> -> languagesField.mapNotNull { (k, v) -> 
+            is Map<*, *> -> languagesField.mapNotNull { (k, v) ->
                 k?.toString()?.let { key -> v?.toString()?.let { value -> key to value } }
             }.toMap()
             else -> emptyMap()
+        }
+    }
+
+    private fun parseStatusChangeHistory(frontMatter: Map<String, Any>): List<StatusChangeHistory> {
+        val historyField = frontMatter["statusChangeHistory"] ?: return emptyList()
+        return when (historyField) {
+            is List<*> -> historyField.mapNotNull { item ->
+                if (item is Map<*, *>) {
+                    try {
+                        StatusChangeHistory(
+                            fromStatus = FragmentStatus.valueOf(item["fromStatus"]?.toString() ?: ""),
+                            toStatus = FragmentStatus.valueOf(item["toStatus"]?.toString() ?: ""),
+                            changedAt = item["changedAt"]?.toString()?.let { LocalDateTime.parse(it) } ?: LocalDateTime.now(),
+                            changedBy = item["changedBy"]?.toString(),
+                            reason = item["reason"]?.toString()
+                        )
+                    } catch (e: Exception) {
+                        logger.warn("Failed to parse status change history entry: $item", e)
+                        null
+                    }
+                } else null
+            }
+            else -> emptyList()
+        }
+    }
+
+    override suspend fun updateMultipleFragmentsStatus(slugs: List<String>, status: FragmentStatus, force: Boolean, changedBy: String?, reason: String?): List<Result<Fragment>> {
+        return withContext(Dispatchers.IO) {
+            slugs.map { slug ->
+                updateFragmentStatus(slug, status, force, changedBy, reason)
+            }
+        }
+    }
+
+    override suspend fun publishMultiple(slugs: List<String>, changedBy: String?, reason: String?): List<Result<Fragment>> {
+        return withContext(Dispatchers.IO) {
+            slugs.map { slug ->
+                updateFragmentStatus(slug, FragmentStatus.PUBLISHED, force = false, changedBy = changedBy, reason = reason)
+            }
+        }
+    }
+
+    override suspend fun archiveMultiple(slugs: List<String>, changedBy: String?, reason: String?): List<Result<Fragment>> {
+        return withContext(Dispatchers.IO) {
+            slugs.map { slug ->
+                updateFragmentStatus(slug, FragmentStatus.ARCHIVED, force = false, changedBy = changedBy, reason = reason)
+            }
+        }
+    }
+
+    override suspend fun getScheduledFragmentsDueForPublication(threshold: LocalDateTime): List<Fragment> {
+        return withContext(Dispatchers.IO) {
+            loadFragments().filter { fragment ->
+                fragment.status == FragmentStatus.SCHEDULED &&
+                fragment.publishDate != null &&
+                !fragment.publishDate.isAfter(threshold)
+            }
+        }
+    }
+
+    override suspend fun publishScheduledFragments(threshold: LocalDateTime): List<Result<Fragment>> {
+        return withContext(Dispatchers.IO) {
+            val dueFragments = loadFragments().filter { fragment ->
+                fragment.status == FragmentStatus.SCHEDULED &&
+                fragment.publishDate != null &&
+                !fragment.publishDate.isAfter(threshold)
+            }
+
+            dueFragments.map { fragment ->
+                updateFragmentStatus(
+                    slug = fragment.slug,
+                    status = FragmentStatus.PUBLISHED,
+                    force = true,
+                    changedBy = "system",
+                    reason = "Scheduled publication"
+                )
+            }
+        }
+    }
+
+    override suspend fun getFragmentsExpiringSoon(threshold: LocalDateTime): List<Fragment> {
+        return withContext(Dispatchers.IO) {
+            loadFragments().filter { fragment ->
+                fragment.expiryDate != null &&
+                !fragment.expiryDate.isAfter(threshold) &&
+                fragment.status == FragmentStatus.PUBLISHED
+            }
+        }
+    }
+
+    override suspend fun expireFragments(threshold: LocalDateTime): List<Result<Fragment>> {
+        return withContext(Dispatchers.IO) {
+            val expiredFragments = loadFragments().filter { fragment ->
+                fragment.status == FragmentStatus.PUBLISHED &&
+                fragment.publishDate != null &&
+                fragment.publishDate.isBefore(threshold)
+            }
+
+            expiredFragments.map { fragment ->
+                updateFragmentStatus(
+                    slug = fragment.slug,
+                    status = FragmentStatus.EXPIRED,
+                    force = true,
+                    changedBy = "system",
+                    reason = "Content expired"
+                )
+            }
+        }
+    }
+
+    private fun dumpFrontMatter(frontMatter: Map<String, Any>, output: StringBuilder) {
+        val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+        frontMatter.forEach { (key, value) ->
+            when (value) {
+                is String -> output.append("$key: \"$value\"\n")
+                is Boolean -> output.append("$key: ${if (value) "true" else "false"}\n")
+                is Number -> output.append("$key: $value\n")
+                is List<*> -> {
+                    output.append("$key:\n")
+                    value.forEach { item ->
+                        output.append("  - \"$item\"\n")
+                    }
+                }
+                is LocalDateTime -> output.append("$key: \"$value\"\n")
+                else -> output.append("$key: \"$value\"\n")
+            }
+        }
+    }
+
+    override suspend fun getRelationships(slug: String, config: io.andromeda.fragments.RelationshipConfig): ContentRelationships? {
+        return withContext(Dispatchers.IO) {
+            val currentFragment = getBySlug(slug) ?: return@withContext null
+            val allFragments = getAllVisible()
+                .filter { it.slug != currentFragment.slug }
+
+            ContentRelationshipGenerator.generateRelationships(
+                currentFragment = currentFragment,
+                allFragments = allFragments,
+                config = config
+            )
         }
     }
 }

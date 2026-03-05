@@ -105,16 +105,17 @@
 </head>
 <body>
     <nav class="nav">
-        <a href="/">Home</a>
-        <a href="/blog">Blog</a>
+        {% for item in viewModel.navigationMenu %}
+        <a href="{{ item.url }}"{% if item.cssClass %} class="{{ item.cssClass }}"{% endif %}>{{ item.label }}</a>
+        {% endfor %}
     </nav>
 
     <h1>Search Results for "{{ query }}"</h1>
 
     <div class="search-box">
-        <form action="/search" method="get">
-            <input type="text" name="q" placeholder="Search articles..." value="{{ query }}">
-            <button type="submit">Search</button>
+        <form action="{{ searchForm.actionUrl }}" method="{{ searchForm.method }}">
+            <input type="text" name="{{ searchForm.paramName }}" placeholder="{{ searchForm.placeholderText }}" value="{{ query }}">
+            <button type="submit">{{ searchForm.buttonText }}</button>
         </form>
     </div>
 
@@ -155,7 +156,7 @@
     {% endif %}
 
     <footer>
-        <p>&copy; 2024 Fragments4k. Powered by <a href="https://github.com/rygel/fragments4k">Fragments4k</a></p>
+        <p>&copy; {{ footer.year }} {{ footer.copyrightText }} {{ footer.poweredByText }}</p>
     </footer>
 </body>
 </html>

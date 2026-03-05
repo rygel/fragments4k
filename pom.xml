@@ -31,7 +31,14 @@
         <mockk.version>1.14.9</mockk.version>
         <rest-assured.version>5.4.0</rest-assured.version>
         <ktlint.version>3.5.0</ktlint.version>
-
+        
+        <!-- Security & Analysis Tools -->
+        <owasp-dependency-check.version>9.3.0</owasp-dependency-check.version>
+        <spotbugs.version>4.8.6</spotbugs.version>
+        <spotbugs-maven-plugin.version>4.8.6</spotbugs-maven-plugin.version>
+        <jmh.version>1.37</jmh.version>
+        <jmh-maven-plugin.version>1.0.1</jmh-maven-plugin.version>
+        
         <!-- Plugin Versions -->
         <maven-jar-plugin.version>3.4.2</maven-jar-plugin.version>
         <maven-shade-plugin.version>3.6.0</maven-shade-plugin.version>
@@ -292,6 +299,54 @@
                         </execution>
                     </executions>
                 </plugin>
+                
+                <plugin>
+                    <groupId>org.owasp</groupId>
+                    <artifactId>dependency-check-maven</artifactId>
+                    <version>${owasp-dependency-check.version}</version>
+                    <executions>
+                        <execution>
+                            <id>dependency-check</id>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                            <phase>verify</phase>
+                        </execution>
+                    </executions>
+                    <configuration>
+                        <failBuildOnCVSS>7</failBuildOnCVSS>
+                        <suppressionFile>${project.basedir}/dependency-check-suppressions.xml</suppressionFile>
+                    </configuration>
+                </plugin>
+                
+                <plugin>
+                    <groupId>com.github.spotbugs</groupId>
+                    <artifactId>spotbugs-maven-plugin</artifactId>
+                    <version>${spotbugs-maven-plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <id>spotbugs</id>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                            <phase>verify</phase>
+                        </execution>
+                    </executions>
+                    <configuration>
+                        <effort>Max</effort>
+                        <threshold>Low</threshold>
+                    </configuration>
+                </plugin>
+                
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>3.5.5</version>
+                    <configuration>
+                        <useSystemClassLoader>false</useSystemClassLoader>
+                        <argLine>-Xmx2048m -XX:MaxMetaspaceSize=512m</argLine>
+                    </configuration>
+                </plugin>
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
@@ -324,29 +379,58 @@
                                             <limit>
                                                 <counter>INSTRUCTION</counter>
                                                 <value>COVEREDRATIO</value>
-                                                <minimum>0.50</minimum>
+                                                <minimum>0.60</minimum>
                                             </limit>
                                             <limit>
                                                 <counter>BRANCH</counter>
                                                 <value>COVEREDRATIO</value>
-                                                <minimum>0.40</minimum>
+                                                <minimum>0.50</minimum>
                                             </limit>
                                             <limit>
                                                 <counter>LINE</counter>
                                                 <value>COVEREDRATIO</value>
-                                                <minimum>0.50</minimum>
+                                                <minimum>0.60</minimum>
                                             </limit>
                                             <limit>
                                                 <counter>COMPLEXITY</counter>
                                                 <value>COVEREDRATIO</value>
-                                                <minimum>0.40</minimum>
+                                                <minimum>0.50</minimum>
                                             </limit>
                                         </limits>
                                     </rule>
                                 </rules>
+                                <excludes>
+                                    <exclude>**/generated/**</exclude>
+                                    <exclude>**/test/**</exclude>
+                                </excludes>
                             </configuration>
                         </execution>
                     </executions>
+                </plugin>
+                
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>3.4.2</version>
+                    <executions>
+                        <execution>
+                            <id>attach-jmh-sources</id>
+                            <phase>generate-test-sources</phase>
+                            <goals>
+                                <goal>test-jar</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>3.5.5</version>
+                    <configuration>
+                        <useSystemClassLoader>false</useSystemClassLoader>
+                        <argLine>-Xmx2048m -XX:MaxMetaspaceSize=512m</argLine>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>

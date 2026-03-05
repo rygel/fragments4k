@@ -62,7 +62,7 @@ class FragmentsQuarkusResource @Inject constructor(
         @QueryParam("page") page: Int?,
         @Context headers: HttpHeaders
     ): Response {
-        val pageResult = blogEngine.getOverview(page ?: 1)
+        val pageResult = blogEngine.getOverview(includeDrafts = false, page = page ?: 1)
         val isPartial = isHtmxRequest(headers)
         val viewModel = BlogOverviewViewModel(
             fragments = pageResult.items.map { FragmentViewModel(it, isPartial) },

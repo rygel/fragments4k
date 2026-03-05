@@ -40,7 +40,67 @@
         }
         .archive-count {
             color: #666;
+            margin-bottom: 20px;
             font-style: italic;
+        }
+        .archive-breadcrumbs {
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+        .archive-breadcrumbs a {
+            color: #0066cc;
+            text-decoration: none;
+            margin: 0 5px;
+        }
+        .archive-breadcrumbs a.active {
+            color: #333;
+            font-weight: bold;
+        }
+        .archive-breadcrumbs a:hover {
+            text-decoration: underline;
+        }
+        .archive-years, .archive-months {
+            margin-bottom: 30px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+        .archive-years h3, .archive-months h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .archive-year-list, .archive-month-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .archive-year-list li, .archive-month-list li {
+            display: inline;
+        }
+        .archive-year-list a, .archive-month-list a {
+            color: #0066cc;
+            text-decoration: none;
+            padding: 5px 10px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+        .archive-year-list a:hover, .archive-month-list a:hover {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        .archive-year-list a.active, .archive-month-list a.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+            font-weight: bold;
         }
         .archive-item {
             margin-bottom: 20px;
@@ -84,8 +144,9 @@
 </head>
 <body>
     <nav class="nav">
-        <a href="/">Home</a>
-        <a href="/blog">Blog</a>
+        <a th:each="item : ${viewModel.navigationMenu}"
+           th:href="${item.url}"
+           th:text="${item.label}">Home</a>
     </nav>
 
     <div class="archive-header">

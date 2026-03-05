@@ -108,8 +108,9 @@
 </head>
 <body>
     <nav class="nav">
-        <a href="/">Home</a>
-        <a href="/blog">Blog</a>
+        {#for item in viewModel.navigationMenu}
+        <a href="{item.url}">{item.label}</a>
+        {/for}
     </nav>
 
     <h1>Blog</h1>
@@ -149,19 +150,19 @@
 
     {#if viewModel.totalPages > 1}
     <div class="pagination">
-        {#if viewModel.hasPrevious}
-        <a href="/blog/page/{viewModel.currentPage - 1}">&larr; Previous</a>
+        {#if pagination.hasPrevious}
+        <a href="{pagination.previousUrl}">&larr; Previous</a>
         {/if}
-        {#if !viewModel.hasPrevious}
+        {#if !pagination.hasPrevious}
         <a class="disabled">&larr; Previous</a>
         {/if}
 
-        <span>Page {viewModel.currentPage} of {viewModel.totalPages}</span>
+        <span>{pagination.text}</span>
 
-        {#if viewModel.hasNext}
-        <a href="/blog/page/{viewModel.currentPage + 1}">Next &rarr;</a>
+        {#if pagination.hasNext}
+        <a href="{pagination.nextUrl}">Next &rarr;</a>
         {/if}
-        {#if !viewModel.hasNext}
+        {#if !pagination.hasNext}
         <a class="disabled">Next &rarr;</a>
         {/if}
     </div>

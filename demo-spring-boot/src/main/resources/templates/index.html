@@ -78,8 +78,9 @@
 </head>
 <body>
     <nav class="nav">
-        <a href="/">Home</a>
-        <a href="/blog">Blog</a>
+        <a th:each="item : ${navigationMenu}"
+           th:href="${item.url}"
+           th:text="${item.label}">Home</a>
     </nav>
 
     <div class="search-box">

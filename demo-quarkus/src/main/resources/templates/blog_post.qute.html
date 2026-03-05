@@ -207,8 +207,9 @@
 </head>
 <body>
     <nav class="nav">
-        <a href="/">Home</a>
-        <a href="/blog">Blog</a>
+        {#for item in viewModel.navigationMenu}
+        <a href="{item.url}">{item.label}</a>
+        {/for}
     </nav>
 
     <article class="post">
@@ -216,10 +217,9 @@
 
         <div class="share-buttons">
             <h3>Share this post:</h3>
-            <a href="https://twitter.com/intent/tweet?text={viewModel.title}&amp;url=http://localhost:8080/blog/{viewModel.date[0]}/{#if viewModel.date[1] < 10}0{/if}{viewModel.date[1]}/{viewModel.slug}" class="share-twitter" target="_blank">Twitter</a>
-            <a href="https://www.facebook.com/sharer/sharer.php?u=http://localhost:8080/blog/{viewModel.date[0]}/{#if viewModel.date[1] < 10}0{/if}{viewModel.date[1]}/{viewModel.slug}" class="share-facebook" target="_blank">Facebook</a>
-            <a href="https://www.linkedin.com/sharing/share-offsite/?url=http://localhost:8080/blog/{viewModel.date[0]}/{#if viewModel.date[1] < 10}0{/if}{viewModel.date[1]}/{viewModel.slug}" class="share-linkedin" target="_blank">LinkedIn</a>
-            <a href="mailto:?subject={viewModel.title}&amp;body=Check out this article: http://localhost:8080/blog/{viewModel.date[0]}/{#if viewModel.date[1] < 10}0{/if}{viewModel.date[1]}/{viewModel.slug}" class="share-email">Email</a>
+            {#for link in viewModel.socialShareLinks}
+            <a href="{link.url}" class="{link.cssClass}"{#if link.opensInNewTab} target="_blank"{/if}>{link.label}</a>
+            {/for}
         </div>
 
         <div class="post-meta">

@@ -78,8 +78,9 @@
 </head>
 <body>
     <nav class="nav">
-        <a href="/">Home</a>
-        <a href="/blog">Blog</a>
+        {% for item in navigationMenu %}
+        <a href="{{ item.url }}"{% if item.cssClass %} class="{{ item.cssClass }}"{% endif %}>{{ item.label }}</a>
+        {% endfor %}
     </nav>
 
     <div class="search-box">
@@ -99,7 +100,7 @@
     {% endfor %}
 
     <footer>
-        <p>&copy; 2024 Fragments4k. Powered by <a href="https://github.com/rygel/fragments4k">Fragments4k</a></p>
+        <p>&copy; {{ footer.year }} {{ footer.copyrightText }} {{ footer.poweredByText }}</p>
     </footer>
 </body>
 </html>

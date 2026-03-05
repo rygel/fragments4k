@@ -11,7 +11,8 @@ data class FragmentViewModel(
     val isPartialRender: Boolean = false,
     val pageTitle: String? = null,
     val additionalContext: Map<String, Any> = emptyMap(),
-    private val allFragments: List<Fragment> = emptyList()
+    private val allFragments: List<Fragment> = emptyList(),
+    val relationships: ContentRelationships? = null
 ) {
     companion object {
         const val HTMX_REQUEST_HEADER = "HX-Request"
@@ -26,6 +27,27 @@ data class FragmentViewModel(
 
     val title: String
         get() = pageTitle ?: fragment.title
+
+    val hasPreviousPost: Boolean
+        get() = relationships?.previous != null
+
+    val hasNextPost: Boolean
+        get() = relationships?.next != null
+
+    val previousPost: Fragment?
+        get() = relationships?.previous
+
+    val nextPost: Fragment?
+        get() = relationships?.next
+
+    val relationshipRelatedPosts: List<Fragment>
+        get() = relationships?.allRelated ?: emptyList()
+
+    val translations: Map<String, Fragment>
+        get() = relationships?.translations ?: emptyMap()
+
+    val hasRelationships: Boolean
+        get() = relationships?.hasRelationships ?: false
 
     val content: String
         get() = fragment.content
