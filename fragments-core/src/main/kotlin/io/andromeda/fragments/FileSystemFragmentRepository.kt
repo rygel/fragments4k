@@ -337,6 +337,14 @@ class FileSystemFragmentRepository(
         }
     }
 
+    override suspend fun unpublishMultiple(slugs: List<String>, changedBy: String?, reason: String?): List<Result<Fragment>> {
+        return withContext(Dispatchers.IO) {
+            slugs.map { slug ->
+                updateFragmentStatus(slug, FragmentStatus.DRAFT, force = false, changedBy = changedBy, reason = reason)
+            }
+        }
+    }
+
     override suspend fun archiveMultiple(slugs: List<String>, changedBy: String?, reason: String?): List<Result<Fragment>> {
         return withContext(Dispatchers.IO) {
             slugs.map { slug ->

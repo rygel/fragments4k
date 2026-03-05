@@ -15,6 +15,7 @@ interface FragmentRepository {
     suspend fun updateFragmentStatus(slug: String, status: io.andromeda.fragments.FragmentStatus, force: Boolean = false, changedBy: String? = null, reason: String? = null): Result<Fragment>
     suspend fun updateMultipleFragmentsStatus(slugs: List<String>, status: io.andromeda.fragments.FragmentStatus, force: Boolean = false, changedBy: String? = null, reason: String? = null): List<Result<Fragment>>
     suspend fun publishMultiple(slugs: List<String>, changedBy: String? = null, reason: String? = null): List<Result<Fragment>>
+    suspend fun unpublishMultiple(slugs: List<String>, changedBy: String? = null, reason: String? = null): List<Result<Fragment>>
     suspend fun archiveMultiple(slugs: List<String>, changedBy: String? = null, reason: String? = null): List<Result<Fragment>>
     suspend fun getScheduledFragmentsDueForPublication(threshold: LocalDateTime = LocalDateTime.now()): List<Fragment>
     suspend fun publishScheduledFragments(threshold: LocalDateTime = LocalDateTime.now()): List<Result<Fragment>>

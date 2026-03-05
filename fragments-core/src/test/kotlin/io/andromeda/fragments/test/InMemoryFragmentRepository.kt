@@ -108,6 +108,12 @@ class InMemoryFragmentRepository : FragmentRepository {
         }
     }
 
+    override suspend fun unpublishMultiple(slugs: List<String>, changedBy: String?, reason: String?): List<Result<Fragment>> {
+        return slugs.map { slug ->
+            updateFragmentStatus(slug, io.andromeda.fragments.FragmentStatus.DRAFT, force = false, changedBy = changedBy, reason = reason)
+        }
+    }
+
     override suspend fun archiveMultiple(slugs: List<String>, changedBy: String?, reason: String?): List<Result<Fragment>> {
         return slugs.map { slug ->
             updateFragmentStatus(slug, io.andromeda.fragments.FragmentStatus.ARCHIVED, force = false, changedBy = changedBy, reason = reason)
