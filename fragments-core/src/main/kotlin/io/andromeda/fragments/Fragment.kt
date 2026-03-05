@@ -59,7 +59,10 @@ data class Fragment(
     val languages: Map<String, String> = emptyMap(),
     val author: String? = null,
     val authorIds: List<String> = emptyList(),
-    val statusChangeHistory: List<StatusChangeHistory> = emptyList()
+    val statusChangeHistory: List<StatusChangeHistory> = emptyList(),
+    val seriesSlug: String? = null,
+    val seriesPart: Int? = null,
+    val seriesTitle: String? = null
 ) {
     val hasMoreTag: Boolean
         get() = content.contains("<!--more-->", ignoreCase = true) ||
@@ -104,4 +107,10 @@ data class Fragment(
 
     val isExpired: Boolean
         get() = status == FragmentStatus.EXPIRED
+
+    val isInSeries: Boolean
+        get() = seriesSlug != null && seriesPart != null
+
+    val seriesPartTitle: String?
+        get() = seriesTitle?.takeIf { it.isNotEmpty() } ?: "Part $seriesPart"
 }

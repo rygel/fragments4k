@@ -237,6 +237,9 @@ class FileSystemFragmentRepository(
         val author = frontMatter["author"]?.toString()
         val authorIds = parseStringList(frontMatter["authorIds"])
         val statusChangeHistory = parseStatusChangeHistory(frontMatter)
+        val seriesSlug = frontMatter["series"]?.toString()
+        val seriesPart = frontMatter["seriesPart"]?.toString()?.toIntOrNull()
+        val seriesTitle = frontMatter["seriesTitle"]?.toString()
 
         return Fragment(
             title = title,
@@ -257,7 +260,10 @@ class FileSystemFragmentRepository(
             languages = languages,
             author = author,
             authorIds = authorIds,
-            statusChangeHistory = statusChangeHistory
+            statusChangeHistory = statusChangeHistory,
+            seriesSlug = seriesSlug,
+            seriesPart = seriesPart,
+            seriesTitle = seriesTitle
         )
     }
 
