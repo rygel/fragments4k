@@ -13,12 +13,19 @@ This document outlines planned features and enhancements for the Fragments proje
   - Technical: Add `status` field to Fragment model, create status transition APIs, implement scheduled content retrieval
   - Estimation: 2-3 weeks
 
-- [ ] **Content Scheduling**
+- [x] **Content Scheduling** ✅
   - Current: Only future date support via `date` field
   - Goal: Allow scheduling content for specific publication times
   - Impact: Essential for editorial calendars and content planning
   - Technical: Add `publishDate` field separate from `date` field, implement scheduled content retrieval
   - Estimation: 1-2 weeks
+  - Status: Completed 2026-03-05
+  - Implementation:
+    - Added ScheduledPublicationJob interface and DefaultScheduledPublicationJob
+    - Added PublicationNotificationService with extensible notification system
+    - Added scheduleMultiple bulk operation
+    - 19 comprehensive tests covering all scheduling features
+    - Framework-agnostic scheduler integration support
 
 - [ ] **Content Relationships**
   - Current: No support for linking related content
