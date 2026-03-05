@@ -38,12 +38,20 @@ This document outlines planned features and enhancements for the Fragments proje
 
 ### Content Management
 
-- [ ] **Expiration & Unpublishing**
+- [x] **Expiration & Unpublishing** ✅
   - Current: No mechanism to unpublish or expire content
   - Goal: Support content expiration dates and ability to unpublish existing content
   - Impact: Important for time-sensitive content management
   - Technical: Add `expiresAt` field, implement unpublish API, update search to exclude expired content
   - Estimation: 1 week
+  - Status: Completed 2026-03-05
+  - Implementation:
+    - Added unpublishMultiple method to FragmentRepository
+    - Implemented unpublish in FileSystemFragmentRepository (PUBLISHED → DRAFT)
+    - Implemented unpublish in both InMemoryFragmentRepository implementations
+    - Expiry filtering already in getAllVisible() and search (via LuceneSearchEngine.index())
+    - 13 comprehensive tests covering all expiry scenarios
+    - Search automatically excludes expired content
 
 - [ ] **Revision History & Versioning**
   - Current: No content versioning or revision tracking
@@ -83,6 +91,21 @@ This document outlines planned features and enhancements for the Fragments proje
   - Estimation: 2-3 weeks
 
 ### Media Management
+
+- [x] **Expiration & Unpublishing** ✅
+  - Current: No mechanism to unpublish or expire content
+  - Goal: Support content expiration dates and ability to unpublish existing content
+  - Impact: Important for time-sensitive content management
+  - Technical: Add `expiresAt` field, implement unpublish API, update search to exclude expired content
+  - Estimation: 1 week
+  - Status: Completed 2026-03-05
+  - Implementation:
+    - Added unpublishMultiple method to FragmentRepository
+    - Implemented unpublish in FileSystemFragmentRepository (PUBLISHED → DRAFT)
+    - Implemented unpublish in both InMemoryFragmentRepository implementations
+    - Expiry filtering already in getAllVisible() and search (via LuceneSearchEngine.index())
+    - 13 comprehensive tests covering all expiry scenarios
+    - Search automatically excludes expired content
 
 - [ ] **Media Library & Upload System**
   - Current: Media only referenced via frontMatter URL strings
