@@ -54,6 +54,7 @@
         <module>fragments-core</module>
         <module>fragments-static-core</module>
         <module>fragments-blog-core</module>
+        <module>fragments-image-optimization-core</module>
         <module>fragments-rss-core</module>
         <module>fragments-lucene-core</module>
         <module>fragments-sitemap-core</module>
