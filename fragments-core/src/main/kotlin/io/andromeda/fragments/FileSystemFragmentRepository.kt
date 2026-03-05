@@ -375,6 +375,66 @@ class FileSystemFragmentRepository(
         }
     }
 
+    override suspend fun scheduleMultiple(slugs: List<String>, publishDate: LocalDateTime, changedBy: String?, reason: String?): List<Result<Fragment>> {
+        return withContext(Dispatchers.IO) {
+            slugs.map { slug ->
+                val file = getFragmentFile(slug)
+                if (file == null || !file.exists()) {
+                    logger.warn("Fragment file not found for slug: $slug")
+                    return@map Result.failure<Fragment>(IllegalArgumentException("Fragment not found: $slug"))
+                }
+
+                val currentFragment = parseFragmentFile(file)
+
+                try {
+                    val content = file.readText()
+                    val parsed = parser.parse(content)
+                    val updatedFrontMatter = parsed.frontMatter.toMutableMap()
+                    updatedFrontMatter["status"] = FragmentStatus.SCHEDULED.name
+                    updatedFrontMatter["publishDate"] = publishDate.toString()
+
+                    val statusChange = StatusChangeHistory(
+                        fromStatus = currentFragment.status,
+                        toStatus = FragmentStatus.SCHEDULED,
+                        changedBy = changedBy,
+                        reason = reason
+                    )
+
+                    val existingHistory = parseStatusChangeHistory(currentFragment.statusChangeHistory)
+                    val updatedHistory = existingHistory + statusChange
+
+                    updatedFrontMatter["statusChangeHistory"] = updatedHistory.map { history ->
+                        mapOf(
+                            "fromStatus" to history.fromStatus.name,
+                            "toStatus" to history.toStatus.name,
+                            "changedAt" to history.changedAt.toString(),
+                            "changedBy" to history.changedBy,
+                            "reason" to history.reason
+                        )
+                    }
+
+                    val newContent = buildString {
+                        append("---\n")
+                        dumpFrontMatter(updatedFrontMatter, this)
+                        append("---\n")
+                        append(parsed.content)
+                    }
+
+                    file.writeText(newContent)
+
+                    val updatedFragment = parseFragmentFile(file)
+                    cacheUpdatedFragment(updatedFragment)
+
+                    logger.info("Scheduled fragment: $slug for $publishDate (by: $changedBy, reason: $reason)")
+                    Result.success(updatedFragment)
+                } catch (e: Exception) {
+                    logger.error("Failed to schedule fragment: $slug", e)
+                    Result.failure(e)
+                }
+            }
+        }
+    }
+
     override suspend fun getFragmentsExpiringSoon(threshold: LocalDateTime): List<Fragment> {
         return withContext(Dispatchers.IO) {
             loadFragments().filter { fragment ->

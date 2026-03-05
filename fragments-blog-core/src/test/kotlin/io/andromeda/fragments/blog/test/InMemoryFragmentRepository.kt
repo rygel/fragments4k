@@ -150,6 +150,29 @@ class InMemoryFragmentRepository : FragmentRepository {
         }
     }
 
+    override suspend fun scheduleMultiple(slugs: List<String>, publishDate: LocalDateTime, changedBy: String?, reason: String?): List<Result<Fragment>> {
+        return slugs.map { slug ->
+            val index = fragments.indexOfFirst { it.slug == slug }
+            if (index >= 0) {
+                val fragment = fragments[index]
+                val statusChange = StatusChangeHistory(
+                    fromStatus = fragment.status,
+                    toStatus = io.andromeda.fragments.FragmentStatus.SCHEDULED,
+                    changedBy = changedBy,
+                    reason = reason
+                )
+                fragments[index] = fragment.copy(
+                    status = io.andromeda.fragments.FragmentStatus.SCHEDULED,
+                    publishDate = publishDate,
+                    statusChangeHistory = fragment.statusChangeHistory + statusChange
+                )
+                Result.success(fragments[index])
+            } else {
+                Result.failure(IllegalArgumentException("Fragment not found: $slug"))
+            }
+        }
+    }
+
     override suspend fun expireFragments(threshold: LocalDateTime): List<Result<Fragment>> {
         val expiredFragments = fragments.filter { fragment ->
             fragment.status == io.andromeda.fragments.FragmentStatus.PUBLISHED &&

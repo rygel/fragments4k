@@ -18,6 +18,7 @@ interface FragmentRepository {
     suspend fun archiveMultiple(slugs: List<String>, changedBy: String? = null, reason: String? = null): List<Result<Fragment>>
     suspend fun getScheduledFragmentsDueForPublication(threshold: LocalDateTime = LocalDateTime.now()): List<Fragment>
     suspend fun publishScheduledFragments(threshold: LocalDateTime = LocalDateTime.now()): List<Result<Fragment>>
+    suspend fun scheduleMultiple(slugs: List<String>, publishDate: LocalDateTime, changedBy: String? = null, reason: String? = null): List<Result<Fragment>>
     suspend fun expireFragments(threshold: LocalDateTime = LocalDateTime.now()): List<Result<Fragment>>
     suspend fun getFragmentsExpiringSoon(threshold: LocalDateTime = LocalDateTime.now().plusDays(7)): List<Fragment>
     suspend fun reload()
