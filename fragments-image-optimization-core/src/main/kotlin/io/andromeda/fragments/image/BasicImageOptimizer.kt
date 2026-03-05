@@ -10,20 +10,85 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.InputStream
+import javax.imageio.IIOImage
 import javax.imageio.ImageIO
+import javax.imageio.ImageWriteParam
+import javax.imageio.stream.FileImageOutputStream
 
 class BasicImageOptimizer : ImageOptimizer {
     
     private val logger = LoggerFactory.getLogger(BasicImageOptimizer::class.java)
     
     override suspend fun optimize(inputStream: InputStream, outputPath: String, options: ImageResizeOptions): Result<OptimizedImage> = withContext(Dispatchers.IO) {
-        try {
+        inputStream.use { stream ->
+            try {
+                val image = ImageIO.read(stream) ?: return@withContext Result.failure(IllegalArgumentException("Could not read image"))
+                val originalSize = stream.available().toLong()
+                
+                val resizedImage = resizeImage(image, options)
+                
+                val originalPath = stream.toString()
+                
+                val format = options.format.lowercase()
+                val outputFormat = getOutputFormat(format)
+                 
+                val quality = options.quality
+                val outputFile = File(outputPath)
+                outputFile.parentFile?.mkdirs()
+                
+                writeImageWithQuality(resizedImage, outputFormat, quality, outputFile)
+                
+                val optimizedSize = outputFile.length()
+                var sizeReduction = 0.0f
+                if (originalSize > 0) {
+                    sizeReduction = ((originalSize - optimizedSize).toFloat() / originalSize) * 100f
+                }
+                
+                val metadata = ImageMetadata(
+                    width = resizedImage.width,
+                    height = resizedImage.height,
+                    format = format,
+                    sizeBytes = optimizedSize,
+                    mimeType = "image/$outputFormat",
+                    hasAlpha = false,
+                    colorDepth = 24
+                )
+                
+                val optimizedImage = OptimizedImage(
+                    originalPath = originalPath,
+                    optimizedPath = outputPath,
+                    originalSize = originalSize,
+                    optimizedSize = optimizedSize,
+                    sizeReduction = sizeReduction,
+                    width = resizedImage.width,
+                    height = resizedImage.height,
+                    format = format,
+                    quality = quality,
+                    metadata = metadata
+                )
+                
+                return@withContext Result.success(optimizedImage)
+            } catch (e: Exception) {
+                logger.error("Failed to optimize image", e)
+                return@withContext Result.failure(e)
+            }
+        }
+    }
+    
+    override suspend fun optimize(filePath: String, options: ImageResizeOptions): Result<OptimizedImage> = withContext(Dispatchers.IO) {
+        val file = File(filePath)
+        if (!file.exists()) {
+            return@withContext Result.failure(IllegalArgumentException("File not found: $filePath"))
+        }
+        
+        val fileName = getOptimizedFileName(filePath, options.format)
+        val outputPath = file.parent + File.separator + fileName
+        
+        file.inputStream().use { inputStream ->
             val image = ImageIO.read(inputStream) ?: return@withContext Result.failure(IllegalArgumentException("Could not read image"))
-            val originalSize = inputStream.available().toLong()
+            val originalSize = file.length()
             
             val resizedImage = resizeImage(image, options)
-            
-            val originalPath = inputStream.toString()
             
             val format = options.format.lowercase()
             val outputFormat = getOutputFormat(format)
@@ -32,7 +97,7 @@ class BasicImageOptimizer : ImageOptimizer {
             val outputFile = File(outputPath)
             outputFile.parentFile?.mkdirs()
             
-            ImageIO.write(resizedImage, outputFormat, outputFile)
+            writeImageWithQuality(resizedImage, outputFormat, quality, outputFile)
             
             val optimizedSize = outputFile.length()
             var sizeReduction = 0.0f
@@ -51,7 +116,7 @@ class BasicImageOptimizer : ImageOptimizer {
             )
             
             val optimizedImage = OptimizedImage(
-                originalPath = originalPath,
+                originalPath = filePath,
                 optimizedPath = outputPath,
                 originalSize = originalSize,
                 optimizedSize = optimizedSize,
@@ -64,21 +129,7 @@ class BasicImageOptimizer : ImageOptimizer {
             )
             
             return@withContext Result.success(optimizedImage)
-        } catch (e: Exception) {
-            logger.error("Failed to optimize image", e)
-            return@withContext Result.failure(e)
         }
-    }
-    
-    override suspend fun optimize(filePath: String, options: ImageResizeOptions): Result<OptimizedImage> = withContext(Dispatchers.IO) {
-        val file = File(filePath)
-        if (!file.exists()) {
-            return@withContext Result.failure(IllegalArgumentException("File not found: $filePath"))
-        }
-        
-        val fileName = getOptimizedFileName(filePath, options.format)
-        val outputPath = file.parent + File.separator + fileName
-        return@withContext optimize(file.inputStream(), outputPath, options)
     }
     
     override suspend fun generateResponsiveVariants(imagePath: String, variants: List<ImageResizeOptions>): Result<List<ResponsiveVariant>> = withContext(Dispatchers.IO) {
@@ -97,20 +148,21 @@ class BasicImageOptimizer : ImageOptimizer {
                 val fileName = "${baseName}-${opts.maxWidth}x${opts.maxHeight}.${opts.format}"
                 val outputPath = parentDir + File.separator + fileName
                 
-                val inputStream = FileInputStream(imagePath)
-                val result = optimize(inputStream, outputPath, opts)
-                if (result.isSuccess) {
-                    val optimized = result.getOrNull()!!
-                    val variant = ResponsiveVariant(
-                        name = opts.maxWidth?.toString() ?: "original",
-                        path = outputPath,
-                        width = optimized.width,
-                        height = optimized.height,
-                        sizeBytes = optimized.optimizedSize,
-                        format = optimized.format,
-                        mediaQuery = generateMediaQuery(optimized.width)
-                    )
-                    variantList.add(variant)
+                FileInputStream(imagePath).use { inputStream ->
+                    val result = optimize(inputStream, outputPath, opts)
+                    if (result.isSuccess) {
+                        val optimized = result.getOrNull()!!
+                        val variant = ResponsiveVariant(
+                            name = opts.maxWidth?.toString() ?: "original",
+                            path = outputPath,
+                            width = optimized.width,
+                            height = optimized.height,
+                            sizeBytes = optimized.optimizedSize,
+                            format = optimized.format,
+                            mediaQuery = generateMediaQuery(optimized.width)
+                        )
+                        variantList.add(variant)
+                    }
                 }
             }
             
@@ -233,5 +285,28 @@ class BasicImageOptimizer : ImageOptimizer {
             width <= 1920 -> "(max-width: 1920px)"
             else -> "(max-width: ${width}px)"
         }
+    }
+    
+    private fun writeImageWithQuality(image: BufferedImage, format: String, quality: Float, outputFile: File) {
+        if (format.equals("jpg", ignoreCase = true) || format.equals("jpeg", ignoreCase = true)) {
+            val writers = ImageIO.getImageWritersByFormatName("jpg")
+            if (writers.hasNext()) {
+                val writer = writers.next()
+                val param = writer.defaultWriteParam
+                if (param.canWriteCompressed()) {
+                    param.compressionMode = ImageWriteParam.MODE_EXPLICIT
+                    param.compressionQuality = quality.coerceIn(0.0f, 1.0f)
+                }
+                
+                FileImageOutputStream(outputFile).use { output ->
+                    writer.output = output
+                    writer.write(null, IIOImage(image, null, null), param)
+                    writer.dispose()
+                }
+                return
+            }
+        }
+        
+        ImageIO.write(image, format, outputFile)
     }
 }
