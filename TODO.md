@@ -53,6 +53,27 @@ This document outlines planned features and enhancements for the Fragments proje
     - 13 comprehensive tests covering all expiry scenarios
     - Search automatically excludes expired content
 
+- [x] **Content Series Management** ✅
+  - Current: Individual fragments with no series support
+  - Goal: Organize related content into series (e.g., multi-part tutorials)
+  - Impact: Improves content organization and user navigation
+  - Technical: Create `ContentSeries` entity, series relationships in Fragment, series routing
+  - Estimation: 2-3 weeks
+  - Status: Completed 2026-03-05
+  - Implementation:
+    - Added ContentSeries data class with SeriesStatus enum (ACTIVE, INACTIVE, DRAFT)
+    - Added SeriesPart data class for individual series parts
+    - Added SeriesNavigation data class for navigating through series
+    - Added series fields to Fragment (seriesSlug, seriesPart, seriesTitle)
+    - Added isInSeries and seriesPartTitle computed properties
+    - Added ContentSeriesRepository interface with full CRUD and navigation
+    - Implemented InMemoryContentSeriesRepository for testing
+    - Implemented FileSystemContentSeriesRepository (YAML file storage)
+    - Series navigation (previous/next part, progress tracking, first/last detection)
+    - Series filtering by tag and category
+    - 19 comprehensive tests covering all series scenarios
+    - Front matter parsing for series fields in FileSystemFragmentRepository
+
 - [ ] **Revision History & Versioning**
   - Current: No content versioning or revision tracking
   - Goal: Track content changes with revision history, ability to revert to previous versions
