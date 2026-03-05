@@ -28,7 +28,12 @@ data class OptimizedImage(
     val metadata: ImageMetadata
 ) {
     val compressionRatio: Float
-        get() = if (originalSize > 0)) optimizedSize.toFloat() / originalSize else 1.0f
+        get() {
+            if (originalSize > 0) {
+                return optimizedSize.toFloat() / originalSize
+            }
+            return 1.0f
+        }
 
     val spaceSaved: Long
         get() = originalSize - optimizedSize

@@ -20,20 +20,17 @@ class BasicImageOptimizer : ImageOptimizer {
         try {
             val image = ImageIO.read(inputStream) ?: return@withContext Result.failure(IllegalArgumentException("Could not read image"))
             val originalSize = inputStream.available().toLong()
+            
             val resizedImage = resizeImage(image, options)
             
             val originalPath = inputStream.toString()
-            val format = options.format.lowercase()
-            val outputFormat = format.lowercase()
-            
-            val quality = options.quality
-            val outputFile = File(outputPath)
-            outputFile.parentFile?.mkdirs()
-            
-            val resizedImage = resizeImage(image, options)
             
             val format = options.format.lowercase()
             val outputFormat = getOutputFormat(format)
+             
+            val quality = options.quality
+            val outputFile = File(outputPath)
+            outputFile.parentFile?.mkdirs()
             
             ImageIO.write(resizedImage, outputFormat, outputFile)
             
