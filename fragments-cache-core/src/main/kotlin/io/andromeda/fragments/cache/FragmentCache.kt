@@ -64,6 +64,11 @@ class FragmentCache(
         CacheConfiguration(ttl = parsedContentTtl, maxSize = maxSize, recordStats = true)
     )
     
+    // Search result cache
+    private val searchResultCache = InMemoryCache<String, List<io.andromeda.fragments.Fragment>>(
+        CacheConfiguration(ttl = Duration.ofMinutes(5), maxSize = 500, recordStats = true)
+    )
+    
     /**
      * Get a fragment by slug from cache
      */
@@ -214,8 +219,30 @@ class FragmentCache(
     }
     
     /**
-     * Clear all caches
+     * Get search results from cache
      */
+    suspend fun getSearchResults(cacheKey: String): List<io.andromeda.fragments.Fragment>? {
+        return searchResultCache.get("search:$cacheKey")
+    }
+    
+    /**
+     * Cache search results
+     */
+    suspend fun putSearchResults(cacheKey: String, results: List<io.andromeda.fragments.Fragment>) {
+        searchResultCache.put("search:$cacheKey", results)
+    }
+    
+    /**
+     * Invalidate search results
+     */
+    suspend fun invalidateSearchResults() {
+        logger.debug("Invalidating all search results")
+         searchResultCache.clear()
+     }
+     
+     /**
+      * Clear all caches
+      */
     suspend fun clearAll() {
         logger.debug("Clearing all caches")
         fragmentCache.clear()
@@ -226,6 +253,7 @@ class FragmentCache(
         fragmentsBySeriesCache.clear()
         relationshipCache.clear()
         parsedContentCache.clear()
+        searchResultCache.clear()
     }
     
     /**
@@ -268,6 +296,7 @@ class FragmentCache(
             ),
             relationshipStats = relationshipCache.getStatistics(),
             parsedContentStats = parsedContentCache.getStatistics(),
+            searchStats = searchResultCache.getStatistics(),
             totalSize = fragmentCache.size() +
                         visibleFragmentsCache.size() +
                         fragmentsByTagCache.size() +
@@ -275,7 +304,8 @@ class FragmentCache(
                         fragmentsByAuthorCache.size() +
                         fragmentsBySeriesCache.size() +
                         relationshipCache.size() +
-                        parsedContentCache.size()
+                        parsedContentCache.size() +
+                        searchResultCache.size()
         )
     }
     
@@ -291,6 +321,7 @@ class FragmentCache(
         fragmentsBySeriesCache.resetStatistics()
         relationshipCache.resetStatistics()
         parsedContentCache.resetStatistics()
+        searchResultCache.resetStatistics()
     }
 }
 
@@ -312,14 +343,17 @@ data class CacheStatisticsReport(
     val listStats: CacheStatistics,
     val relationshipStats: CacheStatistics,
     val parsedContentStats: CacheStatistics,
+    val searchStats: CacheStatistics,
     val totalSize: Long
 ) {
     val overallHitRate: Double
         get() {
             val totalRequests = fragmentStats.requestCount + listStats.requestCount + 
-                             relationshipStats.requestCount + parsedContentStats.requestCount
+                             relationshipStats.requestCount + parsedContentStats.requestCount +
+                             searchStats.requestCount
             val totalHits = fragmentStats.hitCount + listStats.hitCount + 
-                           relationshipStats.hitCount + parsedContentStats.hitCount
+                           relationshipStats.hitCount + parsedContentStats.hitCount +
+                           searchStats.hitCount
             return if (totalRequests > 0) totalHits.toDouble() / totalRequests else 0.0
         }
 }

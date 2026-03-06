@@ -245,11 +245,27 @@ class LuceneSearchEngine(
             val slug = doc.get("slug")
             repository.getBySlug(slug)
         }
-        
+         
         reader.close()
         results
     }
-
+    
+    suspend fun invalidateSearchCache() {
+        // No-op for non-cached implementation
+    }
+    
+    suspend fun invalidateFragmentSearchResults(fragmentSlug: String) {
+        // No-op for non-cached implementation
+    }
+    
+    suspend fun invalidateTagSearchResults(tag: String) {
+        // No-op for non-cached implementation
+    }
+    
+    suspend fun invalidateCategorySearchResults(category: String) {
+        // No-op for non-cached implementation
+    }
+    
     fun close() {
         analyzer.close()
         directory.close()
