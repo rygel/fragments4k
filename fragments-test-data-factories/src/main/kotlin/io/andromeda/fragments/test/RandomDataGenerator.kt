@@ -70,7 +70,7 @@ class RandomDataGenerator(private val random: Random = Random.Default) {
         return (1..words)
             .map { randomWord() }
             .joinToString(" ")
-            .capitalize() + "."
+            .replaceFirstChar { it.uppercase() } + "."
     }
     
     /**
@@ -113,7 +113,7 @@ class RandomDataGenerator(private val random: Random = Random.Default) {
      * Generate a random fragment
      */
     fun randomFragment(): Fragment {
-        return Fragment.Builder()
+        return FragmentFactory.Builder()
             .title("Random Fragment ${randomString(4)}")
             .slug("random-fragment-${randomString(6)}")
             .date(randomDate())
@@ -148,7 +148,8 @@ class RandomDataGenerator(private val random: Random = Random.Default) {
      * Generate a random author
      */
     fun randomAuthor(): Author {
-        return Author.Builder()
+        return AuthorFactory.Builder()
+            .id("random-author-${randomString(6)}")
             .name("Random Author ${randomString(6)}")
             .slug("random-author-${randomString(6)}")
             .email(randomEmail())
@@ -178,7 +179,7 @@ class RandomDataGenerator(private val random: Random = Random.Default) {
      */
     fun randomContentSeries(): ContentSeries {
         val statuses = listOf(SeriesStatus.ACTIVE, SeriesStatus.INACTIVE)
-        return ContentSeries.Builder()
+        return ContentSeriesFactory.Builder()
             .title("Random Series ${randomString(4)}")
             .slug("random-series-${randomString(6)}")
             .description(randomParagraph(1))
@@ -243,7 +244,7 @@ class RandomDataGenerator(private val random: Random = Random.Default) {
         return (1..words)
             .map { loremWords[random.nextInt(loremWords.size)] }
             .joinToString(" ")
-            .capitalize() + "."
+            .replaceFirstChar { it.uppercase() } + "."
     }
     
     /**

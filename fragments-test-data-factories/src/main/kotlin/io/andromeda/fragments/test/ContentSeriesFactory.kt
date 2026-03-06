@@ -14,7 +14,7 @@ object ContentSeriesFactory {
      */
     fun create(
         title: String = "Test Series",
-        slug: String = "test-series"
+        slug: String = "test-series",
         description: String = "A test content series"
     ): ContentSeries {
         return ContentSeries(
@@ -22,8 +22,12 @@ object ContentSeriesFactory {
             slug = slug,
             description = description,
             status = SeriesStatus.ACTIVE,
+            order = 0,
+            tags = emptyList(),
+            categories = emptyList(),
             createdAt = LocalDateTime.now(),
-            updatedAt = null
+            updatedAt = LocalDateTime.now(),
+            metadata = emptyMap()
         )
     }
     
@@ -35,20 +39,32 @@ object ContentSeriesFactory {
         private var slug: String = "test-series"
         private var description: String = "A test content series"
         private var status: SeriesStatus = SeriesStatus.ACTIVE
+        private var order: Int = 0
+        private var tags: List<String> = emptyList()
+        private var categories: List<String> = emptyList()
         private var createdAt: LocalDateTime = LocalDateTime.now()
-        private var updatedAt: LocalDateTime? = null
+        private var updatedAt: LocalDateTime = LocalDateTime.now()
+        private var metadata: Map<String, Any> = emptyMap()
         
         fun title(title: String) = apply { this.title = title }
-        
+
         fun slug(slug: String) = apply { this.slug = slug }
-        
+
         fun description(description: String) = apply { this.description = description }
-        
+
         fun status(status: SeriesStatus) = apply { this.status = status }
-        
+
+        fun order(order: Int) = apply { this.order = order }
+
+        fun tags(tags: List<String>) = apply { this.tags = tags }
+
+        fun categories(categories: List<String>) = apply { this.categories = categories }
+
         fun createdAt(createdAt: LocalDateTime) = apply { this.createdAt = createdAt }
-        
-        fun updatedAt(updatedAt: LocalDateTime?) = apply { this.updatedAt = updatedAt }
+
+        fun updatedAt(updatedAt: LocalDateTime) = apply { this.updatedAt = updatedAt }
+
+        fun metadata(metadata: Map<String, Any>) = apply { this.metadata = metadata }
         
         fun build(): ContentSeries {
             return ContentSeries(
@@ -56,8 +72,12 @@ object ContentSeriesFactory {
                 slug = slug,
                 description = description,
                 status = status,
+                order = order,
+                tags = tags,
+                categories = categories,
                 createdAt = createdAt,
-                updatedAt = updatedAt
+                updatedAt = updatedAt,
+                metadata = metadata
             )
         }
     }
@@ -66,21 +86,21 @@ object ContentSeriesFactory {
      * Create an active series
      */
     fun active(): ContentSeries {
-        return create(status = SeriesStatus.ACTIVE)
+        return Builder().status(SeriesStatus.ACTIVE).build()
     }
-    
+
     /**
      * Create an inactive series
      */
     fun inactive(): ContentSeries {
-        return create(status = SeriesStatus.INACTIVE)
+        return Builder().status(SeriesStatus.INACTIVE).build()
     }
-    
+
     /**
      * Create a draft series
      */
     fun draft(): ContentSeries {
-        return create(status = SeriesStatus.DRAFT)
+        return Builder().status(SeriesStatus.DRAFT).build()
     }
     
     /**

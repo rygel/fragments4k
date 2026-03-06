@@ -167,10 +167,10 @@ class TestScenario {
                 .map { it.copy(status = FragmentStatus.PUBLISHED) }
             val draftFragments = FragmentFactory.createMany(3)
                 .map { it.copy(status = FragmentStatus.DRAFT, visible = false) }
-            
+
             return TestScenarioBuilder()
                 .name("Complex Blog")
-                .description("A complex blog with authors, series, published and draft posts")
+                .description("A complex blog with multiple features including authors, series, published and draft posts")
                 .fragments(publishedFragments + draftFragments)
                 .authors(authors)
                 .contentSeries(seriesList)

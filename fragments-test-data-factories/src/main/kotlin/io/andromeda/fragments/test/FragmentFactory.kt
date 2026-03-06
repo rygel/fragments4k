@@ -2,6 +2,7 @@ package io.andromeda.fragments.test
 
 import io.andromeda.fragments.Fragment
 import io.andromeda.fragments.FragmentStatus
+import io.andromeda.fragments.StatusChangeHistory
 import java.time.LocalDateTime
 
 /**
@@ -73,7 +74,7 @@ object FragmentFactory {
         private var seriesSlug: String? = null
         private var seriesPart: Int? = null
         private var seriesTitle: String? = null
-        private var statusChangeHistory: List<FragmentStatusChange> = emptyList()
+        private var statusChangeHistory: List<StatusChangeHistory> = emptyList()
         
         fun title(title: String) = apply { this.title = title }
         
@@ -114,10 +115,10 @@ object FragmentFactory {
         fun seriesSlug(seriesSlug: String) = apply { this.seriesSlug = seriesSlug }
         
         fun seriesPart(seriesPart: Int?) = apply { this.seriesPart = seriesPart }
-        
+
         fun seriesTitle(seriesTitle: String?) = apply { this.seriesTitle = seriesTitle }
-        
-        fun statusChangeHistory(statusChangeHistory: List<FragmentStatusChange>) = apply { this.statusChangeHistory = statusChangeHistory }
+
+        fun statusChangeHistory(statusChangeHistory: List<StatusChangeHistory>) = apply { this.statusChangeHistory = statusChangeHistory }
         
         fun build(): Fragment {
             return Fragment(
@@ -151,41 +152,44 @@ object FragmentFactory {
      * Create a published fragment
      */
     fun published(): Fragment {
-        return create(status = FragmentStatus.PUBLISHED)
+        return Builder().status(FragmentStatus.PUBLISHED).build()
     }
-    
+
     /**
      * Create a draft fragment
      */
     fun draft(): Fragment {
-        return create(status = FragmentStatus.DRAFT)
+        return Builder()
+            .status(FragmentStatus.DRAFT)
+            .visible(false)
+            .build()
     }
-    
+
     /**
      * Create an archived fragment
      */
     fun archived(): Fragment {
-        return create(status = FragmentStatus.ARCHIVED)
+        return Builder().status(FragmentStatus.ARCHIVED).build()
     }
-    
+
     /**
      * Create a scheduled fragment
      */
     fun scheduled(publishDate: LocalDateTime): Fragment {
-        return create(
-            status = FragmentStatus.SCHEDULED,
-            publishDate = publishDate
-        )
+        return Builder()
+            .status(FragmentStatus.SCHEDULED)
+            .publishDate(publishDate)
+            .build()
     }
-    
+
     /**
      * Create a fragment with expiration
      */
     fun expiring(expiryDate: LocalDateTime): Fragment {
-        return create(
-            status = FragmentStatus.PUBLISHED,
-            expiryDate = expiryDate
-        )
+        return Builder()
+            .status(FragmentStatus.PUBLISHED)
+            .expiryDate(expiryDate)
+            .build()
     }
     
     /**
@@ -256,4 +260,14 @@ data class FragmentStatusChange(
     val timestamp: LocalDateTime = LocalDateTime.now(),
     val changedBy: String? = null,
     val reason: String? = null
-)
+) {
+    fun toStatusChangeHistory(): StatusChangeHistory {
+        return StatusChangeHistory(
+            fromStatus = FragmentStatus.DRAFT,
+            toStatus = status,
+            changedAt = timestamp,
+            changedBy = changedBy,
+            reason = reason
+        )
+    }
+}

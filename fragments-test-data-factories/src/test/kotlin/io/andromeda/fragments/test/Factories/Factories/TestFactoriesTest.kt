@@ -1,5 +1,7 @@
 package io.andromeda.fragments.test
 
+import io.andromeda.fragments.FragmentStatus
+import io.andromeda.fragments.SeriesStatus
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -297,10 +299,10 @@ class RandomDataGeneratorTest {
     @Test
     fun generateRandomParagraph() {
         val paragraph = generator.randomParagraph(3)
-        
+
         assertNotNull(paragraph)
         assertTrue(paragraph.endsWith("."))
-        assertEquals(3, paragraph.count { it.endsWith(".") })
+        assertEquals(3, paragraph.split(".").size - 1)
     }
     
     @Test
@@ -426,11 +428,11 @@ class TestScenarioTest {
             .build()
         
         val scheduledFragments = scenario.fragments.filter { it.status == FragmentStatus.SCHEDULED }
-        
+
         assertTrue(scheduledFragments.isNotEmpty())
         scheduledFragments.forEach { fragment ->
             assertNotNull(fragment.publishDate)
-            assertTrue(fragment.publishDate.isAfter(java.time.LocalDateTime.now()))
+            assertTrue(fragment.publishDate!!.isAfter(java.time.LocalDateTime.now()))
         }
     }
     
@@ -443,7 +445,7 @@ class TestScenarioTest {
         
         assertTrue(expiringFragments.isNotEmpty())
         expiringFragments.forEach { fragment ->
-            assertTrue(fragment.expiryDate.isAfter(java.time.LocalDateTime.now()))
+            assertTrue(fragment.expiryDate!!.isAfter(java.time.LocalDateTime.now()))
             assertEquals(FragmentStatus.PUBLISHED, fragment.status)
         }
     }
@@ -500,7 +502,7 @@ class TestScenarioTest {
     
     @Test
     fun testScenarioBuilder() {
-        val scenario = TestScenario.Builder()
+        val scenario = TestScenarioBuilder()
             .name("Custom Scenario")
             .description("A custom test scenario")
             .fragments(FragmentFactory.createMany(3))
