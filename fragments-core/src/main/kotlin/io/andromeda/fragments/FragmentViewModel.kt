@@ -79,67 +79,6 @@ data class FragmentViewModel(
     val formattedReadingTime: String
         get() = readingTime.text
 
-    val tableOfContents: List<TableOfContentsItem>
-        get() = extractTableOfContents()
-
-    val relatedPosts: List<Fragment>
-        get() = findRelatedPosts()
-
-    val socialShareLinks: List<SocialShareLink>
-        get() = generateSocialShareLinks()
-
-    val navigationMenu: List<NavigationLink>
-        get() = generateNavigationMenu()
-
-    /**
-     * Generates social share links for this fragment
-     */
-    fun generateSocialShareLinks(
-        baseUrl: String = "http://localhost:8080",
-        platforms: List<SocialPlatform> = SocialPlatform.entries
-    ): List<SocialShareLink> {
-        val url = buildUrl(baseUrl)
-        return SocialShareGenerator.generateShareLinks(title, url, platforms)
-    }
-
-    private fun buildUrl(baseUrl: String): String {
-        val year = fragment.date?.year ?: "0000"
-        val month = String.format("%02d", fragment.date?.monthValue ?: 1)
-        return "$baseUrl/blog/$year/$month/$slug"
-    }
-
-    fun generateNavigationMenu(
-        includeArchive: Boolean = false,
-        includeSearch: Boolean = false,
-        baseUrl: String = "/"
-    ): List<NavigationLink> {
-        return NavigationMenuGenerator.generateMainMenu(
-            siteUrl = "/",
-            blogUrl = "/blog",
-            archiveUrl = if (includeArchive) "/blog/archive" else null,
-            searchUrl = if (includeSearch) "/search" else null
-        )
-    }
-
-    /**
-     * Generates SEO metadata for this fragment
-     */
-    fun generateSeoMetadata(
-        siteUrl: String,
-        siteName: String? = null,
-        pagePath: String? = null,
-        author: String? = null,
-        imageUrl: String? = null
-    ): SeoMetadata {
-        return SeoMetadata.fromFragment(
-            fragment = fragment,
-            siteUrl = siteUrl,
-            siteName = siteName,
-            pagePath = pagePath,
-            author = author,
-            imageUrl = imageUrl
-        )
-    }
 
     data class ReadingTime(
         val minutes: Int,

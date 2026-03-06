@@ -1,6 +1,7 @@
 package io.andromeda.fragments.spring
 
 import io.andromeda.fragments.*
+import java.time.LocalDateTime
 import org.junit.jupiter.api.Test
 
 class FragmentsSpringControllerTest {
@@ -12,8 +13,9 @@ class FragmentsSpringControllerTest {
             slug = "test",
             title = "Test",
             content = "# Test Content",
-            date = null,
-            preview = "Test preview",
+            preview = "Test Content",
+            date = LocalDateTime.now(),
+            publishDate = LocalDateTime.now(),
             template = "page",
             visible = true,
             tags = emptyList(),

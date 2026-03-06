@@ -61,6 +61,9 @@
         <module>fragments-lucene-core</module>
         <module>fragments-sitemap-core</module>
         <module>fragments-live-reload</module>
+        <module>fragments-navigation-core</module>
+        <module>fragments-social-core</module>
+        <module>fragments-seo-core</module>
         <module>fragments-http4k</module>
         <module>fragments-javalin</module>
         <module>fragments-spring-boot</module>
@@ -141,7 +144,7 @@
             </dependency>
             <dependency>
                 <groupId>io.mockk</groupId>
-                <artifactId>mockk</artifactId>
+                <artifactId>mockk-jvm</artifactId>
                 <version>${mockk.version}</version>
             </dependency>
             <dependency>
@@ -158,6 +161,21 @@
             <dependency>
                 <groupId>io.andromeda</groupId>
                 <artifactId>fragments-static-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.andromeda</groupId>
+                <artifactId>fragments-navigation-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.andromeda</groupId>
+                <artifactId>fragments-social-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.andromeda</groupId>
+                <artifactId>fragments-seo-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

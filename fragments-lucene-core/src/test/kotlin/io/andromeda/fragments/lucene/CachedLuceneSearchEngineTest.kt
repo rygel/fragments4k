@@ -3,9 +3,9 @@ package io.andromeda.fragments.lucene
 import io.andromeda.fragments.Fragment
 import io.andromeda.fragments.FragmentStatus
 import io.andromeda.fragments.cache.FragmentCache
-import io.mockk.every
+import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.mockk
-import io.mockk.verify
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -42,7 +42,7 @@ class CachedLuceneSearchEngineTest {
             SearchResult(fragment2, 0.8f)
         )
         
-        every { runBlocking { delegate.search("test", 10) } } returns searchResults
+        coEvery { delegate.search("test", 10) } returns searchResults
         
         val result1 = cachedEngine.search("test", 10)
         
@@ -55,7 +55,7 @@ class CachedLuceneSearchEngineTest {
         assertEquals(2, result2.size)
         assertEquals("slug1", result2[0].fragment.slug)
         
-        verify(exactly = 2) { runBlocking { delegate.search("test", 10) } }
+        coVerify(exactly = 1) { delegate.search("test", 10) }
     }
     
     @Test
@@ -71,7 +71,7 @@ class CachedLuceneSearchEngineTest {
             fuzzySearch = false
         )
         
-        every { runBlocking { delegate.search(options) } } returns searchResults
+        coEvery { delegate.search(options) } returns searchResults
         
         val result1 = cachedEngine.search(options)
         
@@ -83,7 +83,7 @@ class CachedLuceneSearchEngineTest {
         
         assertEquals(1, result2.size)
         
-        verify(exactly = 1) { runBlocking { delegate.search(options) } }
+        coVerify(exactly = 1) { delegate.search(options) }
     }
     
     @Test
@@ -92,7 +92,7 @@ class CachedLuceneSearchEngineTest {
         
         val results = listOf(fragment)
         
-        every { runBlocking { delegate.searchByTag("kotlin") } } returns results
+        coEvery { delegate.searchByTag("kotlin") } returns results
         
         val result1 = cachedEngine.searchByTag("kotlin")
         
@@ -104,7 +104,7 @@ class CachedLuceneSearchEngineTest {
         
         assertEquals(1, result2.size)
         
-        verify(exactly = 1) { runBlocking { delegate.searchByTag("kotlin") } }
+        coVerify(exactly = 1) { delegate.searchByTag("kotlin") }
     }
     
     @Test
@@ -113,7 +113,7 @@ class CachedLuceneSearchEngineTest {
         
         val results = listOf(fragment)
         
-        every { runBlocking { delegate.searchByCategory("technology") } } returns results
+        coEvery { delegate.searchByCategory("technology") } returns results
         
         val result1 = cachedEngine.searchByCategory("technology")
         
@@ -125,7 +125,7 @@ class CachedLuceneSearchEngineTest {
         
         assertEquals(1, result2.size)
         
-        verify(exactly = 1) { runBlocking { delegate.searchByCategory("technology") } }
+        coVerify(exactly = 1) { delegate.searchByCategory("technology") }
     }
     
     @Test
@@ -135,7 +135,7 @@ class CachedLuceneSearchEngineTest {
             SearchSuggestion("kotlin", 10, SearchSuggestion.SuggestionType.TAG)
         )
         
-        every { runBlocking { delegate.autocomplete("kot", 10) } } returns suggestions
+        coEvery { delegate.autocomplete("kot", 10) } returns suggestions
         
         val result1 = cachedEngine.autocomplete("kot", 10)
         
@@ -147,7 +147,7 @@ class CachedLuceneSearchEngineTest {
         
         assertEquals(2, result2.size)
         
-        verify(exactly = 1) { runBlocking { delegate.autocomplete("kot", 10) } }
+        coVerify(exactly = 1) { delegate.autocomplete("kot", 10) }
     }
     
     @Test
@@ -157,7 +157,7 @@ class CachedLuceneSearchEngineTest {
             SearchSuggestion("kotlin", 10, SearchSuggestion.SuggestionType.TAG)
         )
         
-        every { runBlocking { delegate.getSuggestions("kot", 10) } } returns suggestions
+        coEvery { delegate.getSuggestions("kot", 10) } returns suggestions
         
         val result1 = cachedEngine.getSuggestions("kot", 10)
         
@@ -169,7 +169,7 @@ class CachedLuceneSearchEngineTest {
         
         assertEquals(2, result2.size)
         
-        verify(exactly = 1) { runBlocking { delegate.getSuggestions("kot", 10) } }
+        coVerify(exactly = 1) { delegate.getSuggestions("kot", 10) }
     }
     
     @Test
@@ -180,8 +180,8 @@ class CachedLuceneSearchEngineTest {
         val results1 = listOf(SearchResult(fragment1, 0.9f))
         val results2 = listOf(SearchResult(fragment2, 0.8f))
         
-        every { runBlocking { delegate.search("query1", 10) } } returns results1
-        every { runBlocking { delegate.search("query2", 10) } } returns results2
+        coEvery { delegate.search("query1", 10) } returns results1
+        coEvery { delegate.search("query2", 10) } returns results2
         
         cachedEngine.search("query1", 10)
         cachedEngine.search("query2", 10)
@@ -202,8 +202,8 @@ class CachedLuceneSearchEngineTest {
         val options1 = SearchOptions(query = "test", phraseSearch = true, fuzzySearch = false)
         val options2 = SearchOptions(query = "test", phraseSearch = false, fuzzySearch = true)
         
-        every { runBlocking { delegate.search(options1) } } returns results
-        every { runBlocking { delegate.search(options2) } } returns results
+        coEvery { delegate.search(options1) } returns results
+        coEvery { delegate.search(options2) } returns results
         
         cachedEngine.search(options1)
         cachedEngine.search(options2)
@@ -221,17 +221,17 @@ class CachedLuceneSearchEngineTest {
         
         val results = listOf(SearchResult(fragment, 0.9f))
         
-        every { runBlocking { delegate.search("test", 10) } } returns results
+        coEvery { delegate.search("test", 10) } returns results
         
         cachedEngine.search("test", 10)
         cachedEngine.invalidateSearchCache()
         
-        every { runBlocking { delegate.search("test", 10) } } returns results
+        coEvery { delegate.search("test", 10) } returns results
         
         val result = cachedEngine.search("test", 10)
         
         assertEquals(1, result.size)
-        verify(atLeast = 2) { runBlocking { delegate.search("test", 10) } }
+        coVerify(atLeast = 2) { delegate.search("test", 10) }
     }
     
     private fun createTestFragment(

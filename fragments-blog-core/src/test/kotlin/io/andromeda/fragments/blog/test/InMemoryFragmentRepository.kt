@@ -229,4 +229,16 @@ class InMemoryFragmentRepository : FragmentRepository {
             config = config
         )
     }
+
+    override suspend fun createRevision(slug: String, changedBy: String?, reason: String?): Result<io.andromeda.fragments.FragmentRevision> {
+        return Result.failure(UnsupportedOperationException("Not implemented in memory"))
+    }
+
+    override suspend fun getFragmentRevisions(slug: String): List<io.andromeda.fragments.FragmentRevision> {
+        return emptyList()
+    }
+
+    override suspend fun revertToRevision(slug: String, revisionId: String, changedBy: String?, reason: String?): Result<Fragment> {
+        return Result.failure(UnsupportedOperationException("Not implemented in memory"))
+    }
 }

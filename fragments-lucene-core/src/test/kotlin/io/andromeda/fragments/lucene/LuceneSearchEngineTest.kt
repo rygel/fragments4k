@@ -131,9 +131,13 @@ class LuceneSearchEngineTest {
         override suspend fun getByStatus(status: io.andromeda.fragments.FragmentStatus): List<Fragment> = fragments.filter { it.status == status }
         override suspend fun getByAuthor(authorId: String): List<Fragment> = fragments.filter { it.author == authorId || it.authorIds.contains(authorId) }
         override suspend fun getByAuthors(authorIds: List<String>): List<Fragment> = fragments.filter { fragment -> authorIds.any { fragment.author == it || fragment.authorIds.contains(it) } }
-        override suspend fun updateFragmentStatus(slug: String, status: io.andromeda.fragments.FragmentStatus, force: Boolean, changedBy: String?, reason: String?): Result<Fragment> = Result.success(fragments.find { it.slug == slug } ?: Result.failure(IllegalArgumentException("Fragment not found")))
+        override suspend fun updateFragmentStatus(slug: String, status: io.andromeda.fragments.FragmentStatus, force: Boolean, changedBy: String?, reason: String?): Result<Fragment> {
+            val f = fragments.find { it.slug == slug }
+            return if (f != null) Result.success(f) else Result.failure(IllegalArgumentException("Fragment not found"))
+        }
         override suspend fun updateMultipleFragmentsStatus(slugs: List<String>, status: io.andromeda.fragments.FragmentStatus, force: Boolean, changedBy: String?, reason: String?): List<Result<Fragment>> = slugs.map { updateFragmentStatus(it, status, force, changedBy, reason) }
         override suspend fun publishMultiple(slugs: List<String>, changedBy: String?, reason: String?): List<Result<Fragment>> = slugs.map { updateFragmentStatus(it, FragmentStatus.PUBLISHED, false, changedBy, reason) }
+        override suspend fun unpublishMultiple(slugs: List<String>, changedBy: String?, reason: String?): List<Result<Fragment>> = slugs.map { updateFragmentStatus(it, FragmentStatus.DRAFT, false, changedBy, reason) }
         override suspend fun archiveMultiple(slugs: List<String>, changedBy: String?, reason: String?): List<Result<Fragment>> = slugs.map { updateFragmentStatus(it, FragmentStatus.ARCHIVED, false, changedBy, reason) }
         override suspend fun getScheduledFragmentsDueForPublication(threshold: LocalDateTime): List<Fragment> = emptyList()
         override suspend fun publishScheduledFragments(threshold: LocalDateTime): List<Result<Fragment>> = emptyList()
@@ -142,5 +146,9 @@ class LuceneSearchEngineTest {
         override suspend fun getFragmentsExpiringSoon(threshold: LocalDateTime): List<Fragment> = emptyList()
         override suspend fun reload() {}
         override suspend fun getRelationships(slug: String, config: io.andromeda.fragments.RelationshipConfig): io.andromeda.fragments.ContentRelationships? = null
+        
+        override suspend fun createRevision(slug: String, changedBy: String?, reason: String?): Result<io.andromeda.fragments.FragmentRevision> = Result.failure(UnsupportedOperationException())
+        override suspend fun getFragmentRevisions(slug: String): List<io.andromeda.fragments.FragmentRevision> = emptyList()
+        override suspend fun revertToRevision(slug: String, revisionId: String, changedBy: String?, reason: String?): Result<Fragment> = Result.failure(UnsupportedOperationException())
     }
 }

@@ -321,6 +321,7 @@ This is test content.
             content = "Content for $title",
             preview = "Preview for $title",
             date = LocalDateTime.now(),
+            publishDate = LocalDateTime.now(),
             frontMatter = emptyMap(),
             visible = true,
             template = "blog_post"
@@ -352,6 +353,27 @@ class InMemoryFragmentRepository : FragmentRepository {
 
     override suspend fun getByCategory(category: String): List<Fragment> =
         fragments.filter { it.categories.contains(category) }
+
+    override suspend fun getByStatus(status: io.andromeda.fragments.FragmentStatus): List<Fragment> = fragments.filter { it.status == status }
+    override suspend fun getByAuthor(authorId: String): List<Fragment> = fragments.filter { it.author == authorId || it.authorIds.contains(authorId) }
+    override suspend fun getByAuthors(authorIds: List<String>): List<Fragment> = fragments.filter { fragment -> authorIds.any { fragment.author == it || fragment.authorIds.contains(it) } }
+    override suspend fun updateFragmentStatus(slug: String, status: io.andromeda.fragments.FragmentStatus, force: Boolean, changedBy: String?, reason: String?): Result<Fragment> {
+        val f = fragments.find { it.slug == slug }
+        return if (f != null) Result.success(f) else Result.failure(IllegalArgumentException("Fragment not found"))
+    }
+    override suspend fun updateMultipleFragmentsStatus(slugs: List<String>, status: io.andromeda.fragments.FragmentStatus, force: Boolean, changedBy: String?, reason: String?): List<Result<Fragment>> = slugs.map { updateFragmentStatus(it, status, force, changedBy, reason) }
+    override suspend fun publishMultiple(slugs: List<String>, changedBy: String?, reason: String?): List<Result<Fragment>> = slugs.map { updateFragmentStatus(it, io.andromeda.fragments.FragmentStatus.PUBLISHED, false, changedBy, reason) }
+    override suspend fun unpublishMultiple(slugs: List<String>, changedBy: String?, reason: String?): List<Result<Fragment>> = slugs.map { updateFragmentStatus(it, io.andromeda.fragments.FragmentStatus.DRAFT, false, changedBy, reason) }
+    override suspend fun archiveMultiple(slugs: List<String>, changedBy: String?, reason: String?): List<Result<Fragment>> = slugs.map { updateFragmentStatus(it, io.andromeda.fragments.FragmentStatus.ARCHIVED, false, changedBy, reason) }
+    override suspend fun getScheduledFragmentsDueForPublication(threshold: LocalDateTime): List<Fragment> = emptyList()
+    override suspend fun publishScheduledFragments(threshold: LocalDateTime): List<Result<Fragment>> = emptyList()
+    override suspend fun scheduleMultiple(slugs: List<String>, publishDate: LocalDateTime, changedBy: String?, reason: String?): List<Result<Fragment>> = emptyList()
+    override suspend fun expireFragments(threshold: LocalDateTime): List<Result<Fragment>> = emptyList()
+    override suspend fun getFragmentsExpiringSoon(threshold: LocalDateTime): List<Fragment> = emptyList()
+    override suspend fun getRelationships(slug: String, config: io.andromeda.fragments.RelationshipConfig): io.andromeda.fragments.ContentRelationships? = null
+    override suspend fun createRevision(slug: String, changedBy: String?, reason: String?): Result<io.andromeda.fragments.FragmentRevision> = Result.failure(UnsupportedOperationException())
+    override suspend fun getFragmentRevisions(slug: String): List<io.andromeda.fragments.FragmentRevision> = emptyList()
+    override suspend fun revertToRevision(slug: String, revisionId: String, changedBy: String?, reason: String?): Result<Fragment> = Result.failure(UnsupportedOperationException())
 
     override suspend fun reload() {
         // Do nothing for in-memory repository
@@ -401,4 +423,22 @@ class ErrorFragmentRepository : FragmentRepository {
     override suspend fun reload() {
         throw RuntimeException("Simulated repository error")
     }
+
+    override suspend fun getByStatus(status: io.andromeda.fragments.FragmentStatus): List<Fragment> { throw RuntimeException("Simulated repository error") }
+    override suspend fun getByAuthor(authorId: String): List<Fragment> { throw RuntimeException("Simulated repository error") }
+    override suspend fun getByAuthors(authorIds: List<String>): List<Fragment> { throw RuntimeException("Simulated repository error") }
+    override suspend fun updateFragmentStatus(slug: String, status: io.andromeda.fragments.FragmentStatus, force: Boolean, changedBy: String?, reason: String?): Result<Fragment> { throw RuntimeException("Simulated repository error") }
+    override suspend fun updateMultipleFragmentsStatus(slugs: List<String>, status: io.andromeda.fragments.FragmentStatus, force: Boolean, changedBy: String?, reason: String?): List<Result<Fragment>> { throw RuntimeException("Simulated repository error") }
+    override suspend fun publishMultiple(slugs: List<String>, changedBy: String?, reason: String?): List<Result<Fragment>> { throw RuntimeException("Simulated repository error") }
+    override suspend fun unpublishMultiple(slugs: List<String>, changedBy: String?, reason: String?): List<Result<Fragment>> { throw RuntimeException("Simulated repository error") }
+    override suspend fun archiveMultiple(slugs: List<String>, changedBy: String?, reason: String?): List<Result<Fragment>> { throw RuntimeException("Simulated repository error") }
+    override suspend fun getScheduledFragmentsDueForPublication(threshold: LocalDateTime): List<Fragment> { throw RuntimeException("Simulated repository error") }
+    override suspend fun publishScheduledFragments(threshold: LocalDateTime): List<Result<Fragment>> { throw RuntimeException("Simulated repository error") }
+    override suspend fun scheduleMultiple(slugs: List<String>, publishDate: LocalDateTime, changedBy: String?, reason: String?): List<Result<Fragment>> { throw RuntimeException("Simulated repository error") }
+    override suspend fun expireFragments(threshold: LocalDateTime): List<Result<Fragment>> { throw RuntimeException("Simulated repository error") }
+    override suspend fun getFragmentsExpiringSoon(threshold: LocalDateTime): List<Fragment> { throw RuntimeException("Simulated repository error") }
+    override suspend fun getRelationships(slug: String, config: io.andromeda.fragments.RelationshipConfig): io.andromeda.fragments.ContentRelationships? { throw RuntimeException("Simulated repository error") }
+    override suspend fun createRevision(slug: String, changedBy: String?, reason: String?): Result<io.andromeda.fragments.FragmentRevision> { throw RuntimeException("Simulated repository error") }
+    override suspend fun getFragmentRevisions(slug: String): List<io.andromeda.fragments.FragmentRevision> { throw RuntimeException("Simulated repository error") }
+    override suspend fun revertToRevision(slug: String, revisionId: String, changedBy: String?, reason: String?): Result<Fragment> { throw RuntimeException("Simulated repository error") }
 }

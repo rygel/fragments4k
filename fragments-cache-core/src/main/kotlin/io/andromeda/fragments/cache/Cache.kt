@@ -173,14 +173,14 @@ class InMemoryCache<K, V>(
     private val logger = LoggerFactory.getLogger(InMemoryCache::class.java)
     private val store = ConcurrentHashMap<K, CacheEntry<V>>()
     private val mutex = Mutex()
-    private val statistics = CacheStatistics()
+    private var statistics = CacheStatistics()
     
     override suspend fun get(key: K): V? {
         return mutex.withLock {
             val entry = store[key]
             if (entry != null && !entry.isExpired()) {
                 if (configuration.recordStats) {
-                    statistics.hit()
+                    statistics = statistics.hit()
                     logger.debug("Cache hit for key: $key")
                 }
                 entry.value
@@ -190,7 +190,7 @@ class InMemoryCache<K, V>(
                     store.remove(key)
                 }
                 if (configuration.recordStats) {
-                    statistics.miss()
+                    statistics = statistics.miss()
                     logger.debug("Cache miss for key: $key")
                 }
                 null
@@ -208,7 +208,7 @@ class InMemoryCache<K, V>(
             val entry = store[key]
             if (entry != null && !entry.isExpired()) {
                 if (configuration.recordStats) {
-                    statistics.hit()
+                    statistics = statistics.hit()
                 }
                 entry.value
             } else {
@@ -224,14 +224,14 @@ class InMemoryCache<K, V>(
                     putEntry(key, value)
                     
                     if (configuration.recordStats) {
-                        statistics.load(endTime - startTime)
+                        statistics = statistics.load(endTime - startTime)
                         logger.debug("Cache compute and load for key: $key in ${endTime - startTime}ns")
                     }
                     
                     value
                 } catch (e: Exception) {
                     if (configuration.recordStats) {
-                        statistics.loadFailure()
+                        statistics = statistics.loadFailure()
                         logger.error("Cache load failure for key: $key", e)
                     }
                     throw e
@@ -280,7 +280,7 @@ class InMemoryCache<K, V>(
     override fun getStatistics(): CacheStatistics = statistics
     
     override fun resetStatistics() {
-        statistics.reset()
+        statistics = statistics.reset()
         logger.debug("Cache statistics reset")
     }
     
@@ -317,7 +317,7 @@ class InMemoryCache<K, V>(
                 if (keyToRemove != null) {
                     store.remove(keyToRemove)
                     if (configuration.recordStats) {
-                        statistics.eviction()
+                        statistics = statistics.eviction()
                     }
                     logger.debug("Cache eviction for key: $keyToRemove (max size reached)")
                 }
