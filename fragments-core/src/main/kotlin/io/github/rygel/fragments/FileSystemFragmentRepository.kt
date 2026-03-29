@@ -28,9 +28,12 @@ import java.time.format.DateTimeFormatter
  * in [Fragment.frontMatter] and accessible from templates.
  *
  * @param basePath Absolute path to the directory containing the Markdown content files.
- * @param baseUrl URL prefix for all fragments in this repository (e.g. `/projects`).
- *   Combined with each fragment's slug it forms the canonical URL. Leave empty for
- *   repositories whose fragments are routed individually (e.g. `/about`).
+ * @param urlBuilder Function that computes the canonical URL for each fragment in this
+ *   repository. Receives the fully constructed [Fragment] and returns its URL string.
+ *   Defaults to `"/slug"` when not provided. Example for a blog repository:
+ *   ```kotlin
+ *   urlBuilder = { f -> "/blog/${f.date!!.year}/${f.date.monthValue.toString().padStart(2,'0')}/${f.slug}" }
+ *   ```
  * @param extension File extension to scan for; defaults to `.md`.
  * @param revisionRepository Storage backend for revision snapshots; defaults to a
  *   [FileSystemFragmentRevisionRepository] rooted at [basePath].
@@ -46,7 +49,7 @@ import java.time.format.DateTimeFormatter
  */
 class FileSystemFragmentRepository(
     private val basePath: String,
-    val baseUrl: String = "",
+    private val urlBuilder: ((Fragment) -> String)? = null,
     private val extension: String = ".md",
     private val revisionRepository: FragmentRevisionRepository = FileSystemFragmentRevisionRepository(basePath),
     private val parser: MarkdownParser = MarkdownParser(),
@@ -271,10 +274,9 @@ class FileSystemFragmentRepository(
         val seriesPart = frontMatter["seriesPart"]?.toString()?.toIntOrNull()
         val seriesTitle = frontMatter["seriesTitle"]?.toString()
 
-        return Fragment(
+        val fragment = Fragment(
             title = title,
             slug = slug,
-            baseUrl = baseUrl,
             status = status,
             date = date,
             publishDate = publishDate,
@@ -296,6 +298,7 @@ class FileSystemFragmentRepository(
             seriesPart = seriesPart,
             seriesTitle = seriesTitle
         )
+        return if (urlBuilder != null) fragment.copy(url = urlBuilder.invoke(fragment)) else fragment
     }
 
     private fun generateSlug(name: String): String {
