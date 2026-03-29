@@ -125,6 +125,9 @@ enum class FragmentStatus {
  * @property author Legacy single-author field (plain name or ID string).
  * @property authorIds Preferred multi-author list; takes precedence over [author].
  * @property statusChangeHistory Ordered audit trail of [StatusChangeHistory] entries.
+ * @property baseUrl The URL prefix assigned by the repository that owns this fragment
+ *   (e.g. `/projects`). Combined with [slug] it forms the canonical path
+ *   `/projects/ai-usage-tracker`. Empty string when the repository has no prefix.
  * @property seriesSlug Slug of the [ContentSeries] this fragment belongs to, if any.
  * @property seriesPart Position within the series (1-based).
  * @property seriesTitle Optional display title for this part (overrides "Part N").
@@ -132,6 +135,7 @@ enum class FragmentStatus {
 data class Fragment(
     val title: String,
     val slug: String,
+    val baseUrl: String = "",
     val status: FragmentStatus = FragmentStatus.PUBLISHED,
     val date: LocalDateTime?,
     val publishDate: LocalDateTime?,
@@ -153,6 +157,10 @@ data class Fragment(
     val seriesPart: Int? = null,
     val seriesTitle: String? = null
 ) {
+    /** Canonical URL for this fragment: [baseUrl]/[slug], or /[slug] when [baseUrl] is empty. */
+    val url: String
+        get() = if (baseUrl.isNotEmpty()) "$baseUrl/$slug" else "/$slug"
+
     /** `true` if the content contains a `<!--more-->` read-more split marker. */
     val hasMoreTag: Boolean
         get() = content.contains("<!--more-->", ignoreCase = true) ||
@@ -211,5 +219,5 @@ data class Fragment(
         get() = seriesSlug != null && seriesPart != null
 
     val seriesPartTitle: String?
-        get() = seriesTitle?.takeIf { it.isNotEmpty() } ?: "Part $seriesPart"
+        get() = seriesTitle?.takeIf { it.isNotEmpty() } ?: seriesPart?.let { "Part $it" }
 }

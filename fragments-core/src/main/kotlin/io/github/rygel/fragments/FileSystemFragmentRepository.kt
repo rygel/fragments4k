@@ -11,6 +11,7 @@ import org.yaml.snakeyaml.Yaml
 import java.io.File
 import java.io.FileNotFoundException
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
 /**
@@ -27,6 +28,9 @@ import java.time.format.DateTimeFormatter
  * in [Fragment.frontMatter] and accessible from templates.
  *
  * @param basePath Absolute path to the directory containing the Markdown content files.
+ * @param baseUrl URL prefix for all fragments in this repository (e.g. `/projects`).
+ *   Combined with each fragment's slug it forms the canonical URL. Leave empty for
+ *   repositories whose fragments are routed individually (e.g. `/about`).
  * @param extension File extension to scan for; defaults to `.md`.
  * @param revisionRepository Storage backend for revision snapshots; defaults to a
  *   [FileSystemFragmentRevisionRepository] rooted at [basePath].
@@ -42,6 +46,7 @@ import java.time.format.DateTimeFormatter
  */
 class FileSystemFragmentRepository(
     private val basePath: String,
+    val baseUrl: String = "",
     private val extension: String = ".md",
     private val revisionRepository: FragmentRevisionRepository = FileSystemFragmentRevisionRepository(basePath),
     private val parser: MarkdownParser = MarkdownParser(),
@@ -185,15 +190,14 @@ class FileSystemFragmentRepository(
     override suspend fun reload() {
         withContext(Dispatchers.IO) {
             cachedFragments = loadFragmentsFromDisk()
-            lastLoaded = LocalDateTime.now()
+            lastLoaded = LocalDateTime.now(ZoneOffset.UTC)
         }
     }
 
     private fun getFragmentFile(slug: String): File? {
-        val files = File(basePath).listFiles { file -> file.extension == extension.removePrefix(".") }
-            ?: return null
-
-        return files.find { file -> file.nameWithoutExtension == slug }
+        return File(basePath).walkTopDown()
+            .filter { it.isFile && it.extension == extension.removePrefix(".") }
+            .find { it.nameWithoutExtension == slug }
     }
 
     private fun cacheUpdatedFragment(fragment: Fragment) {
@@ -253,12 +257,8 @@ class FileSystemFragmentRepository(
         val template = frontMatter["template"]?.toString() ?: "default"
         val preview = frontMatter["preview"]?.toString() ?: extractPreview(parsed.content)
         val order = frontMatter["order"]?.toString()?.toIntOrNull() ?: 0
-        val publishDate = frontMatter["publishDate"]?.toString()?.let {
-            LocalDateTime.parse(it)
-        }
-        val expiryDate = frontMatter["expiryDate"]?.toString()?.let {
-            LocalDateTime.parse(it)
-        }
+        val publishDate = MarkdownParser.parseDate(frontMatter["publishDate"])
+        val expiryDate = MarkdownParser.parseDate(frontMatter["expiryDate"])
 
         val categories = parseStringList(frontMatter["categories"])
         val tags = parseStringList(frontMatter["tags"])
@@ -274,6 +274,7 @@ class FileSystemFragmentRepository(
         return Fragment(
             title = title,
             slug = slug,
+            baseUrl = baseUrl,
             status = status,
             date = date,
             publishDate = publishDate,
@@ -510,23 +511,27 @@ class FileSystemFragmentRepository(
     }
 
     private fun dumpFrontMatter(frontMatter: Map<String, Any>, output: StringBuilder) {
-        val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
         frontMatter.forEach { (key, value) ->
             when (value) {
-                is String -> output.append("$key: \"$value\"\n")
-                is Boolean -> output.append("$key: ${if (value) "true" else "false"}\n")
+                is String -> output.append("$key: \"${value.yamlEscape()}\"\n")
+                is Boolean -> output.append("$key: $value\n")
                 is Number -> output.append("$key: $value\n")
                 is List<*> -> {
                     output.append("$key:\n")
                     value.forEach { item ->
-                        output.append("  - \"$item\"\n")
+                        output.append("  - \"${item?.toString().orEmpty().yamlEscape()}\"\n")
                     }
                 }
                 is LocalDateTime -> output.append("$key: \"$value\"\n")
-                else -> output.append("$key: \"$value\"\n")
+                else -> output.append("$key: \"${value.toString().yamlEscape()}\"\n")
             }
         }
     }
+
+    /** Escapes characters that would produce invalid YAML inside a double-quoted scalar. */
+    private fun String.yamlEscape(): String = this
+        .replace("\\", "\\\\")
+        .replace("\"", "\\\"")
 
     override suspend fun getRelationships(slug: String, config: io.github.rygel.fragments.RelationshipConfig): ContentRelationships? {
         return withContext(Dispatchers.IO) {
