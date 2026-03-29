@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.github.rygel</groupId>
         <artifactId>fragments-parent</artifactId>
-        <version>0.6.0-SNAPSHOT</version>
+        <version>0.6.1</version>
     </parent>
 
     <artifactId>fragments-social-core</artifactId>
