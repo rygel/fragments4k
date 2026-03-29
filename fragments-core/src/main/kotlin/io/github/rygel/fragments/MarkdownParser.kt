@@ -8,31 +8,71 @@ import com.vladsch.flexmark.ext.tables.TablesExtension
 import com.vladsch.flexmark.html.HtmlRenderer
 import com.vladsch.flexmark.parser.Parser
 import com.vladsch.flexmark.util.data.MutableDataSet
+import com.vladsch.flexmark.util.misc.Extension
 import org.yaml.snakeyaml.Yaml
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-class MarkdownParser {
+/**
+ * Parses Markdown files that contain an optional YAML front matter block.
+ *
+ * Supported Markdown extensions: tables, strikethrough, task lists, auto-links,
+ * and footnotes (via flexmark-all). Additional flexmark extensions (e.g.
+ * `ChatExtension` from `fragments-chat-core`) can be injected via [extraExtensions].
+ *
+ * Front matter must be a YAML block delimited by `---` at the very start of the file:
+ * ```
+ * ---
+ * title: "My Post"
+ * date: 2024-01-15
+ * tags: [kotlin, jvm]
+ * ---
+ * Regular Markdown content here.
+ * ```
+ *
+ * Use [parse] to get a [ParsedContent] with the separated front matter and rendered HTML.
+ * Use the [parseDate] companion function to normalise date values from YAML to [java.time.LocalDateTime].
+ *
+ * @param extraExtensions Additional flexmark [Extension] instances appended to the
+ *   default set. Pass extensions here rather than constructing a separate parser
+ *   so that the YAML front matter stripping and caching logic is shared.
+ */
+class MarkdownParser(extraExtensions: List<Extension> = emptyList()) {
     private val options = MutableDataSet().apply {
-        set(Parser.EXTENSIONS, listOf(
-            TablesExtension.create(),
-            StrikethroughExtension.create(),
-            TaskListExtension.create(),
-            AutolinkExtension.create(),
-            FootnoteExtension.create(),
-        ))
+        set(
+            Parser.EXTENSIONS,
+            listOf(
+                TablesExtension.create(),
+                StrikethroughExtension.create(),
+                TaskListExtension.create(),
+                AutolinkExtension.create(),
+                FootnoteExtension.create(),
+            ) + extraExtensions,
+        )
     }
     private val parser = Parser.builder(options).build()
     private val renderer = HtmlRenderer.builder(options).build()
     private val yaml = Yaml()
 
+    /**
+     * The result of parsing a Markdown file.
+     *
+     * @property frontMatter Raw key/value map extracted from the YAML front matter block.
+     *   Empty map when no front matter is present.
+     * @property content Raw Markdown body (front matter stripped).
+     * @property htmlContent [content] rendered to HTML.
+     */
     data class ParsedContent(
         val frontMatter: Map<String, Any>,
         val content: String,
         val htmlContent: String
     )
 
+    /**
+     * Parses [markdown] into a [ParsedContent], separating front matter from body
+     * and converting the body to HTML.
+     */
     fun parse(markdown: String): ParsedContent {
         val frontMatterPattern = Regex("^---\\s*\\n(.*?)\\n---\\s*\\n", RegexOption.DOT_MATCHES_ALL)
         val match = frontMatterPattern.find(markdown)
@@ -65,6 +105,17 @@ class MarkdownParser {
         
         private val DATE_ONLY_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
+        /**
+         * Converts a raw YAML date value to [LocalDateTime].
+         *
+         * Handles all common representations produced by SnakeYAML:
+         * - [java.time.LocalDateTime] / [java.time.LocalDate] — passed through directly.
+         * - [java.util.Date] — converted via the system default time zone.
+         * - [String] — tried against `yyyy-MM-dd'T'HH:mm`, `yyyy-MM-dd HH:mm`,
+         *   and `yyyy-MM-dd` (midnight) in that order.
+         *
+         * Returns `null` for unrecognised types or unparseable strings.
+         */
         fun parseDate(dateValue: Any?): LocalDateTime? {
             return when (dateValue) {
                 is java.time.LocalDateTime -> dateValue

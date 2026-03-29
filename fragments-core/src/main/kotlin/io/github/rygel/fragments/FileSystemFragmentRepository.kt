@@ -13,14 +13,41 @@ import java.io.FileNotFoundException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
+/**
+ * File-system backed implementation of [FragmentRepository].
+ *
+ * On first access, all Markdown files under [basePath] (including subdirectories)
+ * are parsed and cached in memory. The cache is invalidated by calling [reload]
+ * (e.g. from [io.github.rygel.fragments.livereload.LiveReloadManager]).
+ * Status-mutating operations (publish, archive, etc.) write changes back to the
+ * source `.md` file immediately and update the in-memory cache entry.
+ *
+ * File format: standard Markdown with a YAML front matter block delimited by `---`.
+ * Any front matter field not explicitly mapped to a [Fragment] property is retained
+ * in [Fragment.frontMatter] and accessible from templates.
+ *
+ * @param basePath Absolute path to the directory containing the Markdown content files.
+ * @param extension File extension to scan for; defaults to `.md`.
+ * @param revisionRepository Storage backend for revision snapshots; defaults to a
+ *   [FileSystemFragmentRevisionRepository] rooted at [basePath].
+ * @param parser [MarkdownParser] instance used to convert `.md` files to [Fragment] objects.
+ *   Override this to inject additional flexmark extensions (e.g. `ChatExtension` from
+ *   `fragments-chat-core`):
+ *   ```kotlin
+ *   FileSystemFragmentRepository(
+ *       basePath = "/content",
+ *       parser = MarkdownParser(extraExtensions = listOf(ChatExtension.create())),
+ *   )
+ *   ```
+ */
 class FileSystemFragmentRepository(
     private val basePath: String,
     private val extension: String = ".md",
-    private val revisionRepository: FragmentRevisionRepository = FileSystemFragmentRevisionRepository(basePath)
+    private val revisionRepository: FragmentRevisionRepository = FileSystemFragmentRevisionRepository(basePath),
+    private val parser: MarkdownParser = MarkdownParser(),
 ) : FragmentRepository {
 
     private val logger = LoggerFactory.getLogger(FileSystemFragmentRepository::class.java)
-    private val parser = MarkdownParser()
     private var cachedFragments: List<Fragment> = emptyList()
     private var lastLoaded: LocalDateTime = LocalDateTime.MIN
 
@@ -191,7 +218,9 @@ class FileSystemFragmentRepository(
             return emptyList()
         }
 
-        val files = directory.listFiles { file -> file.extension == extension.removePrefix(".") } ?: return emptyList()
+        val files = directory.walkTopDown()
+            .filter { it.isFile && it.extension == extension.removePrefix(".") }
+            .toList()
 
         return files.mapNotNull { file ->
             try {

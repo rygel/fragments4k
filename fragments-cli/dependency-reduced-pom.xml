@@ -3,7 +3,7 @@
   <parent>
     <artifactId>fragments-parent</artifactId>
     <groupId>io.github.rygel</groupId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>0.6.1</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>fragments-cli</artifactId>
