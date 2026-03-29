@@ -1,4 +1,4 @@
-package io.andromeda.fragments.image
+package io.github.rygel.fragments.image
 
 import java.io.InputStream
 

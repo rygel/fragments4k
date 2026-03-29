@@ -1,8 +1,8 @@
-package io.andromeda.fragments.blog.test
+package io.github.rygel.fragments.blog.test
 
-import io.andromeda.fragments.*
-import io.andromeda.fragments.blog.BlogEngine
-import io.andromeda.fragments.test.InMemoryFragmentRepository
+import io.github.rygel.fragments.*
+import io.github.rygel.fragments.blog.BlogEngine
+import io.github.rygel.fragments.test.InMemoryFragmentRepository
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*

@@ -1,6 +1,6 @@
-package io.andromeda.fragments.cache
+package io.github.rygel.fragments.cache
 
-import io.andromeda.fragments.*
+import io.github.rygel.fragments.*
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
 import org.slf4j.LoggerFactory

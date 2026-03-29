@@ -1,4 +1,4 @@
-package io.andromeda.fragments.cache
+package io.github.rygel.fragments.cache
 
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock

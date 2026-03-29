@@ -1,4 +1,4 @@
-package io.andromeda.fragments
+package io.github.rygel.fragments
 
 data class TableOfContentsItem(
     val level: Int,

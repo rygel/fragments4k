@@ -1,7 +1,7 @@
-package io.andromeda.fragments.cache
+package io.github.rygel.fragments.cache
 
-import io.andromeda.fragments.ContentRelationships
-import io.andromeda.fragments.Fragment
+import io.github.rygel.fragments.ContentRelationships
+import io.github.rygel.fragments.Fragment
 import org.slf4j.LoggerFactory
 import java.time.Duration
 
@@ -65,7 +65,7 @@ class FragmentCache(
     )
     
     // Search result cache
-    private val searchResultCache = InMemoryCache<String, List<io.andromeda.fragments.Fragment>>(
+    private val searchResultCache = InMemoryCache<String, List<io.github.rygel.fragments.Fragment>>(
         CacheConfiguration(ttl = Duration.ofMinutes(5), maxSize = 500, recordStats = true)
     )
     
@@ -221,14 +221,14 @@ class FragmentCache(
     /**
      * Get search results from cache
      */
-    suspend fun getSearchResults(cacheKey: String): List<io.andromeda.fragments.Fragment>? {
+    suspend fun getSearchResults(cacheKey: String): List<io.github.rygel.fragments.Fragment>? {
         return searchResultCache.get("search:$cacheKey")
     }
     
     /**
      * Cache search results
      */
-    suspend fun putSearchResults(cacheKey: String, results: List<io.andromeda.fragments.Fragment>) {
+    suspend fun putSearchResults(cacheKey: String, results: List<io.github.rygel.fragments.Fragment>) {
         searchResultCache.put("search:$cacheKey", results)
     }
     

@@ -1,5 +1,10 @@
-package io.andromeda.fragments
+package io.github.rygel.fragments
 
+import com.vladsch.flexmark.ext.autolink.AutolinkExtension
+import com.vladsch.flexmark.ext.footnotes.FootnoteExtension
+import com.vladsch.flexmark.ext.gfm.strikethrough.StrikethroughExtension
+import com.vladsch.flexmark.ext.gfm.tasklist.TaskListExtension
+import com.vladsch.flexmark.ext.tables.TablesExtension
 import com.vladsch.flexmark.html.HtmlRenderer
 import com.vladsch.flexmark.parser.Parser
 import com.vladsch.flexmark.util.data.MutableDataSet
@@ -9,7 +14,15 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 class MarkdownParser {
-    private val options = MutableDataSet()
+    private val options = MutableDataSet().apply {
+        set(Parser.EXTENSIONS, listOf(
+            TablesExtension.create(),
+            StrikethroughExtension.create(),
+            TaskListExtension.create(),
+            AutolinkExtension.create(),
+            FootnoteExtension.create(),
+        ))
+    }
     private val parser = Parser.builder(options).build()
     private val renderer = HtmlRenderer.builder(options).build()
     private val yaml = Yaml()

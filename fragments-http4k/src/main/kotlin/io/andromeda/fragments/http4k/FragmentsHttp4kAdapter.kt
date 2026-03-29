@@ -1,11 +1,11 @@
-package io.andromeda.fragments.http4k
+package io.github.rygel.fragments.http4k
 
-import io.andromeda.fragments.*
-import io.andromeda.fragments.blog.BlogEngine
-import io.andromeda.fragments.lucene.LuceneSearchEngine
-import io.andromeda.fragments.rss.RssGenerator
-import io.andromeda.fragments.sitemap.SitemapGenerator
-import io.andromeda.fragments.static.StaticPageEngine
+import io.github.rygel.fragments.*
+import io.github.rygel.fragments.blog.BlogEngine
+import io.github.rygel.fragments.lucene.LuceneSearchEngine
+import io.github.rygel.fragments.rss.RssGenerator
+import io.github.rygel.fragments.sitemap.SitemapGenerator
+import io.github.rygel.fragments.static.StaticPageEngine
 import kotlinx.coroutines.runBlocking
 import org.http4k.core.*
 import org.http4k.core.Method.GET
@@ -33,8 +33,13 @@ class FragmentsHttp4kAdapter(
     private val siteTitle: String = "My Blog",
     private val siteDescription: String = "My Awesome Blog",
     private val siteUrl: String = "http://localhost:8080",
-    private val feedUrl: String = "$siteUrl/rss.xml"
+    private val feedUrl: String = "$siteUrl/rss.xml",
+    private val navigationMenu: List<NavigationLink>? = null,
+    private val footer: FooterConfig? = null
 ) {
+
+    private fun nav() = navigationMenu ?: NavigationMenuGenerator.generateMainMenu()
+    private fun footer() = footer ?: FooterGenerator.generate()
 
     fun createRoutes(): RoutingHttpHandler {
         return routes(
@@ -62,7 +67,7 @@ class FragmentsHttp4kAdapter(
                 totalPages = 1,
                 templateName = "index",
                 isPartialRender = isHtmxRequest(request),
-                navigationMenu = NavigationMenuGenerator.generateMainMenu(),
+                navigationMenu = nav(),
                 pagination = PaginationInfo(
                     currentPage = 1,
                     totalPages = 1,
@@ -70,7 +75,7 @@ class FragmentsHttp4kAdapter(
                     hasNext = false,
                     text = ""
                 ),
-                footer = FooterGenerator.generate()
+                footer = footer()
             )
             renderResponse(viewModel)
         }
@@ -85,13 +90,8 @@ class FragmentsHttp4kAdapter(
                 val viewModel = ContentViewModel(
                     viewModel = fragmentViewModel,
                     templateName = fragment.template,
-                    navigationMenu = NavigationMenuGenerator.generateMainMenu(),
-                    footer = FooterGenerator.generate(
-                        copyrightText = "©",
-                        year = java.time.Year.now().value,
-                        poweredByName = "Fragments4k",
-                        poweredByUrl = "https://github.com/rygel/fragments4k"
-                    )
+                    navigationMenu = nav(),
+                    footer = footer()
                 )
                 renderResponse(viewModel)
             } else {
@@ -112,18 +112,13 @@ class FragmentsHttp4kAdapter(
                 hasPrevious = pageResult.hasPrevious,
                 templateName = "blog_overview",
                 isPartialRender = isHtmxRequest(request),
-                navigationMenu = NavigationMenuGenerator.generateMainMenu(
-                    siteUrl = "/",
-                    blogUrl = "/blog",
-                    archiveUrl = "/blog/archive",
-                    searchUrl = "/search"
-                ),
+                navigationMenu = nav(),
                 pagination = PaginationGenerator.generateSimpleControls(
                     currentPage = pageResult.currentPage,
                     totalPages = pageResult.totalPages,
                     basePath = "/blog"
                 ),
-                footer = FooterGenerator.generate()
+                footer = footer()
             )
             renderResponse(viewModel)
         }
@@ -141,13 +136,8 @@ class FragmentsHttp4kAdapter(
                 val viewModel = ContentViewModel(
                     viewModel = fragmentViewModel,
                     templateName = fragment.template,
-                    navigationMenu = NavigationMenuGenerator.generateMainMenu(),
-                    footer = FooterGenerator.generate(
-                        copyrightText = "©",
-                        year = java.time.Year.now().value,
-                        poweredByName = "Fragments4k",
-                        poweredByUrl = "https://github.com/rygel/fragments4k"
-                    )
+                    navigationMenu = nav(),
+                    footer = footer()
                 )
                 renderResponse(viewModel)
             } else {
@@ -170,18 +160,13 @@ class FragmentsHttp4kAdapter(
                 templateName = "blog_overview",
                 isPartialRender = isHtmxRequest(request),
                 tag = tag,
-                navigationMenu = NavigationMenuGenerator.generateMainMenu(
-                    siteUrl = "/",
-                    blogUrl = "/blog",
-                    archiveUrl = "/blog/archive",
-                    searchUrl = "/search"
-                ),
+                navigationMenu = nav(),
                 pagination = PaginationGenerator.generateSimpleControls(
                     currentPage = pageResult.currentPage,
                     totalPages = pageResult.totalPages,
                     basePath = "/blog"
                 ),
-                footer = FooterGenerator.generate()
+                footer = footer()
             )
             renderResponse(viewModel)
         }
@@ -199,18 +184,13 @@ class FragmentsHttp4kAdapter(
                 hasPrevious = pageResult.hasPrevious,
                 templateName = "blog_overview",
                 isPartialRender = isHtmxRequest(request),
-                navigationMenu = NavigationMenuGenerator.generateMainMenu(
-                    siteUrl = "/",
-                    blogUrl = "/blog",
-                    archiveUrl = "/blog/archive",
-                    searchUrl = "/search"
-                ),
+                navigationMenu = nav(),
                 pagination = PaginationGenerator.generateSimpleControls(
                     currentPage = pageResult.currentPage,
                      totalPages = pageResult.totalPages,
                      basePath = "/blog"
                  ),
-                 footer = FooterGenerator.generate()
+                 footer = footer()
              )
              renderResponse(viewModel)
          }
@@ -247,13 +227,8 @@ class FragmentsHttp4kAdapter(
                 query = query,
                 results = results.map { FragmentViewModel(it.fragment) },
                 siteTitle = siteTitle,
-                navigationMenu = NavigationMenuGenerator.generateMainMenu(
-                    siteUrl = "/",
-                    blogUrl = "/blog",
-                    archiveUrl = "/blog/archive",
-                    searchUrl = null
-                ),
-                footer = FooterGenerator.generate(),
+                navigationMenu = nav(),
+                footer = footer(),
                 searchForm = SearchFormGenerator.generate(
                     actionUrl = "/search",
                     paramName = "q",
@@ -276,13 +251,8 @@ class FragmentsHttp4kAdapter(
                 year = year,
                 fragments = fragments.map { FragmentViewModel(it) },
                 siteTitle = siteTitle,
-                navigationMenu = NavigationMenuGenerator.generateMainMenu(
-                    siteUrl = "/",
-                    blogUrl = "/blog",
-                    archiveUrl = "/blog/archive",
-                    searchUrl = "/search"
-                ),
-                footer = FooterGenerator.generate(),
+                navigationMenu = nav(),
+                footer = footer(),
                 archiveYearLinks = ArchiveNavigationGenerator.generateYearLinks(
                     baseUrl = "/blog/archive",
                     availableYears = emptyList(),
@@ -309,13 +279,8 @@ class FragmentsHttp4kAdapter(
                 month = month,
                 fragments = fragments.map { FragmentViewModel(it) },
                 siteTitle = siteTitle,
-                navigationMenu = NavigationMenuGenerator.generateMainMenu(
-                    siteUrl = "/",
-                    blogUrl = "/blog",
-                    archiveUrl = "/blog/archive",
-                    searchUrl = "/search"
-                ),
-                footer = FooterGenerator.generate(),
+                navigationMenu = nav(),
+                footer = footer(),
                 archiveMonthLinks = ArchiveNavigationGenerator.generateMonthLinks(
                     year = yearInt,
                     currentMonth = monthInt

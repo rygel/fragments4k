@@ -1,11 +1,11 @@
-package io.andromeda.fragments.quarkus
+package io.github.rygel.fragments.quarkus
 
-import io.andromeda.fragments.Fragment
-import io.andromeda.fragments.FragmentViewModel
-import io.andromeda.fragments.blog.BlogEngine
-import io.andromeda.fragments.rss.RssGenerator
-import io.andromeda.fragments.sitemap.SitemapGenerator
-import io.andromeda.fragments.static.StaticPageEngine
+import io.github.rygel.fragments.Fragment
+import io.github.rygel.fragments.FragmentViewModel
+import io.github.rygel.fragments.blog.BlogEngine
+import io.github.rygel.fragments.rss.RssGenerator
+import io.github.rygel.fragments.sitemap.SitemapGenerator
+import io.github.rygel.fragments.static.StaticPageEngine
 import io.quarkus.qute.TemplateInstance
 import jakarta.inject.Inject
 import jakarta.ws.rs.GET

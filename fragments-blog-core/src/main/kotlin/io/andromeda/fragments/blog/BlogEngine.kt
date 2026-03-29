@@ -1,10 +1,10 @@
-package io.andromeda.fragments.blog
+package io.github.rygel.fragments.blog
 
-import io.andromeda.fragments.ContentRelationships
-import io.andromeda.fragments.Fragment
-import io.andromeda.fragments.FragmentRepository
-import io.andromeda.fragments.FragmentStatus
-import io.andromeda.fragments.RelationshipConfig
+import io.github.rygel.fragments.ContentRelationships
+import io.github.rygel.fragments.Fragment
+import io.github.rygel.fragments.FragmentRepository
+import io.github.rygel.fragments.FragmentStatus
+import io.github.rygel.fragments.RelationshipConfig
 
 class BlogEngine(
     private val repository: FragmentRepository,

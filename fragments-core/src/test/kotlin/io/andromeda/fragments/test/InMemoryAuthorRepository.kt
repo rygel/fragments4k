@@ -1,7 +1,7 @@
-package io.andromeda.fragments.test
+package io.github.rygel.fragments.test
 
-import io.andromeda.fragments.Author
-import io.andromeda.fragments.AuthorRepository
+import io.github.rygel.fragments.Author
+import io.github.rygel.fragments.AuthorRepository
 
 class InMemoryAuthorRepository : AuthorRepository {
     private val authors = mutableListOf<Author>()

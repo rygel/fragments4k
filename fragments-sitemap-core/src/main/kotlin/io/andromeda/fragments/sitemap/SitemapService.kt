@@ -1,8 +1,8 @@
-package io.andromeda.fragments.sitemap
+package io.github.rygel.fragments.sitemap
 
-import io.andromeda.fragments.FragmentRepository
-import io.andromeda.fragments.sitemap.SitemapGenerator
-import io.andromeda.fragments.sitemap.SitemapService
+import io.github.rygel.fragments.FragmentRepository
+import io.github.rygel.fragments.sitemap.SitemapGenerator
+import io.github.rygel.fragments.sitemap.SitemapService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory

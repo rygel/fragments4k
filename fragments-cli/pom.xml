@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.andromeda</groupId>
+        <groupId>io.github.rygel</groupId>
         <artifactId>fragments-parent</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
@@ -15,12 +15,8 @@
     <description>Command-line tool for scaffolding Fragments4k projects</description>
 
     <properties>
-        <java.version>17</java.version>
         <kotlin.version>2.0.21</kotlin.version>
         <picocli.version>4.7.7</picocli.version>
-        <maven.compiler.source>${java.version}</maven.compiler.source>
-        <maven.compiler.target>${java.version}</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
     <dependencies>
@@ -60,7 +56,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>io.andromeda.fragments.cli.FragmentsCli</mainClass>
+                            <mainClass>io.github.rygel.fragments.cli.FragmentsCli</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
@@ -77,7 +73,7 @@
                         <configuration>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>io.andromeda.fragments.cli.FragmentsCli</mainClass>
+                                    <mainClass>io.github.rygel.fragments.cli.FragmentsCli</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>

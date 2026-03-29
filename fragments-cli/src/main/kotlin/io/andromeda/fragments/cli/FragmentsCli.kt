@@ -1,4 +1,4 @@
-package io.andromeda.fragments.cli
+package io.github.rygel.fragments.cli
 
 import picocli.CommandLine
 import picocli.CommandLine.Command
@@ -58,10 +58,10 @@ class InitCommand : Runnable {
     
     @Option(
         names = ["-p", "--package"],
-        description = ["Package name (default: io.andromeda.fragments.demo)"],
-        defaultValue = "io.andromeda.fragments.demo"
+        description = ["Package name (default: io.github.rygel.fragments.demo)"],
+        defaultValue = "io.github.rygel.fragments.demo"
     )
-    private var packageName: String = "io.andromeda.fragments.demo"
+    private var packageName: String = "io.github.rygel.fragments.demo"
     
     override fun run() {
         val frameworks = listOf("http4k", "javalin", "spring-boot", "quarkus", "micronaut")

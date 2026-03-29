@@ -1,16 +1,18 @@
-package io.andromeda.fragments.lucene
+package io.github.rygel.fragments.lucene
 
-import io.andromeda.fragments.Fragment
-import io.andromeda.fragments.FragmentRepository
-import io.andromeda.fragments.FragmentStatus
+import io.github.rygel.fragments.Fragment
+import io.github.rygel.fragments.FragmentRepository
+import io.github.rygel.fragments.FragmentStatus
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.time.LocalDateTime
 
+@Tag("integration")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class LuceneSearchEngineTest {
 
@@ -142,9 +144,9 @@ class LuceneSearchEngineTest {
         override suspend fun expireFragments(threshold: LocalDateTime): List<Result<Fragment>> = emptyList()
         override suspend fun getFragmentsExpiringSoon(threshold: LocalDateTime): List<Fragment> = emptyList()
         override suspend fun reload() {}
-        override suspend fun getRelationships(slug: String, config: io.andromeda.fragments.RelationshipConfig): io.andromeda.fragments.ContentRelationships? = null
-        override suspend fun createRevision(slug: String, changedBy: String?, reason: String?): Result<io.andromeda.fragments.FragmentRevision> = Result.failure(UnsupportedOperationException())
-        override suspend fun getFragmentRevisions(slug: String): List<io.andromeda.fragments.FragmentRevision> = emptyList()
+        override suspend fun getRelationships(slug: String, config: io.github.rygel.fragments.RelationshipConfig): io.github.rygel.fragments.ContentRelationships? = null
+        override suspend fun createRevision(slug: String, changedBy: String?, reason: String?): Result<io.github.rygel.fragments.FragmentRevision> = Result.failure(UnsupportedOperationException())
+        override suspend fun getFragmentRevisions(slug: String): List<io.github.rygel.fragments.FragmentRevision> = emptyList()
         override suspend fun revertToRevision(slug: String, revisionId: String, changedBy: String?, reason: String?): Result<Fragment> = Result.failure(UnsupportedOperationException())
     }
 }

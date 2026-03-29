@@ -1,4 +1,4 @@
-package io.andromeda.fragments.cache
+package io.github.rygel.fragments.cache
 
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach

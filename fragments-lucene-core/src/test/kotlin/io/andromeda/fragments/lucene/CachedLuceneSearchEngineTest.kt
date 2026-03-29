@@ -1,8 +1,8 @@
-package io.andromeda.fragments.lucene
+package io.github.rygel.fragments.lucene
 
-import io.andromeda.fragments.Fragment
-import io.andromeda.fragments.FragmentStatus
-import io.andromeda.fragments.cache.FragmentCache
+import io.github.rygel.fragments.Fragment
+import io.github.rygel.fragments.FragmentStatus
+import io.github.rygel.fragments.cache.FragmentCache
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk

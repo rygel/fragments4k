@@ -1,7 +1,7 @@
-package io.andromeda.fragments.rss
+package io.github.rygel.fragments.rss
 
-import io.andromeda.fragments.Fragment
-import io.andromeda.fragments.FragmentRepository
+import io.github.rygel.fragments.Fragment
+import io.github.rygel.fragments.FragmentRepository
 import java.time.format.DateTimeFormatter
 
 class RssGenerator(

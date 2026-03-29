@@ -1,10 +1,10 @@
-package io.andromeda.fragments.sitemap
+package io.github.rygel.fragments.sitemap
 
-import io.andromeda.fragments.Fragment
-import io.andromeda.fragments.FragmentRepository
-import io.andromeda.fragments.sitemap.ChangeFrequency
-import io.andromeda.fragments.sitemap.SitemapImage
-import io.andromeda.fragments.sitemap.SitemapUrl
+import io.github.rygel.fragments.Fragment
+import io.github.rygel.fragments.FragmentRepository
+import io.github.rygel.fragments.sitemap.ChangeFrequency
+import io.github.rygel.fragments.sitemap.SitemapImage
+import io.github.rygel.fragments.sitemap.SitemapUrl
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.Dispatchers

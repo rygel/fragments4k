@@ -1,9 +1,9 @@
-package io.andromeda.fragments.lucene
+package io.github.rygel.fragments.lucene
 
-import io.andromeda.fragments.cache.FragmentCache
-import io.andromeda.fragments.cache.InMemoryCache
-import io.andromeda.fragments.cache.CacheConfiguration
-import io.andromeda.fragments.Fragment
+import io.github.rygel.fragments.cache.FragmentCache
+import io.github.rygel.fragments.cache.InMemoryCache
+import io.github.rygel.fragments.cache.CacheConfiguration
+import io.github.rygel.fragments.Fragment
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory

@@ -1,9 +1,9 @@
-package io.andromeda.fragments.test
+package io.github.rygel.fragments.test
 
-import io.andromeda.fragments.Fragment
-import io.andromeda.fragments.FragmentRevision
-import io.andromeda.fragments.FragmentRevisionRepository
-import io.andromeda.fragments.FragmentStatus
+import io.github.rygel.fragments.Fragment
+import io.github.rygel.fragments.FragmentRevision
+import io.github.rygel.fragments.FragmentRevisionRepository
+import io.github.rygel.fragments.FragmentStatus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.time.LocalDateTime

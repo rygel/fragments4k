@@ -1,6 +1,6 @@
-package io.andromeda.fragments.quarkus
+package io.github.rygel.fragments.quarkus
 
-import io.andromeda.fragments.Fragment
+import io.github.rygel.fragments.Fragment
 import java.time.LocalDateTime
 import org.junit.jupiter.api.Test
 

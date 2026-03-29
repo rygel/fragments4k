@@ -1,4 +1,4 @@
-package io.andromeda.fragments.cli
+package io.github.rygel.fragments.cli
 
 import java.io.File
 import java.nio.file.Files
@@ -172,7 +172,7 @@ object ProjectGenerator {
 
     <dependencies>
         <dependency>
-            <groupId>io.andromeda</groupId>
+            <groupId>io.github.rygel</groupId>
             <artifactId>fragments-$frameworkArtifact</artifactId>
             <version>${'$'}{fragments.version}</version>
         </dependency>
@@ -226,10 +226,10 @@ $frameworkDependency
         
         val content = """package ${packagePath.replace(File.separator, ".")}
 
-import io.andromeda.fragments.FileSystemFragmentRepository
-import io.andromeda.fragments.http4k.FragmentsHttp4kAdapter
-import io.andromeda.fragments.blog.BlogEngine
-import io.andromeda.fragments.static.StaticPageEngine
+import io.github.rygel.fragments.FileSystemFragmentRepository
+import io.github.rygel.fragments.http4k.FragmentsHttp4kAdapter
+import io.github.rygel.fragments.blog.BlogEngine
+import io.github.rygel.fragments.static.StaticPageEngine
 import org.http4k.filter.ServerFilters.CatchAll
 import org.http4k.server.asServer
 import org.http4k.server.netty.Netty
@@ -281,10 +281,10 @@ fun main() {
         
         val content = """package ${packagePath.replace(File.separator, ".")}
 
-import io.andromeda.fragments.FileSystemFragmentRepository
-import io.andromeda.fragments.javalin.fragmentsRoutes
-import io.andromeda.fragments.blog.BlogEngine
-import io.andromeda.fragments.static.StaticPageEngine
+import io.github.rygel.fragments.FileSystemFragmentRepository
+import io.github.rygel.fragments.javalin.fragmentsRoutes
+import io.github.rygel.fragments.blog.BlogEngine
+import io.github.rygel.fragments.static.StaticPageEngine
 import io.javalin.Javalin
 import io.javalin.rendering.template.JavalinPebble
 import org.slf4j.LoggerFactory
@@ -334,10 +334,10 @@ fun main() {
         
         val content = """package ${packagePath.replace(File.separator, ".")}
 
-import io.andromeda.fragments.FileSystemFragmentRepository
-import io.andromeda.fragments.spring.FragmentsSpringController
-import io.andromeda.fragments.blog.BlogEngine
-import io.andromeda.fragments.static.StaticPageEngine
+import io.github.rygel.fragments.FileSystemFragmentRepository
+import io.github.rygel.fragments.spring.FragmentsSpringController
+import io.github.rygel.fragments.blog.BlogEngine
+import io.github.rygel.fragments.static.StaticPageEngine
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.context.annotation.Bean
@@ -356,27 +356,27 @@ class DemoApplication {
     }
     
     @Bean
-    fun fragmentRepository(): io.andromeda.fragments.FileSystemFragmentRepository {
+    fun fragmentRepository(): io.github.rygel.fragments.FileSystemFragmentRepository {
         val fragmentsPath = System.getProperty("fragments.path")
             ?: System.getenv("FRAGMENTS_PATH")
             ?: "./content"
-        return io.andromeda.fragments.FileSystemFragmentRepository(fragmentsPath)
+        return io.github.rygel.fragments.FileSystemFragmentRepository(fragmentsPath)
     }
     
     @Bean
-    fun staticPageEngine(repository: io.andromeda.fragments.FileSystemFragmentRepository): io.andromeda.fragments.static.StaticPageEngine {
-        return io.andromeda.fragments.static.StaticPageEngine(repository)
+    fun staticPageEngine(repository: io.github.rygel.fragments.FileSystemFragmentRepository): io.github.rygel.fragments.static.StaticPageEngine {
+        return io.github.rygel.fragments.static.StaticPageEngine(repository)
     }
     
     @Bean
-    fun blogEngine(repository: io.andromeda.fragments.FileSystemFragmentRepository): io.andromeda.fragments.blog.BlogEngine {
-        return io.andromeda.fragments.blog.BlogEngine(repository)
+    fun blogEngine(repository: io.github.rygel.fragments.FileSystemFragmentRepository): io.github.rygel.fragments.blog.BlogEngine {
+        return io.github.rygel.fragments.blog.BlogEngine(repository)
     }
     
     @Bean
     fun fragmentsController(
-        staticEngine: io.andromeda.fragments.static.StaticPageEngine,
-        blogEngine: io.andromeda.fragments.blog.BlogEngine
+        staticEngine: io.github.rygel.fragments.static.StaticPageEngine,
+        blogEngine: io.github.rygel.fragments.blog.BlogEngine
     ): FragmentsSpringController {
         return FragmentsSpringController(
             staticEngine = staticEngine,
@@ -397,10 +397,10 @@ class DemoApplication {
         
         val content = """package ${packagePath.replace(File.separator, ".")}
 
-import io.andromeda.fragments.FileSystemFragmentRepository
-import io.andromeda.fragments.quarkus.FragmentsQuarkusResource
-import io.andromeda.fragments.blog.BlogEngine
-import io.andromeda.fragments.static.StaticPageEngine
+import io.github.rygel.fragments.FileSystemFragmentRepository
+import io.github.rygel.fragments.quarkus.FragmentsQuarkusResource
+import io.github.rygel.fragments.blog.BlogEngine
+import io.github.rygel.fragments.static.StaticPageEngine
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.enterprise.inject.Produces
 import org.jboss.logging.Logger
@@ -446,10 +446,10 @@ class DemoApplication {
         
         val content = """package ${packagePath.replace(File.separator, ".")}
 
-import io.andromeda.fragments.FileSystemFragmentRepository
-import io.andromeda.fragments.micronaut.FragmentsMicronautController
-import io.andromeda.fragments.blog.BlogEngine
-import io.andromeda.fragments.static.StaticPageEngine
+import io.github.rygel.fragments.FileSystemFragmentRepository
+import io.github.rygel.fragments.micronaut.FragmentsMicronautController
+import io.github.rygel.fragments.blog.BlogEngine
+import io.github.rygel.fragments.static.StaticPageEngine
 import io.micronaut.runtime.Micronaut
 import org.slf4j.LoggerFactory
 
@@ -795,12 +795,12 @@ server.port=8080
 server.servlet.context-path=/
 spring.thymeleaf.prefix=classpath:/templates/
 spring.thymeleaf.suffix=.html
-logging.level.io.andromeda.fragments=INFO
+logging.level.io.github.rygel.fragments=INFO
 """
             "quarkus" -> """
 quarkus.http.port=8080
 quarkus.application.name=fragments-blog
-quarkus.log.category."io.andromeda.fragments".level=INFO
+quarkus.log.category."io.github.rygel.fragments".level=INFO
 """
             "micronaut" -> """
 micronaut.server.port=8080
@@ -918,7 +918,7 @@ categories: [category]
     }
     
     private fun getPackage(): String {
-        return "io.andromeda.fragments.demo"
+        return "io.github.rygel.fragments.demo"
     }
     
     private fun getMainClass(): String {

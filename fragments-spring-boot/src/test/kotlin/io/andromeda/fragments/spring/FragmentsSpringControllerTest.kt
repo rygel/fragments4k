@@ -1,6 +1,6 @@
-package io.andromeda.fragments.spring
+package io.github.rygel.fragments.spring
 
-import io.andromeda.fragments.*
+import io.github.rygel.fragments.*
 import java.time.LocalDateTime
 import org.junit.jupiter.api.Test
 

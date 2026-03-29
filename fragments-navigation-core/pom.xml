@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.andromeda</groupId>
+        <groupId>io.github.rygel</groupId>
         <artifactId>fragments-parent</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
@@ -13,13 +13,9 @@
     <name>Fragments Navigation Core</name>
     <description>Navigation generators and models for the Fragments framework</description>
 
-    <properties>
-        <java.version>17</java.version>
-    </properties>
-
     <dependencies>
         <dependency>
-            <groupId>io.andromeda</groupId>
+            <groupId>io.github.rygel</groupId>
             <artifactId>fragments-core</artifactId>
             <version>${project.version}</version>
         </dependency>

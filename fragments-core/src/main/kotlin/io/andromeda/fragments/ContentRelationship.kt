@@ -1,4 +1,4 @@
-package io.andromeda.fragments
+package io.github.rygel.fragments
 
 /**
  * Represents relationships between content fragments

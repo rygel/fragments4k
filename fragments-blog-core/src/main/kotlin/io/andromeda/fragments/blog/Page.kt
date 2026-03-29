@@ -1,6 +1,6 @@
-package io.andromeda.fragments.blog
+package io.github.rygel.fragments.blog
 
-import io.andromeda.fragments.Fragment
+import io.github.rygel.fragments.Fragment
 
 data class Page<T>(
     val items: List<T>,

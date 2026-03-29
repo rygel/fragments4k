@@ -1,7 +1,7 @@
-package io.andromeda.fragments.test
+package io.github.rygel.fragments.test
 
-import io.andromeda.fragments.FragmentStatus
-import io.andromeda.fragments.SeriesStatus
+import io.github.rygel.fragments.FragmentStatus
+import io.github.rygel.fragments.SeriesStatus
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test

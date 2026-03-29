@@ -1,8 +1,8 @@
-package io.andromeda.fragments.demo.spring
+package io.github.rygel.fragments.demo.spring
 
-import io.andromeda.fragments.*
-import io.andromeda.fragments.blog.BlogEngine
-import io.andromeda.fragments.static.StaticPageEngine
+import io.github.rygel.fragments.*
+import io.github.rygel.fragments.blog.BlogEngine
+import io.github.rygel.fragments.static.StaticPageEngine
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 import org.springframework.context.annotation.Bean

@@ -1,7 +1,7 @@
-package io.andromeda.fragments.lucene
+package io.github.rygel.fragments.lucene
 
-import io.andromeda.fragments.Fragment
-import io.andromeda.fragments.FragmentRepository
+import io.github.rygel.fragments.Fragment
+import io.github.rygel.fragments.FragmentRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.apache.lucene.analysis.standard.StandardAnalyzer
