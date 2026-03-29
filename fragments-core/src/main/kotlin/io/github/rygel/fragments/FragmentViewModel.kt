@@ -1,5 +1,9 @@
 package io.github.rygel.fragments
 
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
+
 /**
  * A single heading entry extracted from a fragment's content for building a
  * table-of-contents widget.
@@ -103,6 +107,34 @@ data class FragmentViewModel(
 
     val author: String?
         get() = fragment.author
+
+    /**
+     * Converts the fragment's authoring [Fragment.date] (UTC) to the given [zoneId].
+     *
+     * All dates stored in [Fragment] are UTC. Use this method — or its siblings —
+     * to produce a user-local [ZonedDateTime] for display in templates.
+     *
+     * Example (JTE template):
+     * ```
+     * ${model.dateInZone(ZoneId.of("Europe/Berlin")).format(DateTimeFormatter.ofPattern("dd MMM yyyy"))}
+     * ```
+     */
+    fun dateInZone(zoneId: ZoneId): ZonedDateTime? =
+        fragment.date?.atZone(ZoneOffset.UTC)?.withZoneSameInstant(zoneId)
+
+    /**
+     * Converts [Fragment.publishDate] (UTC) to the given [zoneId].
+     * Returns `null` when [Fragment.publishDate] is not set.
+     */
+    fun publishDateInZone(zoneId: ZoneId): ZonedDateTime? =
+        fragment.publishDate?.atZone(ZoneOffset.UTC)?.withZoneSameInstant(zoneId)
+
+    /**
+     * Converts [Fragment.expiryDate] (UTC) to the given [zoneId].
+     * Returns `null` when [Fragment.expiryDate] is not set.
+     */
+    fun expiryDateInZone(zoneId: ZoneId): ZonedDateTime? =
+        fragment.expiryDate?.atZone(ZoneOffset.UTC)?.withZoneSameInstant(zoneId)
 
     /** Estimated reading time based on [WORDS_PER_MINUTE]. */
     val readingTime: ReadingTime

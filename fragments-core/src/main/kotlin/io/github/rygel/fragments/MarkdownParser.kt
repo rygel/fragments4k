@@ -9,9 +9,11 @@ import com.vladsch.flexmark.html.HtmlRenderer
 import com.vladsch.flexmark.parser.Parser
 import com.vladsch.flexmark.util.data.MutableDataSet
 import com.vladsch.flexmark.util.misc.Extension
+import org.slf4j.LoggerFactory
 import org.yaml.snakeyaml.Yaml
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
 /**
@@ -39,6 +41,8 @@ import java.time.format.DateTimeFormatter
  *   so that the YAML front matter stripping and caching logic is shared.
  */
 class MarkdownParser(extraExtensions: List<Extension> = emptyList()) {
+
+    private val logger = LoggerFactory.getLogger(MarkdownParser::class.java)
     private val options = MutableDataSet().apply {
         set(
             Parser.EXTENSIONS,
@@ -74,7 +78,8 @@ class MarkdownParser(extraExtensions: List<Extension> = emptyList()) {
      * and converting the body to HTML.
      */
     fun parse(markdown: String): ParsedContent {
-        val frontMatterPattern = Regex("^---\\s*\\n(.*?)\\n---\\s*\\n", RegexOption.DOT_MATCHES_ALL)
+        // \n? at end allows files with no trailing newline after the closing ---
+        val frontMatterPattern = Regex("^---\\s*\\n(.*?)\\n---\\s*\\n?", RegexOption.DOT_MATCHES_ALL)
         val match = frontMatterPattern.find(markdown)
 
         return if (match != null) {
@@ -93,6 +98,7 @@ class MarkdownParser(extraExtensions: List<Extension> = emptyList()) {
         return try {
             yaml.load(yamlContent) as? Map<String, Any> ?: emptyMap()
         } catch (e: Exception) {
+            logger.warn("Failed to parse YAML front matter — returning empty map. Cause: ${e.message}")
             emptyMap()
         }
     }
@@ -116,11 +122,18 @@ class MarkdownParser(extraExtensions: List<Extension> = emptyList()) {
          *
          * Returns `null` for unrecognised types or unparseable strings.
          */
+        /**
+         * All dates stored in [io.github.rygel.fragments.Fragment] are treated as **UTC**.
+         * String dates without timezone information are assumed to be UTC. `java.util.Date`
+         * values (produced by SnakeYAML for `yyyy-MM-dd` YAML values) are converted via UTC.
+         * Convert to a user-local timezone at display time via
+         * [io.github.rygel.fragments.FragmentViewModel.dateInZone].
+         */
         fun parseDate(dateValue: Any?): LocalDateTime? {
             return when (dateValue) {
                 is java.time.LocalDateTime -> dateValue
                 is java.time.LocalDate -> dateValue.atStartOfDay()
-                is java.util.Date -> dateValue.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime()
+                is java.util.Date -> dateValue.toInstant().atZone(ZoneOffset.UTC).toLocalDateTime()
                 is String -> parseDateString(dateValue)
                 else -> null
             }
