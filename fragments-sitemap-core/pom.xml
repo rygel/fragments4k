@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.andromeda</groupId>
+        <groupId>io.github.rygel</groupId>
         <artifactId>fragments-parent</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
@@ -14,17 +14,9 @@
     <name>Fragments Sitemap Core</name>
     <description>Sitemap XML generator for Fragments</description>
 
-    <properties>
-        <java.version>17</java.version>
-        <kotlinx-coroutines.version>1.8.1</kotlinx-coroutines.version>
-        <maven.compiler.source>${java.version}</maven.compiler.source>
-        <maven.compiler.target>${java.version}</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
-
     <dependencies>
          <dependency>
-            <groupId>io.andromeda</groupId>
+            <groupId>io.github.rygel</groupId>
             <artifactId>fragments-core</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -59,7 +51,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>io.andromeda.fragments.sitemap.SitemapGeneratorKt</mainClass>
+                            <mainClass>io.github.rygel.fragments.sitemap.SitemapGeneratorKt</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

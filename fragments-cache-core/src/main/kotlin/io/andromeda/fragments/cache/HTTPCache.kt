@@ -1,4 +1,4 @@
-package io.andromeda.fragments.cache
+package io.github.rygel.fragments.cache
 
 import java.time.Duration
 import java.time.Instant
@@ -52,6 +52,7 @@ data class HTTPCacheHeaders(
                 eTag = eTag,
                 lastModified = lastModified,
                 maxAge = maxAge,
+                public = false,
                 private = true
             )
         }
@@ -135,7 +136,7 @@ class ETagGenerator {
          * Generate ETag for content based on its hash
          */
         fun generateForContent(content: ByteArray): String {
-            return generateHash(content)
+            return "\"${generateHash(content)}\""
         }
         
         /**
@@ -158,7 +159,7 @@ class ETagGenerator {
          * Generate weak ETag
          */
         fun generateWeak(content: ByteArray): String {
-            return "W/${generateForContent(content)}"
+            return "W/\"${generateForContent(content).removeSurrounding("\"")}\""
         }
         
         /**

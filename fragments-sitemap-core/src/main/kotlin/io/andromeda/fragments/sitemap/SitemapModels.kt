@@ -1,7 +1,7 @@
-package io.andromeda.fragments.sitemap
+package io.github.rygel.fragments.sitemap
 
-import io.andromeda.fragments.Fragment
-import io.andromeda.fragments.FragmentStatus
+import io.github.rygel.fragments.Fragment
+import io.github.rygel.fragments.FragmentStatus
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter

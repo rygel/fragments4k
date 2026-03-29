@@ -1,6 +1,6 @@
-package io.andromeda.fragments
+package io.github.rygel.fragments
 
-import io.andromeda.fragments.test.InMemoryFragmentRepository
+import io.github.rygel.fragments.test.InMemoryFragmentRepository
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach

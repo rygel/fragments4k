@@ -1,7 +1,7 @@
-package io.andromeda.fragments.test
+package io.github.rygel.fragments.test
 
-import io.andromeda.fragments.ArchiveNavigationGenerator
-import io.andromeda.fragments.ArchiveNavigationLink
+import io.github.rygel.fragments.ArchiveNavigationGenerator
+import io.github.rygel.fragments.ArchiveNavigationLink
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 

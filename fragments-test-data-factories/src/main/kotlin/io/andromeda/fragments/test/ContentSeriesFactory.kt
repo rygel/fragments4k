@@ -1,7 +1,7 @@
-package io.andromeda.fragments.test
+package io.github.rygel.fragments.test
 
-import io.andromeda.fragments.ContentSeries
-import io.andromeda.fragments.SeriesStatus
+import io.github.rygel.fragments.ContentSeries
+import io.github.rygel.fragments.SeriesStatus
 import java.time.LocalDateTime
 
 /**

@@ -1,8 +1,8 @@
-package io.andromeda.fragments.static
+package io.github.rygel.fragments.static
 
-import io.andromeda.fragments.Fragment
-import io.andromeda.fragments.FragmentRepository
-import io.andromeda.fragments.FragmentStatus
+import io.github.rygel.fragments.Fragment
+import io.github.rygel.fragments.FragmentRepository
+import io.github.rygel.fragments.FragmentStatus
 
 class StaticPageEngine(private val repository: FragmentRepository) {
 

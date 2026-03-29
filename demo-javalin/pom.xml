@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.andromeda</groupId>
+        <groupId>io.github.rygel</groupId>
         <artifactId>fragments-parent</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
@@ -15,7 +15,6 @@
     <description>Demo application using Fragments with Javalin</description>
 
     <properties>
-        <java.version>17</java.version>
         <javalin.version>6.4.0</javalin.version>
         <jetty.version>11.0.24</jetty.version>
     </properties>
@@ -44,7 +43,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.andromeda</groupId>
+            <groupId>io.github.rygel</groupId>
             <artifactId>fragments-javalin</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -62,7 +61,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>io.andromeda.fragments.demo.javalin.DemoApplicationKt</mainClass>
+                            <mainClass>io.github.rygel.fragments.demo.javalin.DemoApplicationKt</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
@@ -71,7 +70,7 @@
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>io.andromeda.fragments.demo.javalin.DemoApplicationKt</mainClass>
+                    <mainClass>io.github.rygel.fragments.demo.javalin.DemoApplicationKt</mainClass>
                 </configuration>
             </plugin>
         </plugins>

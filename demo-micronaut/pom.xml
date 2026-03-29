@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.andromeda</groupId>
+        <groupId>io.github.rygel</groupId>
         <artifactId>fragments-parent</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
@@ -15,7 +15,6 @@
     <description>Demo application using Fragments with Micronaut</description>
 
     <properties>
-        <java.version>17</java.version>
         <micronaut.version>4.5.1</micronaut.version>
     </properties>
 
@@ -33,7 +32,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.andromeda</groupId>
+            <groupId>io.github.rygel</groupId>
             <artifactId>fragments-micronaut</artifactId>
             <version>${project.version}</version>
         </dependency>

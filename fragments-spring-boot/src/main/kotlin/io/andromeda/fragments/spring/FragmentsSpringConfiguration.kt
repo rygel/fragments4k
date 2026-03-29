@@ -1,9 +1,9 @@
-package io.andromeda.fragments.spring
+package io.github.rygel.fragments.spring
 
-import io.andromeda.fragments.FragmentRepository
-import io.andromeda.fragments.FileSystemFragmentRepository
-import io.andromeda.fragments.blog.BlogEngine
-import io.andromeda.fragments.static.StaticPageEngine
+import io.github.rygel.fragments.FragmentRepository
+import io.github.rygel.fragments.FileSystemFragmentRepository
+import io.github.rygel.fragments.blog.BlogEngine
+import io.github.rygel.fragments.static.StaticPageEngine
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 

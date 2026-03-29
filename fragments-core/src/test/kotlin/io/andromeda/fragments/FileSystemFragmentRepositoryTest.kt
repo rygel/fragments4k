@@ -1,15 +1,17 @@
-package io.andromeda.fragments
+package io.github.rygel.fragments
 
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
 import java.nio.file.Path
 import java.time.LocalDateTime
 
+@Tag("integration")
 class FileSystemFragmentRepositoryTest {
 
     @TempDir

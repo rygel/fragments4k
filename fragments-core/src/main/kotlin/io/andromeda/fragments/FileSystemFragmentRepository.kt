@@ -1,8 +1,8 @@
-package io.andromeda.fragments
+package io.github.rygel.fragments
 
-import io.andromeda.fragments.Fragment
-import io.andromeda.fragments.FragmentRepository
-import io.andromeda.fragments.FragmentStatus
+import io.github.rygel.fragments.Fragment
+import io.github.rygel.fragments.FragmentRepository
+import io.github.rygel.fragments.FragmentStatus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
@@ -499,7 +499,7 @@ class FileSystemFragmentRepository(
         }
     }
 
-    override suspend fun getRelationships(slug: String, config: io.andromeda.fragments.RelationshipConfig): ContentRelationships? {
+    override suspend fun getRelationships(slug: String, config: io.github.rygel.fragments.RelationshipConfig): ContentRelationships? {
         return withContext(Dispatchers.IO) {
             val currentFragment = getBySlug(slug) ?: return@withContext null
             val allFragments = getAllVisible()

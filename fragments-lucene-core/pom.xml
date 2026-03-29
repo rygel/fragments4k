@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.andromeda</groupId>
+        <groupId>io.github.rygel</groupId>
         <artifactId>fragments-parent</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
@@ -13,19 +13,14 @@
     <name>Fragments Lucene Core</name>
     <description>Lucene search engine</description>
 
-    <properties>
-        <java.version>17</java.version>
-        <lucene.version>9.10.0</lucene.version>
-    </properties>
-
     <dependencies>
          <dependency>
-             <groupId>io.andromeda</groupId>
+             <groupId>io.github.rygel</groupId>
              <artifactId>fragments-core</artifactId>
              <version>${project.version}</version>
           </dependency>
          <dependency>
-             <groupId>io.andromeda</groupId>
+             <groupId>io.github.rygel</groupId>
              <artifactId>fragments-cache-core</artifactId>
              <version>${project.version}</version>
          </dependency>
@@ -40,17 +35,14 @@
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-core</artifactId>
-            <version>${lucene.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-queryparser</artifactId>
-            <version>${lucene.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-join</artifactId>
-            <version>${lucene.version}</version>
         </dependency>
          <dependency>
              <groupId>org.junit.jupiter</groupId>
@@ -59,8 +51,7 @@
          </dependency>
          <dependency>
              <groupId>io.mockk</groupId>
-             <artifactId>mockk</artifactId>
-             <version>1.13.9</version>
+             <artifactId>mockk-jvm</artifactId>
              <scope>test</scope>
          </dependency>
     </dependencies>

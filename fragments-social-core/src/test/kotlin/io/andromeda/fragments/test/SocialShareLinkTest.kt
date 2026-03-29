@@ -1,8 +1,8 @@
-package io.andromeda.fragments.test
+package io.github.rygel.fragments.test
 
-import io.andromeda.fragments.SocialPlatform
-import io.andromeda.fragments.SocialShareGenerator
-import io.andromeda.fragments.SocialShareLink
+import io.github.rygel.fragments.SocialPlatform
+import io.github.rygel.fragments.SocialShareGenerator
+import io.github.rygel.fragments.SocialShareLink
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 

@@ -1,7 +1,7 @@
-package io.andromeda.fragments.demo.quarkus
+package io.github.rygel.fragments.demo.quarkus
 
-import io.andromeda.fragments.FileSystemFragmentRepository
-import io.andromeda.fragments.quarkus.FragmentsQuarkusResource
+import io.github.rygel.fragments.FileSystemFragmentRepository
+import io.github.rygel.fragments.quarkus.FragmentsQuarkusResource
 import io.quarkus.runtime.StartupEvent
 import jakarta.enterprise.event.Observes
 import jakarta.inject.Singleton

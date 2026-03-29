@@ -1,10 +1,10 @@
-package io.andromeda.fragments.demo.http4k
+package io.github.rygel.fragments.demo.http4k
 
-import io.andromeda.fragments.FileSystemFragmentRepository
-import io.andromeda.fragments.http4k.FragmentsHttp4kAdapter
-import io.andromeda.fragments.blog.BlogEngine
-import io.andromeda.fragments.lucene.LuceneSearchEngine
-import io.andromeda.fragments.static.StaticPageEngine
+import io.github.rygel.fragments.FileSystemFragmentRepository
+import io.github.rygel.fragments.http4k.FragmentsHttp4kAdapter
+import io.github.rygel.fragments.blog.BlogEngine
+import io.github.rygel.fragments.lucene.LuceneSearchEngine
+import io.github.rygel.fragments.static.StaticPageEngine
 import kotlinx.coroutines.runBlocking
 import org.http4k.core.Filter
 import org.http4k.core.HttpHandler

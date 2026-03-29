@@ -1,9 +1,9 @@
-package io.andromeda.fragments.http4k
+package io.github.rygel.fragments.http4k
 
-import io.andromeda.fragments.*
-import io.andromeda.fragments.blog.BlogEngine
-import io.andromeda.fragments.lucene.LuceneSearchEngine
-import io.andromeda.fragments.static.StaticPageEngine
+import io.github.rygel.fragments.*
+import io.github.rygel.fragments.blog.BlogEngine
+import io.github.rygel.fragments.lucene.LuceneSearchEngine
+import io.github.rygel.fragments.static.StaticPageEngine
 import kotlinx.coroutines.runBlocking
 import org.http4k.core.Method
 import org.http4k.core.Request
@@ -16,12 +16,14 @@ import org.http4k.template.PebbleTemplates
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.LocalDateTime
 import java.util.concurrent.TimeUnit
 
+@Tag("integration")
 class FragmentsHttp4kAdapterTest {
 
     private lateinit var server: Http4kServer
@@ -207,6 +209,26 @@ class InMemoryFragmentRepository : FragmentRepository {
     override suspend fun getByCategory(category: String): List<Fragment> = 
         fragments.filter { it.categories.contains(category) }
     override suspend fun reload() {}
+    override suspend fun getByStatus(status: io.github.rygel.fragments.FragmentStatus): List<Fragment> = fragments.filter { it.status == status }
+    override suspend fun getByAuthor(authorId: String): List<Fragment> = fragments.filter { it.author == authorId || it.authorIds.contains(authorId) }
+    override suspend fun getByAuthors(authorIds: List<String>): List<Fragment> = fragments.filter { fragment -> authorIds.any { fragment.author == it || fragment.authorIds.contains(it) } }
+    override suspend fun updateFragmentStatus(slug: String, status: io.github.rygel.fragments.FragmentStatus, force: Boolean, changedBy: String?, reason: String?): Result<Fragment> {
+        val f = fragments.find { it.slug == slug }
+        return if (f != null) Result.success(f) else Result.failure(IllegalArgumentException("Fragment not found"))
+    }
+    override suspend fun updateMultipleFragmentsStatus(slugs: List<String>, status: io.github.rygel.fragments.FragmentStatus, force: Boolean, changedBy: String?, reason: String?): List<Result<Fragment>> = slugs.map { updateFragmentStatus(it, status, force, changedBy, reason) }
+    override suspend fun publishMultiple(slugs: List<String>, changedBy: String?, reason: String?): List<Result<Fragment>> = slugs.map { updateFragmentStatus(it, io.github.rygel.fragments.FragmentStatus.PUBLISHED, false, changedBy, reason) }
+    override suspend fun unpublishMultiple(slugs: List<String>, changedBy: String?, reason: String?): List<Result<Fragment>> = slugs.map { updateFragmentStatus(it, io.github.rygel.fragments.FragmentStatus.DRAFT, false, changedBy, reason) }
+    override suspend fun archiveMultiple(slugs: List<String>, changedBy: String?, reason: String?): List<Result<Fragment>> = slugs.map { updateFragmentStatus(it, io.github.rygel.fragments.FragmentStatus.ARCHIVED, false, changedBy, reason) }
+    override suspend fun getScheduledFragmentsDueForPublication(threshold: LocalDateTime): List<Fragment> = emptyList()
+    override suspend fun publishScheduledFragments(threshold: LocalDateTime): List<Result<Fragment>> = emptyList()
+    override suspend fun scheduleMultiple(slugs: List<String>, publishDate: LocalDateTime, changedBy: String?, reason: String?): List<Result<Fragment>> = emptyList()
+    override suspend fun expireFragments(threshold: LocalDateTime): List<Result<Fragment>> = emptyList()
+    override suspend fun getFragmentsExpiringSoon(threshold: LocalDateTime): List<Fragment> = emptyList()
+    override suspend fun getRelationships(slug: String, config: io.github.rygel.fragments.RelationshipConfig): io.github.rygel.fragments.ContentRelationships? = null
+    override suspend fun createRevision(slug: String, changedBy: String?, reason: String?): Result<io.github.rygel.fragments.FragmentRevision> = Result.failure(UnsupportedOperationException())
+    override suspend fun getFragmentRevisions(slug: String): List<io.github.rygel.fragments.FragmentRevision> = emptyList()
+    override suspend fun revertToRevision(slug: String, revisionId: String, changedBy: String?, reason: String?): Result<Fragment> = Result.failure(UnsupportedOperationException())
 }
 
 private fun createFragment(
@@ -222,6 +244,7 @@ private fun createFragment(
         title = title,
         content = "# Test Content\n\nThis is test content.",
         date = date ?: if (isBlog) LocalDateTime.now() else null,
+        publishDate = date ?: if (isBlog) LocalDateTime.now() else null,
         preview = "This is test content.",
         template = if (isBlog) "blog_post" else "page",
         visible = true,

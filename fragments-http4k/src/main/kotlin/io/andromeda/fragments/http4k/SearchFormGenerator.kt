@@ -1,4 +1,4 @@
-package io.andromeda.fragments.http4k
+package io.github.rygel.fragments.http4k
 
 object SearchFormGenerator {
     fun generate(

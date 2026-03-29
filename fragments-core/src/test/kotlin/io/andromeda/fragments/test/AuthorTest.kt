@@ -1,7 +1,7 @@
-package io.andromeda.fragments.test
+package io.github.rygel.fragments.test
 
-import io.andromeda.fragments.Author
-import io.andromeda.fragments.Fragment
+import io.github.rygel.fragments.Author
+import io.github.rygel.fragments.Fragment
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test

@@ -1,8 +1,9 @@
-package io.andromeda.fragments.lucene
+package io.github.rygel.fragments.lucene
 
-import io.andromeda.fragments.cache.FragmentCache
-import io.andromeda.fragments.cache.InMemoryCache
-import io.andromeda.fragments.cache.CacheConfiguration
+import io.github.rygel.fragments.cache.FragmentCache
+import io.github.rygel.fragments.cache.InMemoryCache
+import io.github.rygel.fragments.cache.CacheConfiguration
+import io.github.rygel.fragments.Fragment
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
@@ -149,7 +150,7 @@ class CachedLuceneSearchEngine(
     /**
      * Invalidate all search-related caches
      */
-    suspend fun invalidateSearchCache() {
+    override suspend fun invalidateSearchCache() {
         logger.debug("Invalidating search cache")
         searchResultCache.clear()
         suggestionCache.clear()
@@ -190,29 +191,6 @@ class CachedLuceneSearchEngine(
         val cacheKey = generateCategorySearchCacheKey(category)
         searchResultCache.invalidate(cacheKey)
     }
-        }
-    }
-    
-    /**
-     * Invalidate search results containing specific tags
-     */
-    suspend fun invalidateTagSearchResults(tag: String) {
-        logger.debug("Invalidating tag search results for tag: $tag")
-        
-        val cacheKey = generateTagSearchCacheKey(tag)
-        searchResultCache.invalidate(cacheKey)
-    }
-    
-    /**
-     * Invalidate search results containing specific categories
-     */
-    suspend fun invalidateCategorySearchResults(category: String) {
-        logger.debug("Invalidating category search results for category: $category")
-        
-        val cacheKey = generateCategorySearchCacheKey(category)
-        searchResultCache.invalidate(cacheKey)
-    }
-    
     /**
      * Generate cache key for search queries
      */

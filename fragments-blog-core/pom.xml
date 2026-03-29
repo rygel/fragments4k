@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.andromeda</groupId>
+        <groupId>io.github.rygel</groupId>
         <artifactId>fragments-parent</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
@@ -13,13 +13,9 @@
     <name>Fragments Blog Core</name>
     <description>Blog engine with pagination</description>
 
-    <properties>
-        <java.version>17</java.version>
-    </properties>
-
      <dependencies>
           <dependency>
-             <groupId>io.andromeda</groupId>
+             <groupId>io.github.rygel</groupId>
              <artifactId>fragments-core</artifactId>
              <version>${project.version}</version>
           </dependency>
@@ -34,6 +30,14 @@
          <dependency>
              <groupId>org.junit.jupiter</groupId>
              <artifactId>junit-jupiter</artifactId>
+             <scope>test</scope>
+         </dependency>
+         <dependency>
+             <groupId>io.github.rygel</groupId>
+             <artifactId>fragments-core</artifactId>
+             <version>${project.version}</version>
+             <classifier>tests</classifier>
+             <type>test-jar</type>
              <scope>test</scope>
          </dependency>
     </dependencies>

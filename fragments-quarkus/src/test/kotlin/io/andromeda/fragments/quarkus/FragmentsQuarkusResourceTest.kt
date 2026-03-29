@@ -1,6 +1,7 @@
-package io.andromeda.fragments.quarkus
+package io.github.rygel.fragments.quarkus
 
-import io.andromeda.fragments.*
+import io.github.rygel.fragments.Fragment
+import java.time.LocalDateTime
 import org.junit.jupiter.api.Test
 
 class FragmentsQuarkusResourceTest {
@@ -12,8 +13,9 @@ class FragmentsQuarkusResourceTest {
             slug = "test",
             title = "Test",
             content = "# Test Content",
-            date = null,
-            preview = "Test preview",
+            preview = "Test Content",
+            date = LocalDateTime.now(),
+            publishDate = LocalDateTime.now(),
             template = "page",
             visible = true,
             tags = emptyList(),

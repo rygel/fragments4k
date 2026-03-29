@@ -1,7 +1,7 @@
-package io.andromeda.fragments.lucene
+package io.github.rygel.fragments.lucene
 
-import io.andromeda.fragments.Fragment
-import io.andromeda.fragments.FragmentRepository
+import io.github.rygel.fragments.Fragment
+import io.github.rygel.fragments.FragmentRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.apache.lucene.analysis.standard.StandardAnalyzer
@@ -64,13 +64,12 @@ class LuceneSearchEngine(
         
         val config = org.apache.lucene.index.IndexWriterConfig(analyzer)
         val writer = org.apache.lucene.index.IndexWriter(directory, config)
-        
         writer.deleteAll()
         
         fragments.forEach { fragment ->
             val doc = Document()
             doc.add(StringField("slug", fragment.slug, Field.Store.YES))
-            doc.add(StringField("title", fragment.title, Field.Store.YES))
+            doc.add(TextField("title", fragment.title, Field.Store.YES))
             doc.add(TextField("content", fragment.contentTextOnly, Field.Store.NO))
             doc.add(TextField("preview", fragment.previewTextOnly, Field.Store.NO))
             fragment.tags.forEach { tag ->
@@ -207,7 +206,7 @@ class LuceneSearchEngine(
         val booleanQuery = BooleanQuery.Builder()
 
         terms.forEach { term ->
-            val maxEdits = ((1.0 - threshold) * term.length).toInt()
+            val maxEdits = kotlin.math.min(((1.0 - threshold) * term.length).toInt(), 2)
             val luceneTerm = org.apache.lucene.index.Term("content", term)
             val fuzzyQuery = FuzzyQuery(luceneTerm, maxEdits)
             booleanQuery.add(fuzzyQuery, BooleanClause.Occur.SHOULD)

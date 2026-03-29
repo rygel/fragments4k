@@ -1,4 +1,4 @@
-package io.andromeda.fragments
+package io.github.rygel.fragments
 
 import java.time.Month
 import java.time.format.TextStyle

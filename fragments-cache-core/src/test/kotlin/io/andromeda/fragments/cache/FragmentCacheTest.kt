@@ -1,6 +1,6 @@
-package io.andromeda.fragments.cache
+package io.github.rygel.fragments.cache
 
-import io.andromeda.fragments.*
+import io.github.rygel.fragments.*
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -67,7 +67,7 @@ class FragmentCacheTest {
         val retrieved = fragmentCache.getVisibleFragments()
         
         assertNotNull(retrieved)
-        assertEquals(3, retrieved.size)
+        assertEquals(3, retrieved?.size)
     }
     
     @Test
@@ -81,7 +81,7 @@ class FragmentCacheTest {
         val retrieved = fragmentCache.getFragmentsByTag("kotlin")
         
         assertNotNull(retrieved)
-        assertEquals(2, retrieved.size)
+        assertEquals(2, retrieved?.size)
     }
     
     @Test
@@ -95,7 +95,7 @@ class FragmentCacheTest {
         val retrieved = fragmentCache.getFragmentsByCategory("technology")
         
         assertNotNull(retrieved)
-        assertEquals(2, retrieved.size)
+        assertEquals(2, retrieved?.size)
     }
     
     @Test
@@ -109,7 +109,7 @@ class FragmentCacheTest {
         val retrieved = fragmentCache.getFragmentsByAuthor("author1")
         
         assertNotNull(retrieved)
-        assertEquals(2, retrieved.size)
+        assertEquals(2, retrieved?.size)
     }
     
     @Test
@@ -123,25 +123,25 @@ class FragmentCacheTest {
         val retrieved = fragmentCache.getFragmentsBySeries("test-series")
         
         assertNotNull(retrieved)
-        assertEquals(2, retrieved.size)
+        assertEquals(2, retrieved?.size)
     }
     
     @Test
     fun putAndGetRelationships() = runBlocking {
         val relationships = ContentRelationships(
-            previous = null,
-            next = null,
-            relatedByTag = emptyList<Fragment>(),
+            previous = createTestFragment("prev"),
+            next = createTestFragment("next"),
+            relatedByTag = listOf(createTestFragment("related")),
             relatedByCategory = emptyList<Fragment>(),
             relatedByContent = emptyList<Fragment>(),
-            translations = emptyList<Fragment>()
+            translations = emptyMap()
         )
         
         fragmentCache.putRelationships("test-slug", relationships)
         val retrieved = fragmentCache.getRelationships("test-slug")
         
         assertNotNull(retrieved)
-        assertEquals("previous", retrieved?.previous?.slug)
+        assertEquals("prev", retrieved?.previous?.slug)
         assertEquals("next", retrieved?.next?.slug)
         assertEquals(1, retrieved?.relatedByTag?.size)
     }
@@ -149,7 +149,7 @@ class FragmentCacheTest {
     @Test
     fun putAndGetParsedContent() = runBlocking {
         val parsedContent = ParsedContent(
-            frontMatter = emptyMap<String, Any>(),
+            frontMatter = mapOf("title" to "Test"),
             rawContent = "# Test Content",
             htmlContent = "<h1>Test Content</h1>",
             fileHash = "abc123"
@@ -185,7 +185,7 @@ class FragmentCacheTest {
             relatedByTag = emptyList(),
             relatedByCategory = emptyList(),
             relatedByContent = emptyList(),
-            translations = emptyList()
+            translations = emptyMap()
         )
         
         fragmentCache.putFragment(fragment)
@@ -232,7 +232,7 @@ class FragmentCacheTest {
             relatedByTag = emptyList(),
             relatedByCategory = emptyList(),
             relatedByContent = emptyList(),
-            translations = emptyList()
+            translations = emptyMap()
         )
         
         fragmentCache.putFragment(fragment)
@@ -257,7 +257,7 @@ class FragmentCacheTest {
             relatedByTag = emptyList(),
             relatedByCategory = emptyList(),
             relatedByContent = emptyList(),
-            translations = emptyList()
+            translations = emptyMap()
         )
         val parsedContent = ParsedContent(
             frontMatter = emptyMap(),

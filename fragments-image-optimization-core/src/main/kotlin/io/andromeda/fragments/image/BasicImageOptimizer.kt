@@ -1,4 +1,4 @@
-package io.andromeda.fragments.image
+package io.github.rygel.fragments.image
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

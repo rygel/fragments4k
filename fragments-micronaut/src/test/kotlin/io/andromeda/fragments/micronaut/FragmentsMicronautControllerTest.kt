@@ -1,6 +1,7 @@
-package io.andromeda.fragments.micronaut
+package io.github.rygel.fragments.micronaut
 
-import io.andromeda.fragments.*
+import io.github.rygel.fragments.Fragment
+import java.time.LocalDateTime
 import org.junit.jupiter.api.Test
 
 class FragmentsMicronautControllerTest {
@@ -12,8 +13,9 @@ class FragmentsMicronautControllerTest {
             slug = "test",
             title = "Test",
             content = "# Test Content",
-            date = null,
-            preview = "Test preview",
+            preview = "Test Content",
+            date = LocalDateTime.now(),
+            publishDate = LocalDateTime.now(),
             template = "page",
             visible = true,
             tags = emptyList(),

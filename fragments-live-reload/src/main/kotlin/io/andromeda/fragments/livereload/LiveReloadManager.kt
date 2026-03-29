@@ -1,6 +1,6 @@
-package io.andromeda.fragments.livereload
+package io.github.rygel.fragments.livereload
 
-import io.andromeda.fragments.FragmentRepository
+import io.github.rygel.fragments.FragmentRepository
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import org.slf4j.LoggerFactory

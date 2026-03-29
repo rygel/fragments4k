@@ -1,6 +1,6 @@
-package io.andromeda.fragments.test
+package io.github.rygel.fragments.test
 
-import io.andromeda.fragments.*
+import io.github.rygel.fragments.*
 
 class InMemoryContentSeriesRepository : ContentSeriesRepository {
     private val seriesList = mutableListOf<ContentSeries>()

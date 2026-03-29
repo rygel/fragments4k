@@ -1,11 +1,11 @@
-package io.andromeda.fragments.spring
+package io.github.rygel.fragments.spring
 
-import io.andromeda.fragments.*
-import io.andromeda.fragments.blog.BlogEngine
-import io.andromeda.fragments.rss.RssGenerator
-import io.andromeda.fragments.sitemap.SitemapGenerator
-import io.andromeda.fragments.static.StaticPageEngine
-import io.andromeda.fragments.FragmentRepository
+import io.github.rygel.fragments.*
+import io.github.rygel.fragments.blog.BlogEngine
+import io.github.rygel.fragments.rss.RssGenerator
+import io.github.rygel.fragments.sitemap.SitemapGenerator
+import io.github.rygel.fragments.static.StaticPageEngine
+import io.github.rygel.fragments.FragmentRepository
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.GetMapping

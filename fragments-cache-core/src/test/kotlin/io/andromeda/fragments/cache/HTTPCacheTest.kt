@@ -1,4 +1,4 @@
-package io.andromeda.fragments.cache
+package io.github.rygel.fragments.cache
 
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
@@ -310,7 +310,7 @@ class HTTPResponseCacheTest {
         
         assertNotNull(retrieved)
         assertEquals("Hello, World!", retrieved?.body)
-        assertEquals("\"abc123\"", retrieved?.headers.eTag)
+        assertEquals("\"abc123\"", retrieved?.headers?.eTag)
     }
     
     @Test

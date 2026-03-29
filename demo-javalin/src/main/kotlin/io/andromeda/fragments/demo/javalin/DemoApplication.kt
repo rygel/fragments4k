@@ -1,10 +1,10 @@
-package io.andromeda.fragments.demo.javalin
+package io.github.rygel.fragments.demo.javalin
 
-import io.andromeda.fragments.FileSystemFragmentRepository
-import io.andromeda.fragments.blog.BlogEngine
-import io.andromeda.fragments.javalin.fragmentsRoutes
-import io.andromeda.fragments.lucene.LuceneSearchEngine
-import io.andromeda.fragments.static.StaticPageEngine
+import io.github.rygel.fragments.FileSystemFragmentRepository
+import io.github.rygel.fragments.blog.BlogEngine
+import io.github.rygel.fragments.javalin.fragmentsRoutes
+import io.github.rygel.fragments.lucene.LuceneSearchEngine
+import io.github.rygel.fragments.static.StaticPageEngine
 import io.javalin.Javalin
 import io.javalin.rendering.template.JavalinPebble
 import kotlinx.coroutines.runBlocking

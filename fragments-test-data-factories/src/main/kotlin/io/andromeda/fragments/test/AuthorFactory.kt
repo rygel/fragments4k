@@ -1,6 +1,6 @@
-package io.andromeda.fragments.test
+package io.github.rygel.fragments.test
 
-import io.andromeda.fragments.Author
+import io.github.rygel.fragments.Author
 import java.time.LocalDateTime
 
 /**

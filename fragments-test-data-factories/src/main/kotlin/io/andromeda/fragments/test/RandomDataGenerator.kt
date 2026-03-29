@@ -1,10 +1,10 @@
-package io.andromeda.fragments.test
+package io.github.rygel.fragments.test
 
-import io.andromeda.fragments.Author
-import io.andromeda.fragments.ContentSeries
-import io.andromeda.fragments.Fragment
-import io.andromeda.fragments.FragmentStatus
-import io.andromeda.fragments.SeriesStatus
+import io.github.rygel.fragments.Author
+import io.github.rygel.fragments.ContentSeries
+import io.github.rygel.fragments.Fragment
+import io.github.rygel.fragments.FragmentStatus
+import io.github.rygel.fragments.SeriesStatus
 import java.time.LocalDateTime
 import java.util.UUID
 import kotlin.random.Random

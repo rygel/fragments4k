@@ -1,7 +1,7 @@
-package io.andromeda.fragments.demo.micronaut
+package io.github.rygel.fragments.demo.micronaut
 
-import io.andromeda.fragments.*
-import io.andromeda.fragments.micronaut.FragmentsMicronautController
+import io.github.rygel.fragments.*
+import io.github.rygel.fragments.micronaut.FragmentsMicronautController
 import io.micronaut.context.event.StartupEvent
 import io.micronaut.runtime.Micronaut
 import jakarta.inject.Singleton

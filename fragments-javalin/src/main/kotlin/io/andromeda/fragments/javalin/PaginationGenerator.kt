@@ -1,4 +1,4 @@
-package io.andromeda.fragments.javalin
+package io.github.rygel.fragments.javalin
 
 object PaginationGenerator {
     fun generateSimpleControls(

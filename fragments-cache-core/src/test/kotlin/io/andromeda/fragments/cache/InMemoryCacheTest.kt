@@ -1,6 +1,6 @@
-package io.andromeda.fragments.cache
+package io.github.rygel.fragments.cache
 
-import io.mockk.*
+
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -282,8 +282,8 @@ class CacheEntryTest {
         
         val timeToExpiry = entry.getTimeToExpiry()
         assertNotNull(timeToExpiry)
-        assertTrue(timeToExpiry.seconds >= 59)
-        assertTrue(timeToExpiry.seconds <= 60)
+        assertTrue(timeToExpiry!!.seconds >= 59)
+        assertTrue(timeToExpiry!!.seconds <= 60)
     }
 }
 
