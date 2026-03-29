@@ -34,7 +34,7 @@ data class CacheEntry<T>(
      */
     fun getTimeToExpiry(): Duration? {
         return if (expiresAt != null) {
-            Duration.between(Instant.now(), expiresAt).takeIf { it.isPositive() }
+            Duration.between(Instant.now(), expiresAt).takeIf { !it.isNegative() && !it.isZero() }
         } else {
             null
         }

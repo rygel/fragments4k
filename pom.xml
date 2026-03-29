@@ -462,6 +462,14 @@
         </pluginManagement>
     </build>
 
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub Packages</name>
+            <url>https://maven.pkg.github.com/rygel/fragments4k</url>
+        </repository>
+    </distributionManagement>
+
     <repositories>
         <repository>
             <id>central</id>

@@ -17,7 +17,7 @@ class MarkdownParser {
     data class ParsedContent(
         val frontMatter: Map<String, Any>,
         val content: String,
-        val htmlContent: String
+        val htmlContent: String,
     )
 
     fun parse(markdown: String): ParsedContent {
@@ -36,13 +36,12 @@ class MarkdownParser {
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun parseFrontMatter(yamlContent: String): Map<String, Any> {
-        return try {
+    private fun parseFrontMatter(yamlContent: String): Map<String, Any> =
+        try {
             yaml.load(yamlContent) as? Map<String, Any> ?: emptyMap()
         } catch (e: Exception) {
             emptyMap()
         }
-    }
 
     companion object {
         private val DATE_TIME_FORMATTERS = listOf(
