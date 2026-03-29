@@ -42,6 +42,7 @@
         <exec-maven-plugin.version>3.6.3</exec-maven-plugin.version>
         <jacoco.version>0.8.14</jacoco.version>
         <versions-maven-plugin.version>2.18.0</versions-maven-plugin.version>
+        <maven-enforcer-plugin.version>3.5.0</maven-enforcer-plugin.version>
 
     </properties>
 
@@ -66,6 +67,10 @@
         <module>fragments-micronaut</module>
         <module>fragments-cli</module>
         <module>demo-spring-boot</module>
+        <module>demo-http4k</module>
+        <module>demo-javalin</module>
+        <module>demo-quarkus</module>
+        <module>demo-micronaut</module>
     </modules>
 
     <dependencyManagement>
@@ -284,7 +289,38 @@
                         <argLine>-Xmx2048m -XX:MaxMetaspaceSize=512m</argLine>
                         <!-- Exclude slow integration tests by default; run with -Pintegration to include them -->
                         <excludedGroups>integration</excludedGroups>
+                        <!-- Kill hung test processes after 5 minutes -->
+                        <forkedProcessTimeoutInSeconds>300</forkedProcessTimeoutInSeconds>
+                        <systemPropertyVariables>
+                            <!-- Kill any single hung test after 2 minutes -->
+                            <junit.jupiter.execution.timeout.default>120s</junit.jupiter.execution.timeout.default>
+                        </systemPropertyVariables>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-enforcer-plugin</artifactId>
+                    <version>${maven-enforcer-plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <id>enforce</id>
+                            <goals>
+                                <goal>enforce</goal>
+                            </goals>
+                            <configuration>
+                                <rules>
+                                    <requireJavaVersion>
+                                        <version>[21,)</version>
+                                        <message>Java 21 or higher is required.</message>
+                                    </requireJavaVersion>
+                                    <requireMavenVersion>
+                                        <version>[3.9,)</version>
+                                        <message>Maven 3.9 or higher is required.</message>
+                                    </requireMavenVersion>
+                                </rules>
+                            </configuration>
+                        </execution>
+                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
@@ -363,6 +399,10 @@
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-maven-plugin</artifactId>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+            </plugin>
         </plugins>
     </build>
 
@@ -391,10 +431,4 @@
         </repository>
     </distributionManagement>
 
-    <repositories>
-        <repository>
-            <id>central</id>
-            <url>https://repo.maven.apache.org/maven2</url>
-        </repository>
-    </repositories>
 </project>

@@ -15,6 +15,7 @@
     <description>Demo application using Fragments with Spring Boot</description>
 
     <properties>
+        <maven.deploy.skip>true</maven.deploy.skip>
         <spring-boot.version>3.3.2</spring-boot.version>
     </properties>
 
