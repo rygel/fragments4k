@@ -18,7 +18,9 @@ import org.apache.lucene.search.IndexSearcher
 import org.apache.lucene.search.PhraseQuery
 import org.apache.lucene.search.Query
 import org.apache.lucene.search.ScoreDoc
+import org.apache.lucene.search.TermQuery
 import org.apache.lucene.search.TopDocs
+import org.apache.lucene.search.WildcardQuery
 import org.apache.lucene.store.ByteBuffersDirectory
 import org.apache.lucene.store.Directory
 import org.apache.lucene.store.FSDirectory
@@ -121,7 +123,7 @@ class LuceneSearchEngine(
         val reader = org.apache.lucene.index.DirectoryReader.open(directory)
         val searcher = IndexSearcher(reader)
 
-        val titleQuery = QueryParser("title", analyzer).parse("$query*")
+        val titleQuery = WildcardQuery(org.apache.lucene.index.Term("title", "${query.lowercase()}*"))
         val topDocs = searcher.search(titleQuery, limit * 3)
 
         val suggestions = mutableSetOf<SearchSuggestion>()
@@ -187,21 +189,15 @@ class LuceneSearchEngine(
 
     private fun buildPhraseQuery(query: String): Query {
         val terms = query.split("\\s+".toRegex()).filter { it.isNotEmpty() }
-        if (terms.size == 1) {
-            val builder = PhraseQuery.Builder()
-            builder.add(org.apache.lucene.index.Term("content", terms[0]))
-            return builder.build()
-        }
 
+        // Build a phrase query for each field, combine with SHOULD so either field can satisfy
         val booleanQuery = BooleanQuery.Builder()
-        terms.forEach { term ->
+        for (field in arrayOf("title", "content")) {
             val builder = PhraseQuery.Builder()
             builder.setSlop(2)
-            builder.add(org.apache.lucene.index.Term("content", term))
-            val phraseQuery = builder.build()
-            booleanQuery.add(phraseQuery, BooleanClause.Occur.SHOULD)
+            terms.forEach { term -> builder.add(org.apache.lucene.index.Term(field, term.lowercase())) }
+            booleanQuery.add(builder.build(), BooleanClause.Occur.SHOULD)
         }
-
         return booleanQuery.setMinimumNumberShouldMatch(1).build()
     }
 
@@ -211,9 +207,10 @@ class LuceneSearchEngine(
 
         terms.forEach { term ->
             val maxEdits = kotlin.math.min(((1.0 - threshold) * term.length).toInt(), 2)
-            val luceneTerm = org.apache.lucene.index.Term("content", term)
-            val fuzzyQuery = FuzzyQuery(luceneTerm, maxEdits)
-            booleanQuery.add(fuzzyQuery, BooleanClause.Occur.SHOULD)
+            for (field in arrayOf("title", "content")) {
+                val luceneTerm = org.apache.lucene.index.Term(field, term.lowercase())
+                booleanQuery.add(FuzzyQuery(luceneTerm, maxEdits), BooleanClause.Occur.SHOULD)
+            }
         }
 
         return booleanQuery.setMinimumNumberShouldMatch(1).build()
@@ -222,10 +219,10 @@ class LuceneSearchEngine(
     suspend fun searchByTag(tag: String): List<Fragment> = withContext(Dispatchers.IO) {
         val reader = org.apache.lucene.index.DirectoryReader.open(directory)
         val searcher = IndexSearcher(reader)
-        
-        val query = QueryParser("tag", analyzer).parse(tag)
+
+        val query = TermQuery(org.apache.lucene.index.Term("tag", tag.lowercase()))
         val topDocs = searcher.search(query, 100)
-        
+
         val results = topDocs.scoreDocs.mapNotNull { scoreDoc ->
             val doc = searcher.storedFields().document(scoreDoc.doc)
             val slug = doc.get("slug")
@@ -239,8 +236,8 @@ class LuceneSearchEngine(
     suspend fun searchByCategory(category: String): List<Fragment> = withContext(Dispatchers.IO) {
         val reader = org.apache.lucene.index.DirectoryReader.open(directory)
         val searcher = IndexSearcher(reader)
-        
-        val query = QueryParser("category", analyzer).parse(category)
+
+        val query = TermQuery(org.apache.lucene.index.Term("category", category.lowercase()))
         val topDocs = searcher.search(query, 100)
 
         val results = topDocs.scoreDocs.mapNotNull { scoreDoc ->
