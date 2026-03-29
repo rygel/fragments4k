@@ -57,6 +57,7 @@
         <module>fragments-lucene-core</module>
         <module>fragments-sitemap-core</module>
         <module>fragments-live-reload</module>
+        <module>fragments-chat-core</module>
         <module>fragments-navigation-core</module>
         <module>fragments-social-core</module>
         <module>fragments-seo-core</module>
@@ -208,6 +209,11 @@
             <dependency>
                 <groupId>io.github.rygel</groupId>
                 <artifactId>fragments-live-reload</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.rygel</groupId>
+                <artifactId>fragments-chat-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>

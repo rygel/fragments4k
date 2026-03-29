@@ -8,6 +8,7 @@ import com.vladsch.flexmark.ext.tables.TablesExtension
 import com.vladsch.flexmark.html.HtmlRenderer
 import com.vladsch.flexmark.parser.Parser
 import com.vladsch.flexmark.util.data.MutableDataSet
+import com.vladsch.flexmark.util.misc.Extension
 import org.yaml.snakeyaml.Yaml
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -17,7 +18,8 @@ import java.time.format.DateTimeFormatter
  * Parses Markdown files that contain an optional YAML front matter block.
  *
  * Supported Markdown extensions: tables, strikethrough, task lists, auto-links,
- * and footnotes (via flexmark-all).
+ * and footnotes (via flexmark-all). Additional flexmark extensions (e.g.
+ * `ChatExtension` from `fragments-chat-core`) can be injected via [extraExtensions].
  *
  * Front matter must be a YAML block delimited by `---` at the very start of the file:
  * ```
@@ -31,16 +33,23 @@ import java.time.format.DateTimeFormatter
  *
  * Use [parse] to get a [ParsedContent] with the separated front matter and rendered HTML.
  * Use the [parseDate] companion function to normalise date values from YAML to [java.time.LocalDateTime].
+ *
+ * @param extraExtensions Additional flexmark [Extension] instances appended to the
+ *   default set. Pass extensions here rather than constructing a separate parser
+ *   so that the YAML front matter stripping and caching logic is shared.
  */
-class MarkdownParser {
+class MarkdownParser(extraExtensions: List<Extension> = emptyList()) {
     private val options = MutableDataSet().apply {
-        set(Parser.EXTENSIONS, listOf(
-            TablesExtension.create(),
-            StrikethroughExtension.create(),
-            TaskListExtension.create(),
-            AutolinkExtension.create(),
-            FootnoteExtension.create(),
-        ))
+        set(
+            Parser.EXTENSIONS,
+            listOf(
+                TablesExtension.create(),
+                StrikethroughExtension.create(),
+                TaskListExtension.create(),
+                AutolinkExtension.create(),
+                FootnoteExtension.create(),
+            ) + extraExtensions,
+        )
     }
     private val parser = Parser.builder(options).build()
     private val renderer = HtmlRenderer.builder(options).build()
