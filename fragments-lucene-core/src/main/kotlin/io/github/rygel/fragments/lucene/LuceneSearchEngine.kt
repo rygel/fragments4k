@@ -9,6 +9,7 @@ import org.apache.lucene.document.Document
 import org.apache.lucene.document.Field
 import org.apache.lucene.document.StringField
 import org.apache.lucene.document.TextField
+import org.apache.lucene.queryparser.classic.MultiFieldQueryParser
 import org.apache.lucene.queryparser.classic.QueryParser
 import org.apache.lucene.search.BooleanClause
 import org.apache.lucene.search.BooleanQuery
@@ -51,21 +52,22 @@ data class SearchSuggestion(
 }
 
 class LuceneSearchEngine(
-    private val repository: FragmentRepository,
+    private val repositories: List<FragmentRepository>,
     private val indexPath: Path? = null
 ) {
+    constructor(repository: FragmentRepository, indexPath: Path? = null) : this(listOf(repository), indexPath)
     private val analyzer = StandardAnalyzer()
     private val directory: org.apache.lucene.store.Directory = indexPath?.let { org.apache.lucene.store.FSDirectory.open(it) } ?: org.apache.lucene.store.ByteBuffersDirectory()
     private var indexWriter: org.apache.lucene.index.IndexWriter? = null
     private var indexReader: org.apache.lucene.index.IndexReader? = null
 
     suspend fun index() = withContext(Dispatchers.IO) {
-        val fragments = repository.getAllVisible()
-        
         val config = org.apache.lucene.index.IndexWriterConfig(analyzer)
         val writer = org.apache.lucene.index.IndexWriter(directory, config)
         writer.deleteAll()
-        
+
+        val fragments = repositories.flatMap { it.getAllVisible() }
+
         fragments.forEach { fragment ->
             val doc = Document()
             doc.add(StringField("slug", fragment.slug, Field.Store.YES))
@@ -105,7 +107,7 @@ class LuceneSearchEngine(
             val docId = scoreDoc.doc
             val doc = searcher.storedFields().document(docId)
             val slug = doc.get("slug")
-            val fragment = repository.getBySlug(slug)
+            val fragment = repositories.firstNotNullOfOrNull { it.getBySlug(slug) }
             fragment?.let { SearchResult(it, scoreDoc.score) }
         }
 
@@ -176,7 +178,9 @@ class LuceneSearchEngine(
     }
 
     private fun buildStandardQuery(query: String): Query {
-        val parser = QueryParser("content", analyzer)
+        val fields = arrayOf("title", "content")
+        val boosts = mapOf("title" to 2.0f, "content" to 1.0f)
+        val parser = MultiFieldQueryParser(fields, analyzer, boosts)
         parser.defaultOperator = QueryParser.Operator.AND
         return parser.parse(query)
     }
@@ -225,9 +229,9 @@ class LuceneSearchEngine(
         val results = topDocs.scoreDocs.mapNotNull { scoreDoc ->
             val doc = searcher.storedFields().document(scoreDoc.doc)
             val slug = doc.get("slug")
-            repository.getBySlug(slug)
+            repositories.firstNotNullOfOrNull { it.getBySlug(slug) }
         }
-        
+
         reader.close()
         results
     }
@@ -238,11 +242,11 @@ class LuceneSearchEngine(
         
         val query = QueryParser("category", analyzer).parse(category)
         val topDocs = searcher.search(query, 100)
-        
+
         val results = topDocs.scoreDocs.mapNotNull { scoreDoc ->
             val doc = searcher.storedFields().document(scoreDoc.doc)
             val slug = doc.get("slug")
-            repository.getBySlug(slug)
+            repositories.firstNotNullOfOrNull { it.getBySlug(slug) }
         }
          
         reader.close()
