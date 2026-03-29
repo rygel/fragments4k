@@ -73,6 +73,7 @@ class LuceneSearchEngine(
         fragments.forEach { fragment ->
             val doc = Document()
             doc.add(StringField("slug", fragment.slug, Field.Store.YES))
+            doc.add(StringField("url", fragment.url, Field.Store.YES))
             doc.add(TextField("title", fragment.title, Field.Store.YES))
             doc.add(TextField("content", fragment.contentTextOnly, Field.Store.NO))
             doc.add(TextField("preview", fragment.previewTextOnly, Field.Store.NO))

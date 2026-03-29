@@ -28,6 +28,9 @@ import java.time.format.DateTimeFormatter
  * in [Fragment.frontMatter] and accessible from templates.
  *
  * @param basePath Absolute path to the directory containing the Markdown content files.
+ * @param baseUrl URL prefix for all fragments in this repository (e.g. `/projects`).
+ *   Combined with each fragment's slug it forms the canonical URL. Leave empty for
+ *   repositories whose fragments are routed individually (e.g. `/about`).
  * @param extension File extension to scan for; defaults to `.md`.
  * @param revisionRepository Storage backend for revision snapshots; defaults to a
  *   [FileSystemFragmentRevisionRepository] rooted at [basePath].
@@ -43,6 +46,7 @@ import java.time.format.DateTimeFormatter
  */
 class FileSystemFragmentRepository(
     private val basePath: String,
+    val baseUrl: String = "",
     private val extension: String = ".md",
     private val revisionRepository: FragmentRevisionRepository = FileSystemFragmentRevisionRepository(basePath),
     private val parser: MarkdownParser = MarkdownParser(),
@@ -270,6 +274,7 @@ class FileSystemFragmentRepository(
         return Fragment(
             title = title,
             slug = slug,
+            baseUrl = baseUrl,
             status = status,
             date = date,
             publishDate = publishDate,

@@ -93,6 +93,9 @@ data class FragmentViewModel(
     val slug: String
         get() = fragment.slug
 
+    val url: String
+        get() = fragment.url
+
     val template: String
         get() = fragment.template
 
