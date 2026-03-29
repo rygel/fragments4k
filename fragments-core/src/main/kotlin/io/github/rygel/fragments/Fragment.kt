@@ -211,5 +211,5 @@ data class Fragment(
         get() = seriesSlug != null && seriesPart != null
 
     val seriesPartTitle: String?
-        get() = seriesTitle?.takeIf { it.isNotEmpty() } ?: "Part $seriesPart"
+        get() = seriesTitle?.takeIf { it.isNotEmpty() } ?: seriesPart?.let { "Part $it" }
 }

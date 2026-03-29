@@ -61,6 +61,9 @@ enum class SeriesStatus {
 /**
  * A single part of a [ContentSeries], pairing a [Fragment] with its position.
  *
+ * Whether a part is the *last* in the series cannot be determined from the part alone —
+ * use [SeriesNavigation.isLastPart] when you need that information.
+ *
  * @property fragment The content fragment for this part.
  * @property partNumber 1-based position within the series.
  * @property partTitle Optional display title override (falls back to "Part N" when absent).
@@ -70,11 +73,9 @@ data class SeriesPart(
     val partNumber: Int,
     val partTitle: String? = null
 ) {
-    val isNext: Boolean
+    /** `true` when this is the first part of the series (`partNumber == 1`). */
+    val isFirst: Boolean
         get() = partNumber == 1
-
-    val isLast: Boolean
-        get() = false
 }
 
 /**

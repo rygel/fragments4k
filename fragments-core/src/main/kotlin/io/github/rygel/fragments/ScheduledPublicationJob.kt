@@ -1,9 +1,10 @@
 package io.github.rygel.fragments
 
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 interface ScheduledPublicationJob {
-    suspend fun execute(threshold: LocalDateTime = LocalDateTime.now()): ScheduledPublicationResult
+    suspend fun execute(threshold: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC)): ScheduledPublicationResult
 }
 
 data class ScheduledPublicationResult(

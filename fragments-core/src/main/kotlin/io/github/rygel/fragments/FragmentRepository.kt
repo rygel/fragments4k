@@ -1,6 +1,7 @@
 package io.github.rygel.fragments
 
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 /**
  * Primary read/write contract for accessing and managing [Fragment] instances.
@@ -95,13 +96,13 @@ interface FragmentRepository {
      * Returns all [FragmentStatus.SCHEDULED] fragments whose [Fragment.publishDate]
      * is on or before [threshold] (defaults to now).
      */
-    suspend fun getScheduledFragmentsDueForPublication(threshold: LocalDateTime = LocalDateTime.now()): List<Fragment>
+    suspend fun getScheduledFragmentsDueForPublication(threshold: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC)): List<Fragment>
 
     /**
      * Publishes all scheduled fragments that are due at [threshold].
      * Intended to be called from a scheduled job (see [ScheduledPublicationJob]).
      */
-    suspend fun publishScheduledFragments(threshold: LocalDateTime = LocalDateTime.now()): List<Result<Fragment>>
+    suspend fun publishScheduledFragments(threshold: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC)): List<Result<Fragment>>
 
     /**
      * Transitions multiple fragments to [FragmentStatus.SCHEDULED] with the given [publishDate].
@@ -119,13 +120,13 @@ interface FragmentRepository {
      * Transitions any published fragments whose [Fragment.expiryDate] is before [threshold]
      * to [FragmentStatus.EXPIRED].
      */
-    suspend fun expireFragments(threshold: LocalDateTime = LocalDateTime.now()): List<Result<Fragment>>
+    suspend fun expireFragments(threshold: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC)): List<Result<Fragment>>
 
     /**
      * Returns published fragments that will expire before [threshold]
      * (defaults to 7 days from now), useful for sending expiry warnings.
      */
-    suspend fun getFragmentsExpiringSoon(threshold: LocalDateTime = LocalDateTime.now().plusDays(7)): List<Fragment>
+    suspend fun getFragmentsExpiringSoon(threshold: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC).plusDays(7)): List<Fragment>
 
     /**
      * Forces the repository to re-read content from its backing store, discarding
