@@ -1,11 +1,35 @@
 package io.github.rygel.fragments
 
+/**
+ * A single heading entry extracted from a fragment's content for building a
+ * table-of-contents widget.
+ *
+ * @property level Heading depth: 1 = `<h1>`, 2 = `<h2>`, etc.
+ * @property title Plain-text heading content.
+ * @property anchor URL-safe anchor slug derived from [title].
+ */
 data class TableOfContentsItem(
     val level: Int,
     val title: String,
     val anchor: String
 )
 
+/**
+ * Presentation model that wraps a [Fragment] with computed properties needed by
+ * templates: reading time, relationships (prev/next/related), and HTMX-aware
+ * partial rendering detection.
+ *
+ * Passed directly into JTE (or any other) templates so that template code stays
+ * free of business logic.
+ *
+ * @property fragment The underlying domain object.
+ * @property isPartialRender `true` when only an HTML fragment (not a full page)
+ *   should be rendered — set automatically via [fromHtmxRequest].
+ * @property pageTitle Override for the `<title>` element; falls back to [Fragment.title].
+ * @property additionalContext Arbitrary extra values made available to templates
+ *   (e.g. site-wide config, feature flags).
+ * @property relationships Pre-loaded relationship data; `null` means not loaded yet.
+ */
 data class FragmentViewModel(
     val fragment: Fragment,
     val isPartialRender: Boolean = false,
@@ -17,9 +41,16 @@ data class FragmentViewModel(
     companion object {
         const val HTMX_REQUEST_HEADER = "HX-Request"
         const val HTMX_CURRENT_URL_HEADER = "HX-Current-URL"
+
+        /** Average adult reading speed used for [FragmentViewModel.readingTime] calculation. */
         const val WORDS_PER_MINUTE = 225
     }
 
+    /**
+     * Returns a copy of this view model with [isPartialRender] derived from the
+     * presence of an `HX-Request: true` header — wire this up in your framework
+     * adapter's request handler.
+     */
     fun fromHtmxRequest(headers: Map<String, String>): FragmentViewModel {
         val isHtmxRequest = headers[HTMX_REQUEST_HEADER]?.lowercase() == "true"
         return copy(isPartialRender = isHtmxRequest)
@@ -73,13 +104,21 @@ data class FragmentViewModel(
     val author: String?
         get() = fragment.author
 
+    /** Estimated reading time based on [WORDS_PER_MINUTE]. */
     val readingTime: ReadingTime
         get() = calculateReadingTime()
 
+    /** Human-readable reading time string, e.g. `"3m read"` or `"45s read"`. */
     val formattedReadingTime: String
         get() = readingTime.text
 
-
+    /**
+     * Breakdown of the estimated time required to read this fragment's content.
+     *
+     * @property minutes Whole minutes component.
+     * @property seconds Remaining seconds component.
+     * @property text Formatted display string (e.g. `"3m 12s read"`).
+     */
     data class ReadingTime(
         val minutes: Int,
         val seconds: Int,

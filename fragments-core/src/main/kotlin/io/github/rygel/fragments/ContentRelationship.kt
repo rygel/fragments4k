@@ -59,7 +59,18 @@ enum class RelationshipType {
 }
 
 /**
- * Configuration for content relationship generation
+ * Tuning parameters for the content relationship discovery algorithm used by
+ * [FragmentRepository.getRelationships].
+ *
+ * @property maxRelatedByTag Maximum number of related fragments surfaced via shared tags.
+ * @property maxRelatedByCategory Maximum number of related fragments surfaced via shared categories.
+ * @property maxRelatedByContent Maximum number of related fragments surfaced via content similarity.
+ * @property excludeCurrentLanguage When `true`, related fragments in the same language are excluded
+ *   (useful for translation-focused relationship lists).
+ * @property excludeCurrentAuthor When `true`, fragments by the same author are excluded from related results.
+ * @property minSharedTags Minimum number of tags two fragments must share to be considered tag-related.
+ * @property minSharedCategories Minimum number of categories two fragments must share to be considered
+ *   category-related.
  */
 data class RelationshipConfig(
     val maxRelatedByTag: Int = 5,
