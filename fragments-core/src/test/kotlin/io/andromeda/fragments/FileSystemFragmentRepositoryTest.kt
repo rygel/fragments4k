@@ -430,6 +430,35 @@ class FileSystemFragmentRepositoryTest {
         assertFalse(FragmentStatus.canTransition(FragmentStatus.SCHEDULED, FragmentStatus.EXPIRED))
     }
 
+    @Test
+    fun getAllLoadsFragmentsFromSubdirectories() = runBlocking {
+        createTestFile("root-post.md", """
+            ---
+            title: Root Post
+            visible: true
+            ---
+            Root content
+        """.trimIndent())
+
+        val subDir = File(tempDir.toFile(), "blog")
+        subDir.mkdirs()
+        File(subDir, "nested-post.md").writeText("""
+            ---
+            title: Nested Post
+            visible: true
+            ---
+            Nested content
+        """.trimIndent())
+
+        repository.reload()
+
+        val result = repository.getAll()
+        assertEquals(2, result.size)
+        val titles = result.map { it.title }.toSet()
+        assertTrue("Root Post" in titles)
+        assertTrue("Nested Post" in titles)
+    }
+
     private fun createTestFile(filename: String, content: String) {
         val file = File(tempDir.toFile(), filename)
         file.writeText(content)

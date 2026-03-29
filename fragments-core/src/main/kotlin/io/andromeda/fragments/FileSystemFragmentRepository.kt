@@ -191,7 +191,10 @@ class FileSystemFragmentRepository(
             return emptyList()
         }
 
-        val files = directory.listFiles { file -> file.extension == extension.removePrefix(".") } ?: return emptyList()
+        val ext = extension.removePrefix(".")
+        val files = directory.walkTopDown()
+            .filter { it.isFile && it.extension == ext }
+            .toList()
 
         return files.mapNotNull { file ->
             try {
