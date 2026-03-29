@@ -2,79 +2,43 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
+
+permissions: {}
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  test-core:
-    name: Test Core Modules
+  build-and-test:
+    name: Build and Test
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
+      # Caches ~/.m2/repository — downloaded JARs persist across runs so
+      # Maven does not re-download the internet on every push
+      - uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 # v4.7.0
         with:
           java-version: '17'
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Run core module tests
-        run: mvn test -pl fragments-core,fragments-static-core,fragments-blog-core,fragments-rss-core,fragments-lucene-core,fragments-sitemap-core
+      - name: Build and test all modules
+        run: mvn verify -T 4
 
-  test-adapters:
-    name: Test Framework Adapters
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          java-version: '17'
-          distribution: 'temurin'
-          cache: 'maven'
-
-      - name: Run adapter tests
-        run: mvn test -pl fragments-http4k,fragments-javalin,fragments-spring-boot,fragments-quarkus,fragments-micronaut
-
-  test-all:
-    name: Test All Modules
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-          cache: 'maven'
-
-      - name: Run all tests
-        run: mvn test
-
-  build:
-    name: Build Without Tests
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-          cache: 'maven'
-
-      - name: Build with Maven
-        run: mvn clean install -DskipTests
+          name: coverage-report
+          path: '**/target/site/jacoco/'
+          retention-days: 14

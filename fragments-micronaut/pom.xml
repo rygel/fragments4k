@@ -15,7 +15,6 @@
 
     <properties>
         <java.version>17</java.version>
-        <micronaut.version>4.5.1</micronaut.version>
     </properties>
 
     <dependencyManagement>

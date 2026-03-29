@@ -36,5 +36,13 @@
              <artifactId>junit-jupiter</artifactId>
              <scope>test</scope>
          </dependency>
+         <dependency>
+             <groupId>io.andromeda</groupId>
+             <artifactId>fragments-core</artifactId>
+             <version>${project.version}</version>
+             <classifier>tests</classifier>
+             <type>test-jar</type>
+             <scope>test</scope>
+         </dependency>
     </dependencies>
 </project>

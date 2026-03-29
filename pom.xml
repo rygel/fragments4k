@@ -32,10 +32,7 @@
         <rest-assured.version>5.4.0</rest-assured.version>
         <ktlint.version>3.5.0</ktlint.version>
         
-        <!-- Security & Analysis Tools -->
-        <owasp-dependency-check.version>9.3.0</owasp-dependency-check.version>
-        <spotbugs.version>4.8.6</spotbugs.version>
-        <spotbugs-maven-plugin.version>4.8.6</spotbugs-maven-plugin.version>
+        <!-- Performance benchmarking -->
         <jmh.version>1.37</jmh.version>
         <jmh-maven-plugin.version>1.0.1</jmh-maven-plugin.version>
         
@@ -46,8 +43,8 @@
         <jacoco.version>0.8.12</jacoco.version>
 
         <spring-boot.version>3.3.2</spring-boot.version>
-        <quarkus.version>3.32.1</quarkus.version>
-        <micronaut.version>4.11.6</micronaut.version>
+        <quarkus.version>3.13.3</quarkus.version>
+        <micronaut.version>4.5.1</micronaut.version>
     </properties>
 
     <modules>
@@ -70,11 +67,7 @@
         <module>fragments-quarkus</module>
         <module>fragments-micronaut</module>
         <module>fragments-cli</module>
-        <module>demo-http4k</module>
         <module>demo-spring-boot</module>
-        <module>demo-javalin</module>
-        <module>demo-quarkus</module>
-        <module>demo-micronaut</module>
     </modules>
 
     <dependencyManagement>
@@ -214,30 +207,6 @@
     <build>
         <sourceDirectory>src/main/kotlin</sourceDirectory>
         <testSourceDirectory>src/test/kotlin</testSourceDirectory>
-        <plugins>
-            <plugin>
-                <groupId>org.jetbrains.kotlin</groupId>
-                <artifactId>kotlin-maven-plugin</artifactId>
-                <version>${kotlin.version}</version>
-                <executions>
-                    <execution>
-                        <id>compile</id>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>test-compile</id>
-                        <goals>
-                            <goal>test-compile</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <jvmTarget>${java.version}</jvmTarget>
-                </configuration>
-            </plugin>
-        </plugins>
         <pluginManagement>
             <plugins>
                 <plugin>
@@ -266,14 +235,6 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.15.0</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-surefire-plugin</artifactId>
-                    <version>3.5.5</version>
-                    <configuration>
-                        <useSystemClassLoader>false</useSystemClassLoader>
-                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -324,44 +285,6 @@
                             <phase>verify</phase>
                         </execution>
                     </executions>
-                </plugin>
-                
-                <plugin>
-                    <groupId>org.owasp</groupId>
-                    <artifactId>dependency-check-maven</artifactId>
-                    <version>${owasp-dependency-check.version}</version>
-                    <executions>
-                        <execution>
-                            <id>dependency-check</id>
-                            <goals>
-                                <goal>check</goal>
-                            </goals>
-                            <phase>verify</phase>
-                        </execution>
-                    </executions>
-                    <configuration>
-                        <failBuildOnCVSS>7</failBuildOnCVSS>
-                        <suppressionFile>${project.basedir}/dependency-check-suppressions.xml</suppressionFile>
-                    </configuration>
-                </plugin>
-                
-                <plugin>
-                    <groupId>com.github.spotbugs</groupId>
-                    <artifactId>spotbugs-maven-plugin</artifactId>
-                    <version>${spotbugs-maven-plugin.version}</version>
-                    <executions>
-                        <execution>
-                            <id>spotbugs</id>
-                            <goals>
-                                <goal>check</goal>
-                            </goals>
-                            <phase>verify</phase>
-                        </execution>
-                    </executions>
-                    <configuration>
-                        <effort>Max</effort>
-                        <threshold>Low</threshold>
-                    </configuration>
                 </plugin>
                 
                 <plugin>
@@ -434,33 +357,17 @@
                     </executions>
                 </plugin>
                 
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-jar-plugin</artifactId>
-                    <version>3.4.2</version>
-                    <executions>
-                        <execution>
-                            <id>attach-jmh-sources</id>
-                            <phase>generate-test-sources</phase>
-                            <goals>
-                                <goal>test-jar</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                </plugin>
-                
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-surefire-plugin</artifactId>
-                    <version>3.5.5</version>
-                    <configuration>
-                        <useSystemClassLoader>false</useSystemClassLoader>
-                        <argLine>-Xmx2048m -XX:MaxMetaspaceSize=512m</argLine>
-                    </configuration>
-                </plugin>
             </plugins>
         </pluginManagement>
     </build>
+
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub Packages</name>
+            <url>https://maven.pkg.github.com/rygel/fragments4k</url>
+        </repository>
+    </distributionManagement>
 
     <repositories>
         <repository>

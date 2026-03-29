@@ -15,7 +15,6 @@
 
     <properties>
         <java.version>17</java.version>
-        <quarkus.version>3.13.3</quarkus.version>
     </properties>
 
     <dependencyManagement>
