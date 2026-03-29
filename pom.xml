@@ -66,6 +66,7 @@
         <module>fragments-quarkus</module>
         <module>fragments-micronaut</module>
         <module>fragments-cli</module>
+        <module>fragments-bom</module>
         <module>demo-spring-boot</module>
         <module>demo-http4k</module>
         <module>demo-javalin</module>
