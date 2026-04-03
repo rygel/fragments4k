@@ -585,28 +585,35 @@ class FileSystemFragmentRepository(
         val result = revertedFragment.getOrNull() ?: return@withContext Result.failure(Exception("Revert failed"))
         try {
             val file = getFragmentFile(slug) ?: return@withContext Result.failure(IllegalArgumentException("Fragment file not found: $slug"))
-            
+
             val content = file.readText()
             val parsed = parser.parse(content)
             val updatedFrontMatter = parsed.frontMatter.toMutableMap()
             updatedFrontMatter["title"] = result.title
-            
+
             val newContent = buildString {
                 append("---\n")
                 dumpFrontMatter(updatedFrontMatter, this)
                 append("---\n")
                 append(result.content)
             }
-            
+
             file.writeText(newContent)
-            
+
             val updatedFragment = parseFragmentFile(file)
             cacheUpdatedFragment(updatedFragment)
-            
+
             Result.success(updatedFragment)
         } catch (e: Exception) {
             logger.error("Failed to revert fragment: $slug", e)
             Result.failure(e)
         }
+    }
+
+    companion object {
+        private val SLUG_NON_ALPHANUMERIC = Regex("[^a-z0-9\\s-]")
+        private val SLUG_WHITESPACE = Regex("\\s+")
+        private val SLUG_CONSECUTIVE_DASHES = Regex("-+")
+        private val MORE_TAG_PATTERN = Regex("<!--\\s*more\\s*-->", RegexOption.IGNORE_CASE)
     }
 }
