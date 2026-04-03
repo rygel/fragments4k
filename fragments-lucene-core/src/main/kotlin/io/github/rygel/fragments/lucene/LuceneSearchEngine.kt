@@ -98,6 +98,8 @@ class LuceneSearchEngine(
     }
 
     suspend fun search(options: SearchOptions): List<SearchResult> = withContext(Dispatchers.IO) {
+        val fragmentsBySlug = repositories.flatMap { it.getAllVisible() }.associateBy { it.slug }
+
         val reader = org.apache.lucene.index.DirectoryReader.open(directory)
         val searcher = IndexSearcher(reader)
 
@@ -107,11 +109,9 @@ class LuceneSearchEngine(
         val topDocs = searcher.search(query, maxResults)
 
         val results = topDocs.scoreDocs.mapNotNull { scoreDoc ->
-            val docId = scoreDoc.doc
-            val doc = searcher.storedFields().document(docId)
+            val doc = searcher.storedFields().document(scoreDoc.doc)
             val slug = doc.get("slug")
-            val fragment = repositories.firstNotNullOfOrNull { it.getBySlug(slug) }
-            fragment?.let { SearchResult(it, scoreDoc.score) }
+            fragmentsBySlug[slug]?.let { SearchResult(it, scoreDoc.score) }
         }
 
         reader.close()
@@ -218,6 +218,8 @@ class LuceneSearchEngine(
     }
 
     suspend fun searchByTag(tag: String): List<Fragment> = withContext(Dispatchers.IO) {
+        val fragmentsBySlug = repositories.flatMap { it.getAllVisible() }.associateBy { it.slug }
+
         val reader = org.apache.lucene.index.DirectoryReader.open(directory)
         val searcher = IndexSearcher(reader)
 
@@ -226,8 +228,7 @@ class LuceneSearchEngine(
 
         val results = topDocs.scoreDocs.mapNotNull { scoreDoc ->
             val doc = searcher.storedFields().document(scoreDoc.doc)
-            val slug = doc.get("slug")
-            repositories.firstNotNullOfOrNull { it.getBySlug(slug) }
+            fragmentsBySlug[doc.get("slug")]
         }
 
         reader.close()
@@ -235,6 +236,8 @@ class LuceneSearchEngine(
     }
 
     suspend fun searchByCategory(category: String): List<Fragment> = withContext(Dispatchers.IO) {
+        val fragmentsBySlug = repositories.flatMap { it.getAllVisible() }.associateBy { it.slug }
+
         val reader = org.apache.lucene.index.DirectoryReader.open(directory)
         val searcher = IndexSearcher(reader)
 
@@ -243,10 +246,9 @@ class LuceneSearchEngine(
 
         val results = topDocs.scoreDocs.mapNotNull { scoreDoc ->
             val doc = searcher.storedFields().document(scoreDoc.doc)
-            val slug = doc.get("slug")
-            repositories.firstNotNullOfOrNull { it.getBySlug(slug) }
+            fragmentsBySlug[doc.get("slug")]
         }
-         
+
         reader.close()
         results
     }
