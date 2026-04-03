@@ -78,9 +78,7 @@ class MarkdownParser(extraExtensions: List<Extension> = emptyList()) {
      * and converting the body to HTML.
      */
     fun parse(markdown: String): ParsedContent {
-        // \n? at end allows files with no trailing newline after the closing ---
-        val frontMatterPattern = Regex("^---\\s*\\n(.*?)\\n---\\s*\\n?", RegexOption.DOT_MATCHES_ALL)
-        val match = frontMatterPattern.find(markdown)
+        val match = FRONT_MATTER_PATTERN.find(markdown)
 
         return if (match != null) {
             val frontMatterYaml = match.groupValues[1]
@@ -104,6 +102,9 @@ class MarkdownParser(extraExtensions: List<Extension> = emptyList()) {
     }
 
     companion object {
+        // \n? at end allows files with no trailing newline after the closing ---
+        private val FRONT_MATTER_PATTERN = Regex("^---\\s*\\n(.*?)\\n---\\s*\\n?", RegexOption.DOT_MATCHES_ALL)
+
         private val DATE_TIME_FORMATTERS = listOf(
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"),
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
