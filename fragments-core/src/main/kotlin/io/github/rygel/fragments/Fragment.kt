@@ -56,6 +56,19 @@ enum class FragmentStatus {
     EXPIRED;
 
     companion object {
+        /**
+         * Permitted lifecycle transitions.
+         *
+         * Intentional non-obvious entries:
+         * - `PUBLISHED → DRAFT` — "unpublish" / pull back for editing without archiving.
+         * - `ARCHIVED → PUBLISHED` — re-publish previously archived content (e.g. a seasonal post).
+         * - `ARCHIVED → REVIEW / APPROVED` — restart the editorial workflow for archived content.
+         * - `EXPIRED → PUBLISHED / SCHEDULED` — reinstate expired content (e.g. extend its expiry date).
+         * - `SCHEDULED → PUBLISHED` — the scheduled-publication background job uses this transition.
+         *
+         * Use [FragmentRepository.updateFragmentStatus] with `force = true` to bypass
+         * this map for emergency overrides.
+         */
         private val validTransitions = mapOf(
             DRAFT to setOf(REVIEW, APPROVED, PUBLISHED, SCHEDULED, ARCHIVED),
             REVIEW to setOf(DRAFT, APPROVED, ARCHIVED),

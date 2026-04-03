@@ -100,72 +100,49 @@ class LuceneSearchEngine(
     suspend fun search(options: SearchOptions): List<SearchResult> = withContext(Dispatchers.IO) {
         val fragmentsBySlug = repositories.flatMap { it.getAllVisible() }.associateBy { it.slug }
 
-        val reader = org.apache.lucene.index.DirectoryReader.open(directory)
-        val searcher = IndexSearcher(reader)
+        org.apache.lucene.index.DirectoryReader.open(directory).use { reader ->
+            val searcher = IndexSearcher(reader)
+            val query = buildQuery(options)
+            val maxResults = if (options.autocomplete) options.autocompleteLimit else options.maxResults
+            val topDocs = searcher.search(query, maxResults)
 
-        val query = buildQuery(options)
-
-        val maxResults = if (options.autocomplete) options.autocompleteLimit else options.maxResults
-        val topDocs = searcher.search(query, maxResults)
-
-        val results = topDocs.scoreDocs.mapNotNull { scoreDoc ->
-            val doc = searcher.storedFields().document(scoreDoc.doc)
-            val slug = doc.get("slug")
-            fragmentsBySlug[slug]?.let { SearchResult(it, scoreDoc.score) }
+            topDocs.scoreDocs.mapNotNull { scoreDoc ->
+                val doc = searcher.storedFields().document(scoreDoc.doc)
+                fragmentsBySlug[doc.get("slug")]?.let { SearchResult(it, scoreDoc.score) }
+            }
         }
-
-        reader.close()
-        results
     }
 
     suspend fun autocomplete(query: String, limit: Int = 10): List<SearchSuggestion> = withContext(Dispatchers.IO) {
         if (query.isBlank()) return@withContext emptyList()
 
-        val reader = org.apache.lucene.index.DirectoryReader.open(directory)
-        val searcher = IndexSearcher(reader)
+        val lowerQuery = query.lowercase()
+        org.apache.lucene.index.DirectoryReader.open(directory).use { reader ->
+            val searcher = IndexSearcher(reader)
+            val titleQuery = WildcardQuery(org.apache.lucene.index.Term("title", "$lowerQuery*"))
+            val topDocs = searcher.search(titleQuery, limit * 3)
 
-        val titleQuery = WildcardQuery(org.apache.lucene.index.Term("title", "${query.lowercase()}*"))
-        val topDocs = searcher.search(titleQuery, limit * 3)
+            val suggestions = mutableSetOf<SearchSuggestion>()
+            topDocs.scoreDocs.forEach { scoreDoc ->
+                val doc = searcher.storedFields().document(scoreDoc.doc)
 
-        val suggestions = mutableSetOf<SearchSuggestion>()
-
-        topDocs.scoreDocs.forEach { scoreDoc ->
-            val doc = searcher.storedFields().document(scoreDoc.doc)
-
-            val title = doc.get("title")
-            if (title.lowercase().contains(query.lowercase())) {
-                suggestions.add(SearchSuggestion(
-                    text = title,
-                    frequency = 1,
-                    type = SearchSuggestion.SuggestionType.TITLE
-                ))
-            }
-
-            val tags = doc.getValues("tag")
-            tags.forEach { tag ->
-                if (tag.lowercase().contains(query.lowercase())) {
-                    suggestions.add(SearchSuggestion(
-                        text = tag,
-                        frequency = 1,
-                        type = SearchSuggestion.SuggestionType.TAG
-                    ))
+                val title = doc.get("title")
+                if (title.lowercase().contains(lowerQuery)) {
+                    suggestions.add(SearchSuggestion(title, 1, SearchSuggestion.SuggestionType.TITLE))
+                }
+                doc.getValues("tag").forEach { tag ->
+                    if (tag.lowercase().contains(lowerQuery)) {
+                        suggestions.add(SearchSuggestion(tag, 1, SearchSuggestion.SuggestionType.TAG))
+                    }
+                }
+                doc.getValues("category").forEach { category ->
+                    if (category.lowercase().contains(lowerQuery)) {
+                        suggestions.add(SearchSuggestion(category, 1, SearchSuggestion.SuggestionType.CATEGORY))
+                    }
                 }
             }
-
-            val categories = doc.getValues("category")
-            categories.forEach { category ->
-                if (category.lowercase().contains(query.lowercase())) {
-                    suggestions.add(SearchSuggestion(
-                        text = category,
-                        frequency = 1,
-                        type = SearchSuggestion.SuggestionType.CATEGORY
-                    ))
-                }
-            }
+            suggestions.take(limit).toList()
         }
-
-        reader.close()
-        suggestions.take(limit).toList()
     }
 
     suspend fun getSuggestions(query: String, limit: Int = 10): List<SearchSuggestion> {
@@ -220,55 +197,31 @@ class LuceneSearchEngine(
     suspend fun searchByTag(tag: String): List<Fragment> = withContext(Dispatchers.IO) {
         val fragmentsBySlug = repositories.flatMap { it.getAllVisible() }.associateBy { it.slug }
 
-        val reader = org.apache.lucene.index.DirectoryReader.open(directory)
-        val searcher = IndexSearcher(reader)
+        org.apache.lucene.index.DirectoryReader.open(directory).use { reader ->
+            val searcher = IndexSearcher(reader)
+            val query = TermQuery(org.apache.lucene.index.Term("tag", tag.lowercase()))
+            val topDocs = searcher.search(query, 100)
 
-        val query = TermQuery(org.apache.lucene.index.Term("tag", tag.lowercase()))
-        val topDocs = searcher.search(query, 100)
-
-        val results = topDocs.scoreDocs.mapNotNull { scoreDoc ->
-            val doc = searcher.storedFields().document(scoreDoc.doc)
-            fragmentsBySlug[doc.get("slug")]
+            topDocs.scoreDocs.mapNotNull { scoreDoc ->
+                fragmentsBySlug[searcher.storedFields().document(scoreDoc.doc).get("slug")]
+            }
         }
-
-        reader.close()
-        results
     }
 
     suspend fun searchByCategory(category: String): List<Fragment> = withContext(Dispatchers.IO) {
         val fragmentsBySlug = repositories.flatMap { it.getAllVisible() }.associateBy { it.slug }
 
-        val reader = org.apache.lucene.index.DirectoryReader.open(directory)
-        val searcher = IndexSearcher(reader)
+        org.apache.lucene.index.DirectoryReader.open(directory).use { reader ->
+            val searcher = IndexSearcher(reader)
+            val query = TermQuery(org.apache.lucene.index.Term("category", category.lowercase()))
+            val topDocs = searcher.search(query, 100)
 
-        val query = TermQuery(org.apache.lucene.index.Term("category", category.lowercase()))
-        val topDocs = searcher.search(query, 100)
-
-        val results = topDocs.scoreDocs.mapNotNull { scoreDoc ->
-            val doc = searcher.storedFields().document(scoreDoc.doc)
-            fragmentsBySlug[doc.get("slug")]
+            topDocs.scoreDocs.mapNotNull { scoreDoc ->
+                fragmentsBySlug[searcher.storedFields().document(scoreDoc.doc).get("slug")]
+            }
         }
+    }
 
-        reader.close()
-        results
-    }
-    
-    suspend fun invalidateSearchCache() {
-        // No-op for non-cached implementation
-    }
-    
-    suspend fun invalidateFragmentSearchResults(fragmentSlug: String) {
-        // No-op for non-cached implementation
-    }
-    
-    suspend fun invalidateTagSearchResults(tag: String) {
-        // No-op for non-cached implementation
-    }
-    
-    suspend fun invalidateCategorySearchResults(category: String) {
-        // No-op for non-cached implementation
-    }
-    
     fun close() {
         analyzer.close()
         directory.close()
