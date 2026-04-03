@@ -142,11 +142,14 @@ class FileSystemFragmentRepository(
 
             val currentFragment = parseFragmentFile(file)
             if (!force && !FragmentStatus.canTransition(currentFragment.status, status)) {
-                logger.warn("Invalid status transition: ${currentFragment.status} -> $status")
+                val valid = FragmentStatus.getValidTransitions(currentFragment.status)
+                    .joinToString(", ") { it.name.lowercase() }
+                logger.warn("Invalid status transition for '{}': {} -> {}", slug, currentFragment.status, status)
                 return@withContext Result.failure(
                     IllegalStateException(
-                        "Cannot transition from ${currentFragment.status} to $status. " +
-                        "Valid transitions: ${FragmentStatus.getValidTransitions(currentFragment.status)}"
+                        "Cannot transition '$slug' from ${currentFragment.status} to $status. " +
+                        "Valid transitions from ${currentFragment.status}: [$valid]. " +
+                        "Pass force=true to bypass this check."
                     )
                 )
             }
