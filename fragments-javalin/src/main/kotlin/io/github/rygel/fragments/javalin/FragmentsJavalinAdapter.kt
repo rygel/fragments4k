@@ -6,11 +6,11 @@ import io.github.rygel.fragments.lucene.LuceneSearchEngine
 import io.github.rygel.fragments.rss.RssGenerator
 import io.github.rygel.fragments.sitemap.SitemapGenerator
 import io.github.rygel.fragments.static.StaticPageEngine
-import io.javalin.Javalin
+import io.javalin.config.RoutesConfig
 import io.javalin.http.Context
 import kotlinx.coroutines.runBlocking
 
-fun Javalin.fragmentsRoutes(
+fun RoutesConfig.fragmentsRoutes(
     staticEngine: StaticPageEngine,
     blogEngine: BlogEngine,
     renderer: TemplateRenderer?,

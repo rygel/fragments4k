@@ -14,8 +14,8 @@
     <description>Javalin web framework adapter</description>
 
     <properties>
-        <javalin.version>6.4.0</javalin.version>
-        <jetty.version>11.0.24</jetty.version>
+        <javalin.version>7.1.0</javalin.version>
+        <jetty.version>12.1.7</jetty.version>
     </properties>
 
     <dependencyManagement>
@@ -34,7 +34,7 @@
             </dependency>
             <dependency>
                 <groupId>io.javalin</groupId>
-                <artifactId>javalin-rendering</artifactId>
+                <artifactId>javalin-rendering-pebble</artifactId>
                 <version>${javalin.version}</version>
             </dependency>
             <dependency>
@@ -60,7 +60,7 @@
         </dependency>
         <dependency>
             <groupId>io.javalin</groupId>
-            <artifactId>javalin-rendering</artifactId>
+            <artifactId>javalin-rendering-pebble</artifactId>
         </dependency>
         <dependency>
             <groupId>io.github.rygel</groupId>
