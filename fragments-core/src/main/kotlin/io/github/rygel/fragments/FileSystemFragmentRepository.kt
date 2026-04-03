@@ -31,6 +31,21 @@ import java.time.format.DateTimeFormatter
  * @param baseUrl URL prefix for all fragments in this repository (e.g. `/projects`).
  *   Combined with each fragment's slug it forms the canonical URL. Leave empty for
  *   repositories whose fragments are routed individually (e.g. `/about`).
+ * @param urlBuilder Optional factory that computes the canonical URL for each fragment
+ *   after it is parsed, overriding the default `baseUrl/slug` scheme. Use this when
+ *   you need date-based or hierarchical paths. Return a **relative path starting with
+ *   `/`** — the result is stored in [Fragment.resolvedUrl] and returned by
+ *   [Fragment.url]. When non-null, `urlBuilder` takes precedence over `baseUrl`.
+ *   Example — date-based blog URLs:
+ *   ```kotlin
+ *   FileSystemFragmentRepository(
+ *       basePath = "/content/posts",
+ *       urlBuilder = { fragment ->
+ *           val date = fragment.date ?: return@FileSystemFragmentRepository "/${fragment.slug}"
+ *           "/blog/${date.year}/%02d/${fragment.slug}".format(date.monthValue)
+ *       },
+ *   )
+ *   ```
  * @param extension File extension to scan for; defaults to `.md`.
  * @param revisionRepository Storage backend for revision snapshots; defaults to a
  *   [FileSystemFragmentRevisionRepository] rooted at [basePath].
