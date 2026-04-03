@@ -7,6 +7,13 @@ import kotlin.math.min
  */
 object ContentRelationshipGenerator {
 
+    private val REFERENCE_PATTERNS = listOf(
+        Regex("""\{\{fragment:([^}]+)\}\}"""),
+        Regex("""\{%\s*fragment\s+([^\s%]+)\s*%\}"""),
+        Regex("""\[fragment:([^\]]+)\]"""),
+        Regex("""<fragment\s+id=["']([^"']+)["']>"""),
+    )
+
     /**
      * Generates all relationships for a given fragment
      */
@@ -79,8 +86,9 @@ object ContentRelationshipGenerator {
             sharedTags.size >= config.minSharedTags
         }
 
+        val excluded = parseExcludedSlugs(currentFragment.frontMatter["exclude"])
         return withSharedTags
-            .filterNot { fragment -> fragment.slug in (currentFragment.frontMatter["exclude"] as? List<*> ?: emptyList<Any>()) }
+            .filterNot { fragment -> fragment.slug in excluded }
             .sortedByDescending { calculateTagSimilarity(currentFragment, it) }
             .take(config.maxRelatedByTag)
     }
@@ -100,8 +108,9 @@ object ContentRelationshipGenerator {
             sharedCategories.size >= config.minSharedCategories
         }
 
+        val excluded = parseExcludedSlugs(currentFragment.frontMatter["exclude"])
         return withSharedCategories
-            .filterNot { fragment -> fragment.slug in (currentFragment.frontMatter["exclude"] as? List<*> ?: emptyList<Any>()) }
+            .filterNot { fragment -> fragment.slug in excluded }
             .sortedByDescending { calculateCategorySimilarity(currentFragment, it) }
             .take(config.maxRelatedByCategory)
     }
@@ -145,28 +154,17 @@ object ContentRelationshipGenerator {
     }
 
     /**
-     * Extracts content references from fragment content
-     * Looks for patterns like {{fragment:slug}} or {% fragment slug %}
+     * Extracts content references from fragment content.
+     * Looks for patterns like `{{fragment:slug}}`, `{% fragment slug %}`,
+     * `[fragment:slug]`, or `<fragment id="slug">`.
      */
     private fun extractContentReferences(fragment: Fragment): Set<String> {
-        val content = fragment.content
-
-        val referencePatterns = listOf(
-            """\{\{fragment:([^}]+)\}\}""".toRegex(),
-            """\{%\s*fragment\s+([^\s%]+)\s*%\}""".toRegex(),
-            """\[fragment:([^\]]+)\]""".toRegex(),
-            """<fragment\s+id=["']([^"']+)["']>""".toRegex()
-        )
-
         val references = mutableSetOf<String>()
-        referencePatterns.forEach { pattern ->
-            pattern.findAll(content).forEach { match ->
-                match.groupValues.get(1)?.let { slug ->
-                    references.add(slug.trim())
-                }
+        REFERENCE_PATTERNS.forEach { pattern ->
+            pattern.findAll(fragment.content).forEach { match ->
+                references.add(match.groupValues[1].trim())
             }
         }
-
         return references
     }
 
@@ -195,18 +193,15 @@ object ContentRelationshipGenerator {
     }
 
     /**
-     * Helper extension to get distinct by key
+     * Converts the `exclude` front matter value to a set of slugs, handling both
+     * a YAML list (`exclude: [slug-a, slug-b]`) and a plain string
+     * (`exclude: slug-a`). Returns an empty set when the field is absent or has an
+     * unrecognised type so that no fragments are silently filtered out.
      */
-    private fun <T, K> List<T>.distinctBy(selector: (T) -> K): List<T> {
-        val seen = mutableSetOf<K>()
-        return filter { element ->
-            val key = selector(element)
-            if (key in seen) {
-                false
-            } else {
-                seen.add(key)
-                true
-            }
-        }
+    private fun parseExcludedSlugs(value: Any?): Set<String> = when (value) {
+        is List<*> -> value.mapNotNull { it?.toString() }.toSet()
+        is String -> setOf(value)
+        else -> emptySet()
     }
+
 }
