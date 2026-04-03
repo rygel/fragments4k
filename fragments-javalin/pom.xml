@@ -15,7 +15,7 @@
 
     <properties>
         <javalin.version>7.1.0</javalin.version>
-        <jetty.version>12.1.7</jetty.version>
+        <jetty.version>12.1.8</jetty.version>
     </properties>
 
     <dependencyManagement>

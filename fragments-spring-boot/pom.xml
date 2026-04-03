@@ -14,7 +14,7 @@
     <description>Spring Boot web framework adapter</description>
 
     <properties>
-        <spring-boot.version>3.3.2</spring-boot.version>
+        <spring-boot.version>4.0.5</spring-boot.version>
     </properties>
 
     <dependencyManagement>

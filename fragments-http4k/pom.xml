@@ -14,7 +14,7 @@
     <description>HTTP4k web framework adapter</description>
 
     <properties>
-        <http4k.version>6.39.0.0</http4k.version>
+        <http4k.version>6.39.1.0</http4k.version>
     </properties>
 
     <dependencyManagement>
