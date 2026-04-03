@@ -227,14 +227,15 @@ class CachedFragmentRepository(
     
     override suspend fun publishScheduledFragments(threshold: LocalDateTime): List<Result<Fragment>> {
         logger.debug("Publishing scheduled fragments: $threshold")
-        
+
         val results = delegate.publishScheduledFragments(threshold)
-        
-        val successCount = results.count { it.isSuccess }
-        if (successCount > 0) {
+
+        val succeededSlugs = results.mapNotNull { it.getOrNull()?.slug }
+        if (succeededSlugs.isNotEmpty()) {
+            succeededSlugs.forEach { fragmentCache.invalidateFragment(it) }
             fragmentCache.invalidateFragmentLists()
         }
-        
+
         return results
     }
     
@@ -259,14 +260,15 @@ class CachedFragmentRepository(
     
     override suspend fun expireFragments(threshold: LocalDateTime): List<Result<Fragment>> {
         logger.debug("Expiring fragments: $threshold")
-        
+
         val results = delegate.expireFragments(threshold)
-        
-        val successCount = results.count { it.isSuccess }
-        if (successCount > 0) {
+
+        val succeededSlugs = results.mapNotNull { it.getOrNull()?.slug }
+        if (succeededSlugs.isNotEmpty()) {
+            succeededSlugs.forEach { fragmentCache.invalidateFragment(it) }
             fragmentCache.invalidateFragmentLists()
         }
-        
+
         return results
     }
     
@@ -324,13 +326,14 @@ class CachedFragmentRepository(
         reason: String?
     ): Result<Fragment> {
         logger.debug("Reverting to revision for: $slug")
-        
+
         val result = delegate.revertToRevision(slug, revisionId, changedBy, reason)
-        
+
         if (result.isSuccess) {
             fragmentCache.invalidateFragment(slug)
+            fragmentCache.invalidateFragmentLists()
         }
-        
+
         return result
     }
 }
