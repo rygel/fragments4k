@@ -4,6 +4,7 @@ import io.github.rygel.fragments.*
 import io.github.rygel.fragments.blog.BlogEngine
 import io.github.rygel.fragments.lucene.LuceneSearchEngine
 import io.github.rygel.fragments.static.StaticPageEngine
+import io.javalin.Javalin
 import io.javalin.testtools.JavalinTest
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -27,209 +28,130 @@ class FragmentsJavalinAdapterTest {
         searchEngine.index()
     }
 
-    @Test
-    fun homeEndpointReturns200() = JavalinTest.test { app, client ->
-        val staticEngine = StaticPageEngine(repo)
-        val blogEngine = BlogEngine(repo)
-        app.fragmentsRoutes(
-            staticEngine = staticEngine,
-            blogEngine = blogEngine,
-            renderer = MockTemplateRenderer(),
-            searchEngine = searchEngine
-        )
+    private fun createTestApp(staticEngine: StaticPageEngine, blogEngine: BlogEngine): Javalin =
+        Javalin.create { config ->
+            config.routes.fragmentsRoutes(
+                staticEngine = staticEngine,
+                blogEngine = blogEngine,
+                renderer = MockTemplateRenderer(),
+                searchEngine = searchEngine
+            )
+        }
 
-        val response = client.get("/")
-        assertEquals(200, response.code)
+    @Test
+    fun homeEndpointReturns200() {
+        val app = createTestApp(StaticPageEngine(repo), BlogEngine(repo))
+        JavalinTest.test(app) { _, client ->
+            assertEquals(200, client.get("/").code)
+        }
     }
 
     @Test
-    fun homeEndpointWithFragmentsReturns200() = JavalinTest.test { app, client ->
+    fun homeEndpointWithFragmentsReturns200() {
         repo.addFragment(createFragment("home-test", "Home Test"))
-        val staticEngine = StaticPageEngine(repo)
-        val blogEngine = BlogEngine(repo)
-        app.fragmentsRoutes(
-            staticEngine = staticEngine,
-            blogEngine = blogEngine,
-            renderer = MockTemplateRenderer(),
-            searchEngine = searchEngine
-        )
-
-        val response = client.get("/")
-        assertEquals(200, response.code)
+        val app = createTestApp(StaticPageEngine(repo), BlogEngine(repo))
+        JavalinTest.test(app) { _, client ->
+            assertEquals(200, client.get("/").code)
+        }
     }
 
     @Test
-    fun nonExistentPageReturns404() = JavalinTest.test { app, client ->
-        val staticEngine = StaticPageEngine(repo)
-        val blogEngine = BlogEngine(repo)
-        app.fragmentsRoutes(
-            staticEngine = staticEngine,
-            blogEngine = blogEngine,
-            renderer = MockTemplateRenderer(),
-            searchEngine = searchEngine
-        )
-
-        val response = client.get("/page/non-existent")
-        assertEquals(404, response.code)
+    fun nonExistentPageReturns404() {
+        val app = createTestApp(StaticPageEngine(repo), BlogEngine(repo))
+        JavalinTest.test(app) { _, client ->
+            assertEquals(404, client.get("/page/non-existent").code)
+        }
     }
 
     @Test
-    fun existingPageReturns200() = JavalinTest.test { app, client ->
+    fun existingPageReturns200() {
         repo.addFragment(createFragment("test-page", "Test Page", isBlog = false))
-        val staticEngine = StaticPageEngine(repo)
-        val blogEngine = BlogEngine(repo)
-        app.fragmentsRoutes(
-            staticEngine = staticEngine,
-            blogEngine = blogEngine,
-            renderer = MockTemplateRenderer(),
-            searchEngine = searchEngine
-        )
-
-        val response = client.get("/page/test-page")
-        assertEquals(200, response.code)
+        val app = createTestApp(StaticPageEngine(repo), BlogEngine(repo))
+        JavalinTest.test(app) { _, client ->
+            assertEquals(200, client.get("/page/test-page").code)
+        }
     }
 
     @Test
-    fun blogOverviewReturns200() = JavalinTest.test { app, client ->
-        val staticEngine = StaticPageEngine(repo)
-        val blogEngine = BlogEngine(repo)
-        app.fragmentsRoutes(
-            staticEngine = staticEngine,
-            blogEngine = blogEngine,
-            renderer = MockTemplateRenderer(),
-            searchEngine = searchEngine
-        )
-
-        val response = client.get("/blog")
-        assertEquals(200, response.code)
+    fun blogOverviewReturns200() {
+        val app = createTestApp(StaticPageEngine(repo), BlogEngine(repo))
+        JavalinTest.test(app) { _, client ->
+            assertEquals(200, client.get("/blog").code)
+        }
     }
 
     @Test
-    fun blogOverviewWithPostsReturns200() = JavalinTest.test { app, client ->
+    fun blogOverviewWithPostsReturns200() {
         repo.addFragment(createFragment("post-1", "Post 1", isBlog = true))
         repo.addFragment(createFragment("post-2", "Post 2", isBlog = true))
-        val staticEngine = StaticPageEngine(repo)
-        val blogEngine = BlogEngine(repo)
-        app.fragmentsRoutes(
-            staticEngine = staticEngine,
-            blogEngine = blogEngine,
-            renderer = MockTemplateRenderer(),
-            searchEngine = searchEngine
-        )
-
-        val response = client.get("/blog")
-        assertEquals(200, response.code)
+        val app = createTestApp(StaticPageEngine(repo), BlogEngine(repo))
+        JavalinTest.test(app) { _, client ->
+            assertEquals(200, client.get("/blog").code)
+        }
     }
 
     @Test
-    fun blogPostWithValidPathReturns404WhenMissing() = JavalinTest.test { app, client ->
-        val staticEngine = StaticPageEngine(repo)
-        val blogEngine = BlogEngine(repo)
-        app.fragmentsRoutes(
-            staticEngine = staticEngine,
-            blogEngine = blogEngine,
-            renderer = MockTemplateRenderer(),
-            searchEngine = searchEngine
-        )
-
-        val response = client.get("/blog/2024/01/test-post")
-        assertEquals(404, response.code)
+    fun blogPostWithValidPathReturns404WhenMissing() {
+        val app = createTestApp(StaticPageEngine(repo), BlogEngine(repo))
+        JavalinTest.test(app) { _, client ->
+            assertEquals(404, client.get("/blog/2024/01/test-post").code)
+        }
     }
 
     @Test
-    fun blogPostWithValidPathReturns200WhenExists() = JavalinTest.test { app, client ->
+    fun blogPostWithValidPathReturns200WhenExists() {
         val date = LocalDateTime.of(2024, 1, 15, 10, 0)
         repo.addFragment(createFragment("test-post", "Test Post", isBlog = true, date = date))
-        val staticEngine = StaticPageEngine(repo)
-        val blogEngine = BlogEngine(repo)
-        app.fragmentsRoutes(
-            staticEngine = staticEngine,
-            blogEngine = blogEngine,
-            renderer = MockTemplateRenderer(),
-            searchEngine = searchEngine
-        )
-
-        val response = client.get("/blog/2024/01/test-post")
-        assertEquals(200, response.code)
+        val app = createTestApp(StaticPageEngine(repo), BlogEngine(repo))
+        JavalinTest.test(app) { _, client ->
+            assertEquals(200, client.get("/blog/2024/01/test-post").code)
+        }
     }
 
     @Test
-    fun blogPaginationReturns200() = JavalinTest.test { app, client ->
-        val staticEngine = StaticPageEngine(repo)
-        val blogEngine = BlogEngine(repo)
-        app.fragmentsRoutes(
-            staticEngine = staticEngine,
-            blogEngine = blogEngine,
-            renderer = MockTemplateRenderer(),
-            searchEngine = searchEngine
-        )
-
-        val response = client.get("/blog/page/2")
-        assertEquals(200, response.code)
+    fun blogPaginationReturns200() {
+        val app = createTestApp(StaticPageEngine(repo), BlogEngine(repo))
+        JavalinTest.test(app) { _, client ->
+            assertEquals(200, client.get("/blog/page/2").code)
+        }
     }
 
     @Test
-    fun blogTagReturns200() = JavalinTest.test { app, client ->
+    fun blogTagReturns200() {
         repo.addFragment(createFragment("tagged-post", "Tagged Post", isBlog = true, tags = listOf("kotlin")))
-        val staticEngine = StaticPageEngine(repo)
-        val blogEngine = BlogEngine(repo)
-        app.fragmentsRoutes(
-            staticEngine = staticEngine,
-            blogEngine = blogEngine,
-            renderer = MockTemplateRenderer(),
-            searchEngine = searchEngine
-        )
-
-        val response = client.get("/blog/tag/kotlin")
-        assertEquals(200, response.code)
+        val app = createTestApp(StaticPageEngine(repo), BlogEngine(repo))
+        JavalinTest.test(app) { _, client ->
+            assertEquals(200, client.get("/blog/tag/kotlin").code)
+        }
     }
 
     @Test
-    fun blogCategoryReturns200() = JavalinTest.test { app, client ->
+    fun blogCategoryReturns200() {
         repo.addFragment(createFragment("categorized-post", "Categorized Post", isBlog = true, categories = listOf("tech")))
-        val staticEngine = StaticPageEngine(repo)
-        val blogEngine = BlogEngine(repo)
-        app.fragmentsRoutes(
-            staticEngine = staticEngine,
-            blogEngine = blogEngine,
-            renderer = MockTemplateRenderer(),
-            searchEngine = searchEngine
-        )
-
-        val response = client.get("/blog/category/tech")
-        assertEquals(200, response.code)
+        val app = createTestApp(StaticPageEngine(repo), BlogEngine(repo))
+        JavalinTest.test(app) { _, client ->
+            assertEquals(200, client.get("/blog/category/tech").code)
+        }
     }
 
     @Test
-    fun rssFeedReturns200() = JavalinTest.test { app, client ->
-        val staticEngine = StaticPageEngine(repo)
-        val blogEngine = BlogEngine(repo)
-        app.fragmentsRoutes(
-            staticEngine = staticEngine,
-            blogEngine = blogEngine,
-            renderer = MockTemplateRenderer(),
-            searchEngine = searchEngine
-        )
-
-        val response = client.get("/rss.xml")
-        assertEquals(200, response.code)
-        assertEquals("application/rss+xml", response.header("Content-Type"))
+    fun rssFeedReturns200() {
+        val app = createTestApp(StaticPageEngine(repo), BlogEngine(repo))
+        JavalinTest.test(app) { _, client ->
+            val response = client.get("/rss.xml")
+            assertEquals(200, response.code)
+            assertEquals("application/rss+xml", response.headers().get("Content-Type")?.first())
+        }
     }
 
     @Test
-    fun sitemapReturns200() = JavalinTest.test { app, client ->
-        val staticEngine = StaticPageEngine(repo)
-        val blogEngine = BlogEngine(repo)
-        app.fragmentsRoutes(
-            staticEngine = staticEngine,
-            blogEngine = blogEngine,
-            renderer = MockTemplateRenderer(),
-            searchEngine = searchEngine
-        )
-
-        val response = client.get("/sitemap.xml")
-        assertEquals(200, response.code)
-        assertEquals("application/xml", response.header("Content-Type"))
+    fun sitemapReturns200() {
+        val app = createTestApp(StaticPageEngine(repo), BlogEngine(repo))
+        JavalinTest.test(app) { _, client ->
+            val response = client.get("/sitemap.xml")
+            assertEquals(200, response.code)
+            assertEquals("application/xml", response.headers().get("Content-Type")?.first())
+        }
     }
 }
 

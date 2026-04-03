@@ -26,21 +26,10 @@ fun main() {
 
     val pebble = JavalinPebble()
 
-    val app = Javalin.create {
-        it.staticFiles.enableWebjars()
-        it.fileRenderer(pebble)
-    }
-
-    app.exception(Exception::class.java) { e, ctx ->
-        logger.error("Error handling request", e)
-        ctx.status(500).result("Internal Server Error: ${e.message}")
-    }
-
-    runBlocking {
-        repository.reload()
-        searchEngine.index()
-
-        app.fragmentsRoutes(
+    val app = Javalin.create { config ->
+        config.staticFiles.enableWebjars()
+        config.fileRenderer(pebble)
+        config.routes.fragmentsRoutes(
             staticEngine = staticEngine,
             blogEngine = blogEngine,
             renderer = null,
@@ -50,6 +39,15 @@ fun main() {
             siteUrl = "http://localhost:8080",
             feedUrl = "http://localhost:8080/rss.xml"
         )
+        config.routes.exception(Exception::class.java) { e, ctx ->
+            logger.error("Error handling request", e)
+            ctx.status(500).result("Internal Server Error: ${e.message}")
+        }
+    }
+
+    runBlocking {
+        repository.reload()
+        searchEngine.index()
     }
 
     val port = System.getProperty("server.port")?.toIntOrNull() ?: 8080

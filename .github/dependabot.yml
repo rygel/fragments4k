@@ -21,6 +21,8 @@ updates:
       maven-dependencies:
         patterns:
           - "*"
+        exclude-patterns:
+          - "io.javalin:*"
 
   - package-ecosystem: "github-actions"
     directory: "/"

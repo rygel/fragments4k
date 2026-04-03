@@ -100,12 +100,12 @@ object ProjectGenerator {
                 <dependency>
                     <groupId>io.javalin</groupId>
                     <artifactId>javalin</artifactId>
-                    <version>6.1.6</version>
+                    <version>7.1.0</version>
                 </dependency>
                 <dependency>
                     <groupId>io.javalin</groupId>
-                    <artifactId>javalin-rendering</artifactId>
-                    <version>6.1.6</version>
+                    <artifactId>javalin-rendering-pebble</artifactId>
+                    <version>7.1.0</version>
                 </dependency>
             """
             "spring-boot" -> "spring-boot" to """
