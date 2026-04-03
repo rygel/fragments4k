@@ -42,7 +42,7 @@ class RssGenerator(
 
     private fun renderItem(fragment: Fragment, siteUrl: String): String {
         val pubDate = fragment.date?.format(formatter) ?: ""
-        val fullUrl = "$siteUrl/${fragment.slug}"
+        val fullUrl = "$siteUrl${fragment.url}"
 
         return buildString {
             appendLine("    <item>")

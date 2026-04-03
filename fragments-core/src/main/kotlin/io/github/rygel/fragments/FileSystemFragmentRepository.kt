@@ -47,6 +47,7 @@ import java.time.format.DateTimeFormatter
 class FileSystemFragmentRepository(
     private val basePath: String,
     val baseUrl: String = "",
+    val urlBuilder: ((Fragment) -> String)? = null,
     private val extension: String = ".md",
     private val revisionRepository: FragmentRevisionRepository = FileSystemFragmentRevisionRepository(basePath),
     private val parser: MarkdownParser = MarkdownParser(),
@@ -271,7 +272,7 @@ class FileSystemFragmentRepository(
         val seriesPart = frontMatter["seriesPart"]?.toString()?.toIntOrNull()
         val seriesTitle = frontMatter["seriesTitle"]?.toString()
 
-        return Fragment(
+        val fragment = Fragment(
             title = title,
             slug = slug,
             baseUrl = baseUrl,
@@ -296,6 +297,7 @@ class FileSystemFragmentRepository(
             seriesPart = seriesPart,
             seriesTitle = seriesTitle
         )
+        return if (urlBuilder != null) fragment.copy(resolvedUrl = urlBuilder(fragment)) else fragment
     }
 
     private fun generateSlug(name: String): String {
