@@ -609,11 +609,4 @@ class FileSystemFragmentRepository(
             Result.failure(e)
         }
     }
-
-    companion object {
-        private val SLUG_NON_ALPHANUMERIC = Regex("[^a-z0-9\\s-]")
-        private val SLUG_WHITESPACE = Regex("\\s+")
-        private val SLUG_CONSECUTIVE_DASHES = Regex("-+")
-        private val MORE_TAG_PATTERN = Regex("<!--\\s*more\\s*-->", RegexOption.IGNORE_CASE)
-    }
 }
