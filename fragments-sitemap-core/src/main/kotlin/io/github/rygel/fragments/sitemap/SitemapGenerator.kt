@@ -23,7 +23,7 @@ class SitemapGenerator(
             val lastModDateFormatted = lastModDate.format(formatter)
 
             val urls = fragments.map { fragment ->
-                val url = "$siteUrl/${fragment.slug}"
+                val url = "$siteUrl${fragment.url}"
                 val modDate = fragment.date?.format(formatter) ?: lastModDateFormatted
                 val changeFreq = ChangeFrequency.fromFragment(fragment, lastModified)
                 val priority = ChangeFrequency.calculatePriority(fragment, lastModified)

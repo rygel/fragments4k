@@ -155,11 +155,18 @@ data class Fragment(
     val statusChangeHistory: List<StatusChangeHistory> = emptyList(),
     val seriesSlug: String? = null,
     val seriesPart: Int? = null,
-    val seriesTitle: String? = null
+    val seriesTitle: String? = null,
+    val resolvedUrl: String? = null
 ) {
-    /** Canonical URL for this fragment: [baseUrl]/[slug], or /[slug] when [baseUrl] is empty. */
+    /**
+     * Canonical URL for this fragment.
+     *
+     * Returns [resolvedUrl] when set — populated by the repository's `urlBuilder`,
+     * which allows date-based paths like `/blog/2026/03/hello-world`.
+     * Falls back to `[baseUrl]/[slug]`, or `/[slug]` when [baseUrl] is empty.
+     */
     val url: String
-        get() = if (baseUrl.isNotEmpty()) "$baseUrl/$slug" else "/$slug"
+        get() = resolvedUrl ?: if (baseUrl.isNotEmpty()) "$baseUrl/$slug" else "/$slug"
 
     /** `true` if the content contains a `<!--more-->` read-more split marker. */
     val hasMoreTag: Boolean
