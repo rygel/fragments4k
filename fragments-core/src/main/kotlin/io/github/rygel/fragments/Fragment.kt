@@ -175,7 +175,7 @@ data class Fragment(
 
     /** Plain-text version of [preview] with all HTML tags stripped. */
     val previewTextOnly: String
-        get() = preview.replace(Regex("<[^>]*>"), "").trim()
+        get() = preview.replace(HTML_TAG_REGEX, "").trim()
 
     /**
      * Plain-text content up to the `<!--more-->` marker (or the full body
@@ -185,10 +185,10 @@ data class Fragment(
         get() = if (hasMoreTag) {
             content.substringBefore("<!--more-->")
                 .substringBefore("<!-- more -->")
-                .replace(Regex("<[^>]*>"), "")
+                .replace(HTML_TAG_REGEX, "")
                 .trim()
         } else {
-            content.replace(Regex("<[^>]*>"), "").trim()
+            content.replace(HTML_TAG_REGEX, "").trim()
         }
 
     /**
@@ -227,4 +227,8 @@ data class Fragment(
 
     val seriesPartTitle: String?
         get() = seriesTitle?.takeIf { it.isNotEmpty() } ?: seriesPart?.let { "Part $it" }
+
+    companion object {
+        private val HTML_TAG_REGEX = Regex("<[^>]*>")
+    }
 }
