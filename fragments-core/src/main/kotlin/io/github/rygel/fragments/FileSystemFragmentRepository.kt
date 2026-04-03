@@ -160,25 +160,9 @@ class FileSystemFragmentRepository(
                 val updatedFrontMatter = parsed.frontMatter.toMutableMap()
                 updatedFrontMatter["status"] = status.name
 
-                val statusChange = StatusChangeHistory(
-                    fromStatus = currentFragment.status,
-                    toStatus = status,
-                    changedBy = changedBy,
-                    reason = reason
-                )
-
-                val existingHistory = parseStatusChangeHistory(currentFragment.statusChangeHistory)
-                val updatedHistory = existingHistory + statusChange
-
-                updatedFrontMatter["statusChangeHistory"] = updatedHistory.map { history ->
-                    mapOf(
-                        "fromStatus" to history.fromStatus.name,
-                        "toStatus" to history.toStatus.name,
-                        "changedAt" to history.changedAt.toString(),
-                        "changedBy" to history.changedBy,
-                        "reason" to history.reason
-                    )
-                }
+                val updatedHistory = currentFragment.statusChangeHistory +
+                    StatusChangeHistory(fromStatus = currentFragment.status, toStatus = status, changedBy = changedBy, reason = reason)
+                updatedFrontMatter["statusChangeHistory"] = serializeStatusHistory(updatedHistory)
 
                 val newContent = buildString {
                     append("---\n")
@@ -201,9 +185,21 @@ class FileSystemFragmentRepository(
         }
     }
 
-    private fun parseStatusChangeHistory(history: List<StatusChangeHistory>): List<StatusChangeHistory> {
-        return history
-    }
+    /**
+     * Serializes a [StatusChangeHistory] list to the YAML-friendly map structure written
+     * into front matter. Centralised here so [updateFragmentStatus] and [scheduleMultiple]
+     * share the same format.
+     */
+    private fun serializeStatusHistory(history: List<StatusChangeHistory>): List<Map<String, Any?>> =
+        history.map { entry ->
+            mapOf(
+                "fromStatus" to entry.fromStatus.name,
+                "toStatus" to entry.toStatus.name,
+                "changedAt" to entry.changedAt.toString(),
+                "changedBy" to entry.changedBy,
+                "reason" to entry.reason
+            )
+        }
 
     @Suppress("INVISIBLE_MEMBER")
     override suspend fun reload() {
@@ -320,19 +316,25 @@ class FileSystemFragmentRepository(
 
     private fun generateSlug(name: String): String {
         return name.lowercase()
-            .replace(Regex("[^a-z0-9\\s-]"), "")
-            .replace(Regex("\\s+"), "-")
-            .replace(Regex("-+"), "-")
+            .replace(SLUG_NON_ALPHANUMERIC, "")
+            .replace(SLUG_WHITESPACE, "-")
+            .replace(SLUG_CONSECUTIVE_DASHES, "-")
     }
 
     private fun extractPreview(content: String): String {
-        val moreTagPattern = Regex("<!--\\s*more\\s*-->", RegexOption.IGNORE_CASE)
-        val moreTagIndex = moreTagPattern.find(content)
+        val moreTagIndex = MORE_TAG_PATTERN.find(content)
         return when {
             moreTagIndex != null -> content.substring(0, moreTagIndex.range.first)
             content.length > 200 -> content.substring(0, 200) + "..."
             else -> content
         }
+    }
+
+    companion object {
+        private val SLUG_NON_ALPHANUMERIC = Regex("[^a-z0-9\\s-]")
+        private val SLUG_WHITESPACE = Regex("\\s+")
+        private val SLUG_CONSECUTIVE_DASHES = Regex("-+")
+        private val MORE_TAG_PATTERN = Regex("<!--\\s*more\\s*-->", RegexOption.IGNORE_CASE)
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -458,25 +460,9 @@ class FileSystemFragmentRepository(
                     updatedFrontMatter["status"] = FragmentStatus.SCHEDULED.name
                     updatedFrontMatter["publishDate"] = publishDate.toString()
 
-                    val statusChange = StatusChangeHistory(
-                        fromStatus = currentFragment.status,
-                        toStatus = FragmentStatus.SCHEDULED,
-                        changedBy = changedBy,
-                        reason = reason
-                    )
-
-                    val existingHistory = parseStatusChangeHistory(currentFragment.statusChangeHistory)
-                    val updatedHistory = existingHistory + statusChange
-
-                    updatedFrontMatter["statusChangeHistory"] = updatedHistory.map { history ->
-                        mapOf(
-                            "fromStatus" to history.fromStatus.name,
-                            "toStatus" to history.toStatus.name,
-                            "changedAt" to history.changedAt.toString(),
-                            "changedBy" to history.changedBy,
-                            "reason" to history.reason
-                        )
-                    }
+                    val updatedHistory = currentFragment.statusChangeHistory +
+                        StatusChangeHistory(fromStatus = currentFragment.status, toStatus = FragmentStatus.SCHEDULED, changedBy = changedBy, reason = reason)
+                    updatedFrontMatter["statusChangeHistory"] = serializeStatusHistory(updatedHistory)
 
                     val newContent = buildString {
                         append("---\n")
