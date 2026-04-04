@@ -24,9 +24,9 @@ Add dependency:
 
 ```xml
 <dependency>
-    <groupId>io.andromeda</groupId>
+    <groupId>io.github.rygel</groupId>
     <artifactId>fragments-micronaut</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>0.6.2</version>
 </dependency>
 ```
 
