@@ -35,7 +35,8 @@ class FragmentsHttp4kAdapter(
     private val siteUrl: String = "http://localhost:8080",
     private val feedUrl: String = "$siteUrl/rss.xml",
     private val navigationMenu: List<NavigationLink>? = null,
-    private val footer: FooterConfig? = null
+    private val footer: FooterConfig? = null,
+    private val authorRepository: AuthorRepository? = null
 ) {
 
     private fun nav() = navigationMenu ?: NavigationMenuGenerator.generateMainMenu()
@@ -50,12 +51,14 @@ class FragmentsHttp4kAdapter(
             "/blog/{year}/{month}/{slug}" bind GET to { request -> handleBlogPost(request) },
             "/blog/tag/{tag}" bind GET to { request -> handleByTag(request) },
             "/blog/category/{category}" bind GET to { request -> handleByCategory(request) },
+            "/blog/author/{slug}" bind GET to { request -> handleByAuthor(request) },
             "/blog/archive/{year}" bind GET to { request -> handleArchiveYear(request) },
             "/blog/archive/{year}/{month}" bind GET to { request -> handleArchiveYearMonth(request) },
             "/search" bind GET to { request -> handleSearch(request) },
             "/rss.xml" bind GET to { _ -> handleRss() },
             "/sitemap.xml" bind GET to { _ -> handleSitemap() },
-            "/robots.txt" bind GET to { _ -> handleRobotsTxt() }
+            "/robots.txt" bind GET to { _ -> handleRobotsTxt() },
+            "/llms.txt" bind GET to { _ -> handleLlmsTxt() }
         )
     }
 
@@ -197,6 +200,35 @@ class FragmentsHttp4kAdapter(
          }
      }
 
+    private fun handleByAuthor(request: Request): Response {
+        val slug = request.path("slug") ?: return Response(Status.NOT_FOUND)
+        val page = request.query("page")?.toIntOrNull() ?: 1
+        return runBlocking {
+            val pageResult = blogEngine.getByAuthor(slug, page)
+            val author = authorRepository?.getBySlugOrId(slug)
+            val authorViewModel = author?.let { AuthorViewModel(it, postCount = pageResult.totalItems) }
+            val viewModel = AuthorPageViewModel(
+                authorSlug = slug,
+                authorName = author?.name,
+                author = authorViewModel,
+                fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(request)) },
+                currentPage = pageResult.currentPage,
+                totalPages = pageResult.totalPages,
+                hasNext = pageResult.hasNext,
+                hasPrevious = pageResult.hasPrevious,
+                isPartialRender = isHtmxRequest(request),
+                navigationMenu = nav(),
+                pagination = PaginationGenerator.generateSimpleControls(
+                    currentPage = pageResult.currentPage,
+                    totalPages = pageResult.totalPages,
+                    basePath = "/blog/author/$slug"
+                ),
+                footer = footer()
+            )
+            renderResponse(viewModel)
+        }
+    }
+
     private fun handleRss(): Response {
         return runBlocking {
             val rssXml = rssGenerator.generateFeed(
@@ -230,6 +262,20 @@ class FragmentsHttp4kAdapter(
         return Response(Status.OK)
             .header("Content-Type", "text/plain; charset=utf-8")
             .body(body)
+    }
+
+    private fun handleLlmsTxt(): Response {
+        return runBlocking {
+            val body = LlmsTxtGenerator.generate(
+                siteTitle = siteTitle,
+                siteDescription = siteDescription,
+                siteUrl = siteUrl,
+                repositories = listOf(staticEngine.getRepository())
+            )
+            Response(Status.OK)
+                .header("Content-Type", "text/plain; charset=utf-8")
+                .body(body)
+        }
     }
 
     private fun handleSearch(request: Request): Response {
@@ -366,6 +412,24 @@ class FragmentsHttp4kAdapter(
         val navigationMenu: List<NavigationLink>,
         val footer: FooterConfig,
         val searchForm: SearchFormConfig
+    ) : ViewModel {
+        override fun template(): String = templateName
+    }
+
+    data class AuthorPageViewModel(
+        val authorSlug: String,
+        val authorName: String? = null,
+        val author: AuthorViewModel? = null,
+        val fragments: List<FragmentViewModel>,
+        val currentPage: Int,
+        val totalPages: Int,
+        val hasNext: Boolean = false,
+        val hasPrevious: Boolean = false,
+        private val templateName: String = "blog_overview",
+        val isPartialRender: Boolean = false,
+        val navigationMenu: List<NavigationLink>,
+        val pagination: PaginationInfo,
+        val footer: FooterConfig
     ) : ViewModel {
         override fun template(): String = templateName
     }

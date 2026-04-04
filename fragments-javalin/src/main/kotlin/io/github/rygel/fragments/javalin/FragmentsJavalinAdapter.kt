@@ -22,7 +22,8 @@ fun RoutesConfig.fragmentsRoutes(
     siteTitle: String = "My Blog",
     siteDescription: String = "My Awesome Blog",
     siteUrl: String = "http://localhost:8080",
-    feedUrl: String = "http://localhost:8080/rss.xml"
+    feedUrl: String = "http://localhost:8080/rss.xml",
+    authorRepository: AuthorRepository? = null
 ) {
     val rssGenerator = RssGenerator(
         repository = staticEngine.getRepository()
@@ -226,6 +227,40 @@ fun RoutesConfig.fragmentsRoutes(
         }
     }
 
+    get("/blog/author/{slug}") { ctx ->
+        val slug = ctx.pathParam("slug")
+        val page = ctx.queryParam("page")?.toIntOrNull() ?: 1
+        ctx.handleAsync {
+            val pageResult = blogEngine.getByAuthor(slug, page)
+            val author = authorRepository?.getBySlugOrId(slug)
+            val authorViewModel = author?.let { AuthorViewModel(it, postCount = pageResult.totalItems) }
+            val viewModel = AuthorPageViewModel(
+                authorSlug = slug,
+                authorName = author?.name,
+                author = authorViewModel,
+                fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(ctx)) },
+                currentPage = pageResult.currentPage,
+                totalPages = pageResult.totalPages,
+                hasNext = pageResult.hasNext,
+                hasPrevious = pageResult.hasPrevious,
+                isPartialRender = isHtmxRequest(ctx),
+                navigationMenu = NavigationMenuGenerator.generateMainMenu(
+                    siteUrl = "/",
+                    blogUrl = "/blog",
+                    archiveUrl = "/blog/archive",
+                    searchUrl = "/search"
+                ),
+                pagination = PaginationGenerator.generateSimpleControls(
+                    currentPage = pageResult.currentPage,
+                    totalPages = pageResult.totalPages,
+                    basePath = "/blog/author/$slug"
+                ),
+                footer = FooterGenerator.generate()
+            )
+            render(ctx, "blog_overview", viewModel)
+        }
+    }
+
     get("/blog/archive/{year}") { ctx ->
         val year = ctx.pathParam("year")
         val yearInt = year.toIntOrNull()
@@ -335,6 +370,19 @@ fun RoutesConfig.fragmentsRoutes(
         ctx.result(body)
     }
 
+    get("/llms.txt") { ctx ->
+        ctx.handleAsync {
+            val body = LlmsTxtGenerator.generate(
+                siteTitle = siteTitle,
+                siteDescription = siteDescription,
+                siteUrl = siteUrl,
+                repositories = listOf(staticEngine.getRepository())
+            )
+            ctx.contentType("text/plain")
+            ctx.result(body)
+        }
+    }
+
     get("/search") { ctx ->
         val query = ctx.queryParam("q")
         if (query == null) {
@@ -426,6 +474,21 @@ data class TagViewModel(
     val hasNext: Boolean = false,
     val hasPrevious: Boolean = false,
     val isPartialRender: Boolean = false
+)
+
+data class AuthorPageViewModel(
+    val authorSlug: String,
+    val authorName: String? = null,
+    val author: AuthorViewModel? = null,
+    val fragments: List<FragmentViewModel>,
+    val currentPage: Int,
+    val totalPages: Int,
+    val hasNext: Boolean = false,
+    val hasPrevious: Boolean = false,
+    val isPartialRender: Boolean = false,
+    val navigationMenu: List<NavigationLink>,
+    val pagination: PaginationInfo,
+    val footer: FooterConfig
 )
 
 data class CategoryViewModel(

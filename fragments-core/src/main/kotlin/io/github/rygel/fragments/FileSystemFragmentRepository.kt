@@ -283,6 +283,7 @@ class FileSystemFragmentRepository(
         val author = frontMatter["author"]?.toString()
         val authorIds = parseStringList(frontMatter["authorIds"])
         val statusChangeHistory = parseStatusChangeHistory(frontMatter)
+        val faq = parseFaqEntries(frontMatter)
         val seriesSlug = frontMatter["series"]?.toString()
         val seriesPart = frontMatter["seriesPart"]?.toString()?.toIntOrNull()
         val seriesTitle = frontMatter["seriesTitle"]?.toString()
@@ -308,6 +309,7 @@ class FileSystemFragmentRepository(
             author = author,
             authorIds = authorIds,
             statusChangeHistory = statusChangeHistory,
+            faq = faq,
             seriesSlug = seriesSlug,
             seriesPart = seriesPart,
             seriesTitle = seriesTitle
@@ -343,6 +345,20 @@ class FileSystemFragmentRepository(
         return when (value) {
             is List<*> -> value.mapNotNull { it?.toString() }
             is String -> value.split(",").map { it.trim() }
+            else -> emptyList()
+        }
+    }
+
+    private fun parseFaqEntries(frontMatter: Map<String, Any>): List<FaqEntry> {
+        val faqField = frontMatter["faq"] ?: return emptyList()
+        return when (faqField) {
+            is List<*> -> faqField.mapNotNull { item ->
+                if (item is Map<*, *>) {
+                    val question = item["q"]?.toString()
+                    val answer = item["a"]?.toString()
+                    if (question != null && answer != null) FaqEntry(question, answer) else null
+                } else null
+            }
             else -> emptyList()
         }
     }

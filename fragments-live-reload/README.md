@@ -18,17 +18,17 @@ Live reload support for Fragments4k development mode.
 
 ```xml
 <dependency>
-    <groupId>io.andromeda</groupId>
+    <groupId>io.github.rygel</groupId>
     <artifactId>fragments-live-reload</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>0.6.2</version>
 </dependency>
 ```
 
 2. Create a `LiveReloadManager` instance in your application:
 
 ```kotlin
-import io.andromeda.fragments.FileSystemFragmentRepository
-import io.andromeda.fragments.livereload.LiveReloadManager
+import io.github.rygel.fragments.FileSystemFragmentRepository
+import io.github.rygel.fragments.livereload.LiveReloadManager
 import java.nio.file.Paths
 
 val repository = FileSystemFragmentRepository("content")
