@@ -31,7 +31,7 @@ import java.time.format.DateTimeFormatter
  * by [MarkdownParser.Companion.parseDateString].
  */
 private class NoDateResolver : Resolver() {
-    override fun addImplicitResolver(tag: Tag, regexp: java.util.regex.Pattern, first: String, limit: Int) {
+    override fun addImplicitResolver(tag: Tag, regexp: java.util.regex.Pattern, first: String?, limit: Int) {
         if (tag != Tag.TIMESTAMP) {
             super.addImplicitResolver(tag, regexp, first, limit)
         }
