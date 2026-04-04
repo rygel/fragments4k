@@ -222,6 +222,75 @@ class SeoMetadataTest {
     }
 
     @Test
+    fun testFromFragmentUsesFragmentImageAsFallback() {
+        val fragment = Fragment(
+            title = "Post with Image",
+            slug = "post-with-image",
+            status = FragmentStatus.PUBLISHED,
+            date = LocalDateTime.of(2024, 6, 1, 12, 0),
+            publishDate = null,
+            preview = "A post with a cover image",
+            content = "<p>Content</p>",
+            frontMatter = emptyMap(),
+            image = "/static/images/cover.jpg"
+        )
+
+        val seo = SeoMetadata.fromFragment(
+            fragment = fragment,
+            siteUrl = "https://example.com"
+        )
+
+        assertEquals("https://example.com/static/images/cover.jpg", seo.ogImage)
+        assertEquals("https://example.com/static/images/cover.jpg", seo.twitterImage)
+    }
+
+    @Test
+    fun testFromFragmentExplicitImageUrlTakesPrecedenceOverFragmentImage() {
+        val fragment = Fragment(
+            title = "Post with Image",
+            slug = "post-with-image",
+            status = FragmentStatus.PUBLISHED,
+            date = LocalDateTime.of(2024, 6, 1, 12, 0),
+            publishDate = null,
+            preview = "A post with a cover image",
+            content = "<p>Content</p>",
+            frontMatter = emptyMap(),
+            image = "/static/images/cover.jpg"
+        )
+
+        val seo = SeoMetadata.fromFragment(
+            fragment = fragment,
+            siteUrl = "https://example.com",
+            imageUrl = "https://cdn.example.com/explicit.jpg"
+        )
+
+        assertEquals("https://cdn.example.com/explicit.jpg", seo.ogImage)
+        assertEquals("https://cdn.example.com/explicit.jpg", seo.twitterImage)
+    }
+
+    @Test
+    fun testFromFragmentNoImageAtAll() {
+        val fragment = Fragment(
+            title = "Post without Image",
+            slug = "post-without-image",
+            status = FragmentStatus.PUBLISHED,
+            date = LocalDateTime.of(2024, 6, 1, 12, 0),
+            publishDate = null,
+            preview = "A post without image",
+            content = "<p>Content</p>",
+            frontMatter = emptyMap()
+        )
+
+        val seo = SeoMetadata.fromFragment(
+            fragment = fragment,
+            siteUrl = "https://example.com"
+        )
+
+        assertNull(seo.ogImage)
+        assertNull(seo.twitterImage)
+    }
+
+    @Test
     fun testJsonEscaping() {
         val seoMetadata = SeoMetadata(
             title = "Test with \"quotes\"",

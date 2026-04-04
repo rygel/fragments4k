@@ -135,6 +135,8 @@ enum class FragmentStatus {
  * @property language BCP-47 language tag (e.g. `"en"`, `"de"`); defaults to `"en"`.
  * @property languages Map of language tag → slug for alternate-language versions of
  *   this content (used by the relationship engine to surface translations).
+ * @property image Raw image path from front matter (e.g. `"/static/images/cover.jpg"`).
+ *   Used as a fallback for SEO open-graph / twitter card images when no explicit URL is provided.
  * @property author Legacy single-author field (plain name or ID string).
  * @property authorIds Preferred multi-author list; takes precedence over [author].
  * @property statusChangeHistory Ordered audit trail of [StatusChangeHistory] entries.
@@ -163,6 +165,7 @@ data class Fragment(
     val order: Int = 0,
     val language: String = "en",
     val languages: Map<String, String> = emptyMap(),
+    val image: String? = null,
     val author: String? = null,
     val authorIds: List<String> = emptyList(),
     val statusChangeHistory: List<StatusChangeHistory> = emptyList(),
