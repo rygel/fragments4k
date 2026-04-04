@@ -364,6 +364,75 @@ class SeoMetadataTest {
     }
 
     @Test
+    fun testFromFragmentWithAuthorUrlAndSocialLinks() {
+        val fragment = Fragment(
+            title = "Author Rich Post",
+            slug = "author-rich",
+            status = FragmentStatus.PUBLISHED,
+            date = LocalDateTime.of(2024, 3, 15, 10, 0),
+            publishDate = null,
+            preview = "A post with rich author metadata",
+            content = "<p>Content</p>",
+            frontMatter = emptyMap(),
+            author = "Alexander Brandt"
+        )
+
+        val seo = SeoMetadata.fromFragment(
+            fragment = fragment,
+            siteUrl = "https://example.com",
+            authorUrl = "https://example.com/blog/author/alexander-brandt",
+            authorSocialLinks = listOf("https://github.com/rygel", "https://x.com/username")
+        )
+
+        assertEquals("Alexander Brandt", seo.author)
+        assertEquals("https://example.com/blog/author/alexander-brandt", seo.authorUrl)
+        assertEquals(listOf("https://github.com/rygel", "https://x.com/username"), seo.authorSocialLinks)
+
+        val jsonLd = seo.generateJsonLd()
+        assertTrue(jsonLd.contains(""""@type": "Person""""))
+        assertTrue(jsonLd.contains(""""name": "Alexander Brandt""""))
+        assertTrue(jsonLd.contains(""""url": "https://example.com/blog/author/alexander-brandt""""))
+        assertTrue(jsonLd.contains(""""sameAs": ["""))
+        assertTrue(jsonLd.contains(""""https://github.com/rygel""""))
+        assertTrue(jsonLd.contains(""""https://x.com/username""""))
+    }
+
+    @Test
+    fun testJsonLdPersonSchemaWithoutSocialLinks() {
+        val seo = SeoMetadata(
+            title = "Test Post",
+            description = "Test description",
+            canonicalUrl = "https://example.com/test",
+            ogType = "article",
+            author = "Jane Doe",
+            authorUrl = "https://example.com/blog/author/jane-doe"
+        )
+
+        val jsonLd = seo.generateJsonLd()
+        assertTrue(jsonLd.contains(""""url": "https://example.com/blog/author/jane-doe""""))
+        assertFalse(jsonLd.contains("sameAs"))
+    }
+
+    @Test
+    fun testJsonLdPersonSchemaWithoutAuthorUrl() {
+        val seo = SeoMetadata(
+            title = "Test Post",
+            description = "Test description",
+            canonicalUrl = "https://example.com/test",
+            ogType = "article",
+            author = "Jane Doe",
+            authorSocialLinks = listOf("https://github.com/janedoe")
+        )
+
+        val jsonLd = seo.generateJsonLd()
+        assertTrue(jsonLd.contains(""""name": "Jane Doe""""))
+        // The Person block should not have a url property when authorUrl is null
+        val personBlock = jsonLd.substringAfter(""""author":""").substringBefore("}")
+        assertFalse(personBlock.contains(""""url":"""))
+        assertTrue(jsonLd.contains(""""sameAs": ["https://github.com/janedoe"]"""))
+    }
+
+    @Test
     fun testJsonEscaping() {
         val seoMetadata = SeoMetadata(
             title = "Test with \"quotes\"",
