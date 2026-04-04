@@ -245,3 +245,63 @@ data class Fragment(
         private val HTML_TAG_REGEX = Regex("<[^>]*>")
     }
 }
+
+/**
+ * Returns the front matter value for [key] as a [String], or `null` if absent or not a string.
+ */
+fun Fragment.getString(key: String): String? =
+    frontMatter[key]?.toString()
+
+/**
+ * Returns the front matter value for [key] as a [Boolean], or `null` if absent.
+ * Handles SnakeYAML's native boolean parsing.
+ */
+fun Fragment.getBoolean(key: String): Boolean? =
+    when (val v = frontMatter[key]) {
+        is Boolean -> v
+        is String -> v.lowercase().toBooleanStrictOrNull()
+        else -> null
+    }
+
+/**
+ * Returns the front matter value for [key] as an [Int], or `null` if absent.
+ * Handles SnakeYAML parsing numbers as various [Number] subtypes.
+ */
+fun Fragment.getInt(key: String): Int? =
+    when (val v = frontMatter[key]) {
+        is Number -> v.toInt()
+        is String -> v.toIntOrNull()
+        else -> null
+    }
+
+/**
+ * Returns the front matter value for [key] as a [Long], or `null` if absent.
+ */
+fun Fragment.getLong(key: String): Long? =
+    when (val v = frontMatter[key]) {
+        is Number -> v.toLong()
+        is String -> v.toLongOrNull()
+        else -> null
+    }
+
+/**
+ * Returns the front matter value for [key] as a [Double], or `null` if absent.
+ */
+fun Fragment.getDouble(key: String): Double? =
+    when (val v = frontMatter[key]) {
+        is Number -> v.toDouble()
+        is String -> v.toDoubleOrNull()
+        else -> null
+    }
+
+/**
+ * Returns the front matter value for [key] as a [List] of [String], or an empty list if absent.
+ * Handles both YAML list syntax and comma-separated strings.
+ */
+@Suppress("UNCHECKED_CAST")
+fun Fragment.getStringList(key: String): List<String> =
+    when (val v = frontMatter[key]) {
+        is List<*> -> v.mapNotNull { it?.toString() }
+        is String -> v.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+        else -> emptyList()
+    }
