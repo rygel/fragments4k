@@ -60,8 +60,7 @@ class LuceneSearchEngine(
     constructor(repository: FragmentRepository, indexPath: Path? = null) : this(listOf(repository), indexPath)
     private val analyzer = StandardAnalyzer()
     private val directory: org.apache.lucene.store.Directory = indexPath?.let { org.apache.lucene.store.FSDirectory.open(it) } ?: org.apache.lucene.store.ByteBuffersDirectory()
-    private var indexWriter: org.apache.lucene.index.IndexWriter? = null
-    private var indexReader: org.apache.lucene.index.IndexReader? = null
+    @Volatile private var reader: org.apache.lucene.index.DirectoryReader? = null
 
     suspend fun index() = withContext(Dispatchers.IO) {
         val config = org.apache.lucene.index.IndexWriterConfig(analyzer)
@@ -88,10 +87,16 @@ class LuceneSearchEngine(
             }
             writer.addDocument(doc)
         }
-        
+
         writer.commit()
         writer.close()
+
+        reader = reader?.let { org.apache.lucene.index.DirectoryReader.openIfChanged(it) ?: it }
+            ?: org.apache.lucene.index.DirectoryReader.open(directory)
     }
+
+    private fun requireReader(): org.apache.lucene.index.DirectoryReader =
+        reader ?: error("Search index not initialised — call index() first")
 
     suspend fun search(queryString: String, maxResults: Int = 10): List<SearchResult> = withContext(Dispatchers.IO) {
         search(SearchOptions(query = queryString, maxResults = maxResults))
@@ -223,6 +228,7 @@ class LuceneSearchEngine(
     }
 
     fun close() {
+        reader?.close()
         analyzer.close()
         directory.close()
     }

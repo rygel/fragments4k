@@ -1,0 +1,1 @@
+io.github.rygel:fragments-parent:pom:0.6.2-SNAPSHOT

@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.github.rygel</groupId>
         <artifactId>fragments-parent</artifactId>
-        <version>0.6.2-SNAPSHOT</version>
+        <version>0.6.2</version>
     </parent>
 
     <artifactId>fragments-javalin</artifactId>
@@ -15,7 +15,7 @@
 
     <properties>
         <javalin.version>7.1.0</javalin.version>
-        <jetty.version>12.1.7</jetty.version>
+        <jetty.version>12.1.8</jetty.version>
     </properties>
 
     <dependencyManagement>

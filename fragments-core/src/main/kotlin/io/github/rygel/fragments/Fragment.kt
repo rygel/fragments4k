@@ -135,12 +135,14 @@ enum class FragmentStatus {
  * @property language BCP-47 language tag (e.g. `"en"`, `"de"`); defaults to `"en"`.
  * @property languages Map of language tag → slug for alternate-language versions of
  *   this content (used by the relationship engine to surface translations).
+ * @property image Raw image path from front matter (e.g. `"/static/images/cover.jpg"`).
+ *   Used as a fallback for SEO open-graph / twitter card images when no explicit URL is provided.
  * @property author Legacy single-author field (plain name or ID string).
  * @property authorIds Preferred multi-author list; takes precedence over [author].
  * @property statusChangeHistory Ordered audit trail of [StatusChangeHistory] entries.
- * @property baseUrl The URL prefix assigned by the repository that owns this fragment
- *   (e.g. `/projects`). Combined with [slug] it forms the canonical path
- *   `/projects/ai-usage-tracker`. Empty string when the repository has no prefix.
+ * @property url Canonical URL for this fragment as assigned by the repository
+ *   (e.g. `/projects/ai-usage-tracker`, `/blog/2026/03/hello-world`).
+ *   Defaults to `/slug` when the repository has no [FileSystemFragmentRepository.urlBuilder].
  * @property seriesSlug Slug of the [ContentSeries] this fragment belongs to, if any.
  * @property seriesPart Position within the series (1-based).
  * @property seriesTitle Optional display title for this part (overrides "Part N").
@@ -163,6 +165,7 @@ data class Fragment(
     val order: Int = 0,
     val language: String = "en",
     val languages: Map<String, String> = emptyMap(),
+    val image: String? = null,
     val author: String? = null,
     val authorIds: List<String> = emptyList(),
     val statusChangeHistory: List<StatusChangeHistory> = emptyList(),

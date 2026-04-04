@@ -6,11 +6,19 @@
 
     <groupId>io.github.rygel</groupId>
     <artifactId>fragments-parent</artifactId>
-    <version>0.6.2-SNAPSHOT</version>
+    <version>0.6.2</version>
     <packaging>pom</packaging>
 
     <name>Fragments Parent</name>
     <description>A framework-agnostic Markdown-based blog/static site library with adapters for multiple JVM web frameworks</description>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
 
     <properties>
         <java.version>21</java.version>
@@ -27,9 +35,9 @@
         <jte.version>3.2.3</jte.version>
         <lucene.version>10.4.0</lucene.version>
 
-        <junit.version>5.14.3</junit.version>
+        <junit.version>6.0.3</junit.version>
         <mockk.version>1.14.9</mockk.version>
-        <rest-assured.version>5.5.7</rest-assured.version>
+        <rest-assured.version>6.0.0</rest-assured.version>
         <ktlint.version>3.5.0</ktlint.version>
         
         <!-- Performance benchmarking -->
@@ -41,8 +49,8 @@
         <maven-shade-plugin.version>3.6.2</maven-shade-plugin.version>
         <exec-maven-plugin.version>3.6.3</exec-maven-plugin.version>
         <jacoco.version>0.8.14</jacoco.version>
-        <versions-maven-plugin.version>2.18.0</versions-maven-plugin.version>
-        <maven-enforcer-plugin.version>3.5.0</maven-enforcer-plugin.version>
+        <versions-maven-plugin.version>2.21.0</versions-maven-plugin.version>
+        <maven-enforcer-plugin.version>3.6.2</maven-enforcer-plugin.version>
 
     </properties>
 

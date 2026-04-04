@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.github.rygel</groupId>
         <artifactId>fragments-parent</artifactId>
-        <version>0.6.2-SNAPSHOT</version>
+        <version>0.6.2</version>
     </parent>
 
     <artifactId>fragments-quarkus</artifactId>
@@ -14,7 +14,7 @@
     <description>Quarkus web framework adapter</description>
 
     <properties>
-        <quarkus.version>3.13.3</quarkus.version>
+        <quarkus.version>3.34.2</quarkus.version>
     </properties>
 
     <dependencyManagement>

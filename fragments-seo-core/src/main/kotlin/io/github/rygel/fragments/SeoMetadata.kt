@@ -172,6 +172,7 @@ data class SeoMetadata(
             }
 
             val resolvedAuthor = author ?: fragment.author
+            val resolvedImageUrl = imageUrl ?: fragment.image?.let { "$siteUrl$it" }
 
             return SeoMetadata(
                 title = fragment.title,
@@ -179,13 +180,13 @@ data class SeoMetadata(
                 canonicalUrl = canonicalUrl,
                 ogTitle = fragment.title,
                 ogDescription = description,
-                ogImage = imageUrl,
+                ogImage = resolvedImageUrl,
                 ogType = ogType,
                 ogSiteName = siteName,
                 twitterCard = "summary_large_image",
                 twitterTitle = fragment.title,
                 twitterDescription = description,
-                twitterImage = imageUrl,
+                twitterImage = resolvedImageUrl,
                 keywords = fragment.tags,
                 author = resolvedAuthor,
                 publishedDate = fragment.date?.toString(),

@@ -10,11 +10,33 @@ import com.vladsch.flexmark.parser.Parser
 import com.vladsch.flexmark.util.data.MutableDataSet
 import com.vladsch.flexmark.util.misc.Extension
 import org.slf4j.LoggerFactory
+import org.yaml.snakeyaml.DumperOptions
+import org.yaml.snakeyaml.LoaderOptions
 import org.yaml.snakeyaml.Yaml
+import org.yaml.snakeyaml.constructor.SafeConstructor
+import org.yaml.snakeyaml.nodes.Tag
+import org.yaml.snakeyaml.representer.Representer
+import org.yaml.snakeyaml.resolver.Resolver
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+
+/**
+ * A SnakeYAML [Resolver] that removes the implicit [Tag.TIMESTAMP] resolver.
+ *
+ * By default SnakeYAML auto-parses values like `2026-03-29` into [java.util.Date],
+ * which loses timezone information and triggers warnings in [MarkdownParser.parseDate].
+ * With this resolver dates arrive as plain [String] values and are parsed explicitly
+ * by [MarkdownParser.Companion.parseDateString].
+ */
+private class NoDateResolver : Resolver() {
+    override fun addImplicitResolver(tag: Tag, regexp: java.util.regex.Pattern, first: String?, limit: Int) {
+        if (tag != Tag.TIMESTAMP) {
+            super.addImplicitResolver(tag, regexp, first, limit)
+        }
+    }
+}
 
 /**
  * Parses Markdown files that contain an optional YAML front matter block.
@@ -57,7 +79,17 @@ class MarkdownParser(extraExtensions: List<Extension> = emptyList()) {
     }
     private val parser = Parser.builder(options).build()
     private val renderer = HtmlRenderer.builder(options).build()
-    private val yaml = Yaml()
+    private val yaml = run {
+        val loaderOptions = LoaderOptions()
+        val dumperOptions = DumperOptions()
+        Yaml(
+            SafeConstructor(loaderOptions),
+            Representer(dumperOptions),
+            dumperOptions,
+            loaderOptions,
+            NoDateResolver(),
+        )
+    }
 
     /**
      * The result of parsing a Markdown file.

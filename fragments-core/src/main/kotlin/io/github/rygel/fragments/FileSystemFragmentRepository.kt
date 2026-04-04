@@ -279,6 +279,7 @@ class FileSystemFragmentRepository(
         val tags = parseStringList(frontMatter["tags"])
         val language = frontMatter["language"]?.toString() ?: "en"
         val languages = parseLanguagesMap(frontMatter)
+        val image = frontMatter["image"] as? String
         val author = frontMatter["author"]?.toString()
         val authorIds = parseStringList(frontMatter["authorIds"])
         val statusChangeHistory = parseStatusChangeHistory(frontMatter)
@@ -289,7 +290,6 @@ class FileSystemFragmentRepository(
         val fragment = Fragment(
             title = title,
             slug = slug,
-            baseUrl = baseUrl,
             status = status,
             date = date,
             publishDate = publishDate,
@@ -304,6 +304,7 @@ class FileSystemFragmentRepository(
             order = order,
             language = language,
             languages = languages,
+            image = image,
             author = author,
             authorIds = authorIds,
             statusChangeHistory = statusChangeHistory,
