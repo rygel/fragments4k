@@ -19,6 +19,8 @@ data class SeoMetadata(
     val twitterImage: String? = null,
     val keywords: List<String> = emptyList(),
     val author: String? = null,
+    val authorUrl: String? = null,
+    val authorSocialLinks: List<String> = emptyList(),
     val publishedDate: String? = null,
     val modifiedDate: String? = null,
     val locale: String = "en_US",
@@ -90,7 +92,15 @@ data class SeoMetadata(
         """.trimIndent())
         
         author?.let {
-            jsonBuilder.append(",\n                \"author\": {\n                    \"@type\": \"Person\",\n                    \"name\": \"${escapeJson(it)}\"\n                }")
+            jsonBuilder.append(",\n                \"author\": {\n                    \"@type\": \"Person\",\n                    \"name\": \"${escapeJson(it)}\"")
+            authorUrl?.let { url ->
+                jsonBuilder.append(",\n                    \"url\": \"${escapeJson(url)}\"")
+            }
+            if (authorSocialLinks.isNotEmpty()) {
+                val linksJson = authorSocialLinks.joinToString(", ") { link -> "\"${escapeJson(link)}\"" }
+                jsonBuilder.append(",\n                    \"sameAs\": [$linksJson]")
+            }
+            jsonBuilder.append("\n                }")
         }
         
         publishedDate?.let {
@@ -159,7 +169,9 @@ data class SeoMetadata(
             pagePath: String? = null,
             author: String? = null,
             imageUrl: String? = null,
-            ogType: String = "article"
+            ogType: String = "article",
+            authorUrl: String? = null,
+            authorSocialLinks: List<String> = emptyList()
         ): SeoMetadata {
             val canonicalUrl = if (pagePath != null) {
                 "$siteUrl/$pagePath"
@@ -189,6 +201,8 @@ data class SeoMetadata(
                 twitterImage = resolvedImageUrl,
                 keywords = fragment.tags,
                 author = resolvedAuthor,
+                authorUrl = authorUrl,
+                authorSocialLinks = authorSocialLinks,
                 publishedDate = fragment.date?.toString(),
                 locale = fragment.language.replace("-", "_")
             )

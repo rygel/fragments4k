@@ -22,7 +22,8 @@ class FragmentsMicronautController @Inject constructor(
     private val siteTitle: String = "My Blog",
     private val siteDescription: String = "My Awesome Blog",
     private val siteUrl: String = "http://localhost:8080",
-    private val feedUrl: String = "http://localhost:8080/rss.xml"
+    private val feedUrl: String = "http://localhost:8080/rss.xml",
+    private val authorRepository: AuthorRepository? = null
 ) {
     private val rssGenerator: RssGenerator by lazy { RssGenerator(repository = staticEngine.getRepository()) }
     private val sitemapGenerator: SitemapGenerator by lazy { SitemapGenerator(repository = staticEngine.getRepository(), siteUrl = siteUrl, lastModified = null) }
@@ -130,6 +131,30 @@ class FragmentsMicronautController @Inject constructor(
         return HttpResponse.ok(viewModel)
     }
 
+    @Get("/blog/author/{slug}")
+    suspend fun byAuthor(
+        slug: String,
+        @QueryValue(defaultValue = "1") page: Int,
+        headers: HttpHeaders
+    ): HttpResponse<Any> {
+        val pageResult = blogEngine.getByAuthor(slug, page)
+        val isPartial = isHtmxRequest(headers)
+        val author = authorRepository?.getBySlugOrId(slug)
+        val authorViewModel = author?.let { AuthorViewModel(it, postCount = pageResult.totalItems) }
+        val viewModel = AuthorPageViewModel(
+            authorSlug = slug,
+            authorName = author?.name,
+            author = authorViewModel,
+            fragments = pageResult.items.map { FragmentViewModel(it, isPartial) },
+            currentPage = pageResult.currentPage,
+            totalPages = pageResult.totalPages,
+            hasNext = pageResult.hasNext,
+            hasPrevious = pageResult.hasPrevious,
+            isPartialRender = isPartial
+        )
+        return HttpResponse.ok(viewModel)
+    }
+
     private fun isHtmxRequest(headers: HttpHeaders): Boolean {
         return headers.get(FragmentViewModel.HTMX_REQUEST_HEADER)?.firstOrNull()?.lowercase() == "true"
     }
@@ -184,6 +209,18 @@ class FragmentsMicronautController @Inject constructor(
 
     data class TagViewModel(
         val tag: String,
+        val fragments: List<FragmentViewModel>,
+        val currentPage: Int,
+        val totalPages: Int,
+        val hasNext: Boolean = false,
+        val hasPrevious: Boolean = false,
+        val isPartialRender: Boolean = false
+    )
+
+    data class AuthorPageViewModel(
+        val authorSlug: String,
+        val authorName: String? = null,
+        val author: AuthorViewModel? = null,
         val fragments: List<FragmentViewModel>,
         val currentPage: Int,
         val totalPages: Int,

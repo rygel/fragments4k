@@ -83,6 +83,13 @@ class BlogEngine(
             .sortedByDescending { it.date }
     }
 
+    suspend fun getByAuthor(authorId: String, page: Int = 1): Page<Fragment> {
+        val authorPosts = repository.getByAuthor(authorId)
+            .filter { isBlogTemplate(it.template) }
+            .sortedByDescending { it.date }
+        return Page.create(authorPosts, page, pageSize)
+    }
+
     suspend fun getAllTags(): Map<String, Int> {
         return repository.getAllVisible()
             .flatMap { it.tags }
