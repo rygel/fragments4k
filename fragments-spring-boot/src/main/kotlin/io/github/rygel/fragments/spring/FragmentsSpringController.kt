@@ -160,6 +160,16 @@ class FragmentsSpringController(
         return sitemapGenerator.generateSitemap()
     }
 
+    @GetMapping(value = ["/robots.txt"], produces = [MediaType.TEXT_PLAIN_VALUE])
+    fun robotsTxt(): String {
+        return buildString {
+            appendLine("User-agent: *")
+            appendLine("Allow: /")
+            appendLine()
+            appendLine("Sitemap: $siteUrl/sitemap.xml")
+        }
+    }
+
     private fun isHtmxRequest(header: String?): Boolean {
         return header?.lowercase() == "true"
     }

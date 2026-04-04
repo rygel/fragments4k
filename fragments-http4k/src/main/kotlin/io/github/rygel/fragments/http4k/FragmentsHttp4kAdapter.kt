@@ -54,7 +54,8 @@ class FragmentsHttp4kAdapter(
             "/blog/archive/{year}/{month}" bind GET to { request -> handleArchiveYearMonth(request) },
             "/search" bind GET to { request -> handleSearch(request) },
             "/rss.xml" bind GET to { _ -> handleRss() },
-            "/sitemap.xml" bind GET to { _ -> handleSitemap() }
+            "/sitemap.xml" bind GET to { _ -> handleSitemap() },
+            "/robots.txt" bind GET to { _ -> handleRobotsTxt() }
         )
     }
 
@@ -217,6 +218,18 @@ class FragmentsHttp4kAdapter(
                 .header("Content-Type", "application/xml; charset=utf-8")
                 .body(sitemapXml)
         }
+    }
+
+    private fun handleRobotsTxt(): Response {
+        val body = buildString {
+            appendLine("User-agent: *")
+            appendLine("Allow: /")
+            appendLine()
+            appendLine("Sitemap: $siteUrl/sitemap.xml")
+        }
+        return Response(Status.OK)
+            .header("Content-Type", "text/plain; charset=utf-8")
+            .body(body)
     }
 
     private fun handleSearch(request: Request): Response {

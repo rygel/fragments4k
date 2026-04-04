@@ -324,6 +324,17 @@ fun RoutesConfig.fragmentsRoutes(
         }
     }
 
+    get("/robots.txt") { ctx ->
+        val body = buildString {
+            appendLine("User-agent: *")
+            appendLine("Allow: /")
+            appendLine()
+            appendLine("Sitemap: $siteUrl/sitemap.xml")
+        }
+        ctx.contentType("text/plain")
+        ctx.result(body)
+    }
+
     get("/search") { ctx ->
         val query = ctx.queryParam("q")
         if (query == null) {
