@@ -4,6 +4,7 @@ import io.github.rygel.fragments.AuthorRepository
 import io.github.rygel.fragments.AuthorViewModel
 import io.github.rygel.fragments.Fragment
 import io.github.rygel.fragments.FragmentViewModel
+import io.github.rygel.fragments.LlmsTxtGenerator
 import io.github.rygel.fragments.blog.BlogEngine
 import io.github.rygel.fragments.rss.RssGenerator
 import io.github.rygel.fragments.sitemap.SitemapGenerator
@@ -213,6 +214,22 @@ class FragmentsQuarkusResource @Inject constructor(
             appendLine()
             appendLine("Sitemap: $siteUrl/sitemap.xml")
         }
+        return Response.ok()
+            .header("Content-Type", "text/plain; charset=utf-8")
+            .entity(body)
+            .build()
+    }
+
+    @GET
+    @Path("/llms.txt")
+    @Produces("text/plain")
+    suspend fun llmsTxt(): Response {
+        val body = LlmsTxtGenerator.generate(
+            siteTitle = siteTitle,
+            siteDescription = siteDescription,
+            siteUrl = siteUrl,
+            repositories = listOf(staticEngine.getRepository())
+        )
         return Response.ok()
             .header("Content-Type", "text/plain; charset=utf-8")
             .entity(body)

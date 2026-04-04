@@ -57,7 +57,8 @@ class FragmentsHttp4kAdapter(
             "/search" bind GET to { request -> handleSearch(request) },
             "/rss.xml" bind GET to { _ -> handleRss() },
             "/sitemap.xml" bind GET to { _ -> handleSitemap() },
-            "/robots.txt" bind GET to { _ -> handleRobotsTxt() }
+            "/robots.txt" bind GET to { _ -> handleRobotsTxt() },
+            "/llms.txt" bind GET to { _ -> handleLlmsTxt() }
         )
     }
 
@@ -261,6 +262,20 @@ class FragmentsHttp4kAdapter(
         return Response(Status.OK)
             .header("Content-Type", "text/plain; charset=utf-8")
             .body(body)
+    }
+
+    private fun handleLlmsTxt(): Response {
+        return runBlocking {
+            val body = LlmsTxtGenerator.generate(
+                siteTitle = siteTitle,
+                siteDescription = siteDescription,
+                siteUrl = siteUrl,
+                repositories = listOf(staticEngine.getRepository())
+            )
+            Response(Status.OK)
+                .header("Content-Type", "text/plain; charset=utf-8")
+                .body(body)
+        }
     }
 
     private fun handleSearch(request: Request): Response {

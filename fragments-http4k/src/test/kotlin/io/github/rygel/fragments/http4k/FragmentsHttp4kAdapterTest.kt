@@ -189,6 +189,21 @@ class FragmentsHttp4kAdapterTest {
     }
 
     @Test
+    fun llmsTxtReturns200WithCorrectContent() {
+        repo.addFragment(createFragment("test-post", "Test Post", isBlog = true,
+            date = LocalDateTime.of(2024, 1, 15, 10, 0)))
+        repo.addFragment(createFragment("about", "About Page", isBlog = false))
+
+        val response = Request(Method.GET, "http://localhost:${server.port()}/llms.txt")
+            .execute(server)
+        assertEquals(Status.OK, response.status)
+        assertEquals("text/plain; charset=utf-8", response.header("Content-Type"))
+        val body = response.bodyString()
+        assertTrue(body.contains("# Test Blog"))
+        assertTrue(body.contains("> Test Description"))
+    }
+
+    @Test
     fun htmxRequestReturnsPartialRender() {
         repo.addFragment(createFragment("test-page", "Test Page", isBlog = false))
         
