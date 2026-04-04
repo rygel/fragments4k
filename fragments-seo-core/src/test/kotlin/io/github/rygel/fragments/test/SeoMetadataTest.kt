@@ -199,6 +199,79 @@ class SeoMetadataTest {
     }
 
     @Test
+    fun testOgTypeParameterIsUsed() {
+        val fragment = Fragment(
+            title = "Home Page",
+            slug = "home",
+            status = FragmentStatus.PUBLISHED,
+            date = LocalDateTime.of(2024, 1, 15, 10, 0),
+            publishDate = null,
+            preview = "Welcome to our site",
+            content = "Home page content",
+            frontMatter = emptyMap(),
+            visible = true
+        )
+
+        val seoMetadata = SeoMetadata.fromFragment(
+            fragment = fragment,
+            siteUrl = "https://example.com",
+            ogType = "website"
+        )
+
+        assertEquals("website", seoMetadata.ogType)
+
+        val ogTags = seoMetadata.generateOpenGraphTags()
+        assertTrue(ogTags.any { it.contains("""<meta property="og:type" content="website">""") })
+    }
+
+    @Test
+    fun testAuthorDefaultsFromFragment() {
+        val fragment = Fragment(
+            title = "Author Test",
+            slug = "author-test",
+            status = FragmentStatus.PUBLISHED,
+            date = LocalDateTime.of(2024, 1, 15, 10, 0),
+            publishDate = null,
+            preview = "Testing author defaults",
+            content = "Content",
+            frontMatter = emptyMap(),
+            visible = true,
+            author = "Fragment Author"
+        )
+
+        val seoMetadata = SeoMetadata.fromFragment(
+            fragment = fragment,
+            siteUrl = "https://example.com"
+        )
+
+        assertEquals("Fragment Author", seoMetadata.author)
+    }
+
+    @Test
+    fun testExplicitAuthorOverridesFragmentAuthor() {
+        val fragment = Fragment(
+            title = "Author Override Test",
+            slug = "author-override",
+            status = FragmentStatus.PUBLISHED,
+            date = LocalDateTime.of(2024, 1, 15, 10, 0),
+            publishDate = null,
+            preview = "Testing author override",
+            content = "Content",
+            frontMatter = emptyMap(),
+            visible = true,
+            author = "Fragment Author"
+        )
+
+        val seoMetadata = SeoMetadata.fromFragment(
+            fragment = fragment,
+            siteUrl = "https://example.com",
+            author = "Explicit Author"
+        )
+
+        assertEquals("Explicit Author", seoMetadata.author)
+    }
+
+    @Test
     fun testDescriptionTruncation() {
         val longDescription = "a".repeat(200)
         val fragment = Fragment(

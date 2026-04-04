@@ -158,18 +158,20 @@ data class SeoMetadata(
             siteName: String? = null,
             pagePath: String? = null,
             author: String? = null,
-            imageUrl: String? = null
+            imageUrl: String? = null,
+            ogType: String = "article"
         ): SeoMetadata {
             val canonicalUrl = if (pagePath != null) {
                 "$siteUrl/$pagePath"
             } else {
                 "$siteUrl/page/${fragment.slug}"
             }
-            
+
             val description = fragment.previewTextOnly.take(160).let {
                 if (it.length >= 160) "$it..." else it
             }
 
+            val resolvedAuthor = author ?: fragment.author
             val resolvedImageUrl = imageUrl ?: fragment.image?.let { "$siteUrl$it" }
 
             return SeoMetadata(
@@ -179,14 +181,14 @@ data class SeoMetadata(
                 ogTitle = fragment.title,
                 ogDescription = description,
                 ogImage = resolvedImageUrl,
-                ogType = "article",
+                ogType = ogType,
                 ogSiteName = siteName,
                 twitterCard = "summary_large_image",
                 twitterTitle = fragment.title,
                 twitterDescription = description,
                 twitterImage = resolvedImageUrl,
                 keywords = fragment.tags,
-                author = author,
+                author = resolvedAuthor,
                 publishedDate = fragment.date?.toString(),
                 locale = fragment.language.replace("-", "_")
             )
