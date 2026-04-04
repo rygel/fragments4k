@@ -3,6 +3,16 @@ package io.github.rygel.fragments
 import java.time.LocalDateTime
 
 /**
+ * A single question/answer pair for FAQ structured data.
+ *
+ * Used to generate FAQPage JSON-LD schema from fragment front matter.
+ *
+ * @property question The FAQ question text.
+ * @property answer The FAQ answer text.
+ */
+data class FaqEntry(val question: String, val answer: String)
+
+/**
  * Records a single status transition for audit trail purposes.
  *
  * Instances are persisted in the fragment's front matter under the
@@ -143,6 +153,8 @@ enum class FragmentStatus {
  * @property url Canonical URL for this fragment as assigned by the repository
  *   (e.g. `/projects/ai-usage-tracker`, `/blog/2026/03/hello-world`).
  *   Defaults to `/slug` when the repository has no [FileSystemFragmentRepository.urlBuilder].
+ * @property faq List of [FaqEntry] question/answer pairs parsed from front matter.
+ *   Used to generate FAQPage JSON-LD schema for search engine rich results.
  * @property seriesSlug Slug of the [ContentSeries] this fragment belongs to, if any.
  * @property seriesPart Position within the series (1-based).
  * @property seriesTitle Optional display title for this part (overrides "Part N").
@@ -169,6 +181,7 @@ data class Fragment(
     val author: String? = null,
     val authorIds: List<String> = emptyList(),
     val statusChangeHistory: List<StatusChangeHistory> = emptyList(),
+    val faq: List<FaqEntry> = emptyList(),
     val seriesSlug: String? = null,
     val seriesPart: Int? = null,
     val seriesTitle: String? = null,

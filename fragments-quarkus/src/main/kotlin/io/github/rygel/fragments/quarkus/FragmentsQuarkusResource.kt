@@ -1,5 +1,7 @@
 package io.github.rygel.fragments.quarkus
 
+import io.github.rygel.fragments.AuthorRepository
+import io.github.rygel.fragments.AuthorViewModel
 import io.github.rygel.fragments.Fragment
 import io.github.rygel.fragments.FragmentViewModel
 import io.github.rygel.fragments.LlmsTxtGenerator
@@ -25,7 +27,8 @@ class FragmentsQuarkusResource @Inject constructor(
     private val siteTitle: String = "My Blog",
     private val siteDescription: String = "My Awesome Blog",
     private val siteUrl: String = "http://localhost:8080",
-    private val feedUrl: String = "http://localhost:8080/rss.xml"
+    private val feedUrl: String = "http://localhost:8080/rss.xml",
+    private val authorRepository: AuthorRepository? = null
 ) {
     private val rssGenerator: RssGenerator by lazy { RssGenerator(repository = staticEngine.getRepository()) }
     private val sitemapGenerator: SitemapGenerator by lazy { SitemapGenerator(repository = staticEngine.getRepository(), siteUrl = siteUrl, lastModified = null) }
@@ -145,6 +148,31 @@ class FragmentsQuarkusResource @Inject constructor(
         return Response.ok(viewModel).build()
     }
 
+    @GET
+    @Path("/blog/author/{slug}")
+    suspend fun byAuthor(
+        @PathParam("slug") slug: String,
+        @QueryParam("page") page: Int?,
+        @Context headers: HttpHeaders
+    ): Response {
+        val pageResult = blogEngine.getByAuthor(slug, page ?: 1)
+        val isPartial = isHtmxRequest(headers)
+        val author = authorRepository?.getBySlugOrId(slug)
+        val authorViewModel = author?.let { AuthorViewModel(it, postCount = pageResult.totalItems) }
+        val viewModel = AuthorPageViewModel(
+            authorSlug = slug,
+            authorName = author?.name,
+            author = authorViewModel,
+            fragments = pageResult.items.map { FragmentViewModel(it, isPartial) },
+            currentPage = pageResult.currentPage,
+            totalPages = pageResult.totalPages,
+            hasNext = pageResult.hasNext,
+            hasPrevious = pageResult.hasPrevious,
+            isPartialRender = isPartial
+        )
+        return Response.ok(viewModel).build()
+    }
+
     private fun isHtmxRequest(headers: HttpHeaders): Boolean {
         return headers.getHeaderString(FragmentViewModel.HTMX_REQUEST_HEADER)?.lowercase() == "true"
     }
@@ -224,6 +252,18 @@ class FragmentsQuarkusResource @Inject constructor(
 
     data class TagViewModel(
         val tag: String,
+        val fragments: List<FragmentViewModel>,
+        val currentPage: Int,
+        val totalPages: Int,
+        val hasNext: Boolean = false,
+        val hasPrevious: Boolean = false,
+        val isPartialRender: Boolean = false
+    )
+
+    data class AuthorPageViewModel(
+        val authorSlug: String,
+        val authorName: String? = null,
+        val author: AuthorViewModel? = null,
         val fragments: List<FragmentViewModel>,
         val currentPage: Int,
         val totalPages: Int,
