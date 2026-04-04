@@ -155,6 +155,19 @@ class FragmentsMicronautController @Inject constructor(
             .header("Content-Type", "application/xml; charset=utf-8")
     }
 
+    @Get("/robots.txt")
+    @Produces("text/plain;charset=utf-8")
+    fun robotsTxt(): HttpResponse<String> {
+        val body = buildString {
+            appendLine("User-agent: *")
+            appendLine("Allow: /")
+            appendLine()
+            appendLine("Sitemap: $siteUrl/sitemap.xml")
+        }
+        return HttpResponse.ok(body)
+            .header("Content-Type", "text/plain; charset=utf-8")
+    }
+
     data class HomeViewModel(
         val fragments: List<FragmentViewModel>,
         val isPartialRender: Boolean = false
