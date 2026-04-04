@@ -169,20 +169,22 @@ data class SeoMetadata(
             val description = fragment.previewTextOnly.take(160).let {
                 if (it.length >= 160) "$it..." else it
             }
-            
+
+            val resolvedImageUrl = imageUrl ?: fragment.image?.let { "$siteUrl$it" }
+
             return SeoMetadata(
                 title = fragment.title,
                 description = description,
                 canonicalUrl = canonicalUrl,
                 ogTitle = fragment.title,
                 ogDescription = description,
-                ogImage = imageUrl,
+                ogImage = resolvedImageUrl,
                 ogType = "article",
                 ogSiteName = siteName,
                 twitterCard = "summary_large_image",
                 twitterTitle = fragment.title,
                 twitterDescription = description,
-                twitterImage = imageUrl,
+                twitterImage = resolvedImageUrl,
                 keywords = fragment.tags,
                 author = author,
                 publishedDate = fragment.date?.toString(),
