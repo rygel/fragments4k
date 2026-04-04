@@ -168,6 +168,19 @@ class FragmentsMicronautController @Inject constructor(
             .header("Content-Type", "text/plain; charset=utf-8")
     }
 
+    @Get("/llms.txt")
+    @Produces("text/plain;charset=utf-8")
+    suspend fun llmsTxt(): HttpResponse<String> {
+        val body = LlmsTxtGenerator.generate(
+            siteTitle = siteTitle,
+            siteDescription = siteDescription,
+            siteUrl = siteUrl,
+            repositories = listOf(staticEngine.getRepository())
+        )
+        return HttpResponse.ok(body)
+            .header("Content-Type", "text/plain; charset=utf-8")
+    }
+
     data class HomeViewModel(
         val fragments: List<FragmentViewModel>,
         val isPartialRender: Boolean = false

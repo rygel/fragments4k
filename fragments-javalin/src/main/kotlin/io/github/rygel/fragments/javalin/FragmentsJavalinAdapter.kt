@@ -335,6 +335,19 @@ fun RoutesConfig.fragmentsRoutes(
         ctx.result(body)
     }
 
+    get("/llms.txt") { ctx ->
+        ctx.handleAsync {
+            val body = LlmsTxtGenerator.generate(
+                siteTitle = siteTitle,
+                siteDescription = siteDescription,
+                siteUrl = siteUrl,
+                repositories = listOf(staticEngine.getRepository())
+            )
+            ctx.contentType("text/plain")
+            ctx.result(body)
+        }
+    }
+
     get("/search") { ctx ->
         val query = ctx.queryParam("q")
         if (query == null) {

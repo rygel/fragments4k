@@ -170,6 +170,16 @@ class FragmentsSpringController(
         }
     }
 
+    @GetMapping(value = ["/llms.txt"], produces = [MediaType.TEXT_PLAIN_VALUE])
+    suspend fun llmsTxt(): String {
+        return LlmsTxtGenerator.generate(
+            siteTitle = siteTitle,
+            siteDescription = siteDescription,
+            siteUrl = siteUrl,
+            repositories = listOf(repository)
+        )
+    }
+
     private fun isHtmxRequest(header: String?): Boolean {
         return header?.lowercase() == "true"
     }
