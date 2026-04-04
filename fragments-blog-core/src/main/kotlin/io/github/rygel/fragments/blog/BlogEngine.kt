@@ -6,11 +6,25 @@ import io.github.rygel.fragments.FragmentRepository
 import io.github.rygel.fragments.FragmentStatus
 import io.github.rygel.fragments.RelationshipConfig
 
+/**
+ * Provides paginated, filtered access to blog-post fragments.
+ *
+ * A fragment is treated as a **blog post** when its `template` front matter field
+ * is `"blog"` or `"blog_post"` (see [BLOG_TEMPLATES]). Fragments with any other
+ * template value — including `"default"` and `"static"` — are excluded from all
+ * methods in this engine.
+ */
 class BlogEngine(
     private val repository: FragmentRepository,
     private val pageSize: Int = 10,
     private val relationshipConfig: RelationshipConfig = RelationshipConfig()
 ) {
+    /**
+     * Returns `true` if [template] marks the fragment as a blog post.
+     * Centralised here so a mistyped template value produces a visible miss
+     * rather than silently excluding posts.
+     */
+    private fun isBlogTemplate(template: String) = template in BLOG_TEMPLATES
 
     suspend fun getOverview(includeDrafts: Boolean = false, page: Int): Page<Fragment> {
         val allFragments = if (includeDrafts) {
@@ -19,14 +33,14 @@ class BlogEngine(
             repository.getAllVisible()
         }
         val blogPosts = allFragments
-            .filter { it.template == "blog" || it.template.isEmpty() }
+            .filter { isBlogTemplate(it.template) }
             .sortedByDescending { it.date }
         return Page.create(blogPosts, page, pageSize)
     }
 
     suspend fun getDrafts(page: Int): Page<Fragment> {
         val draftFragments = repository.getAll()
-            .filter { it.template == "blog" || it.template.isEmpty() }
+            .filter { isBlogTemplate(it.template) }
             .filter { it.status == FragmentStatus.DRAFT }
             .sortedByDescending { it.date }
         return Page.create(draftFragments, page, pageSize)
@@ -38,14 +52,14 @@ class BlogEngine(
 
     suspend fun getByTag(tag: String, page: Int): Page<Fragment> {
         val taggedPosts = repository.getByTag(tag)
-            .filter { it.template == "blog" || it.template.isEmpty() }
+            .filter { isBlogTemplate(it.template) }
             .sortedByDescending { it.date }
         return Page.create(taggedPosts, page, pageSize)
     }
 
     suspend fun getByCategory(category: String, page: Int): Page<Fragment> {
         val categorizedPosts = repository.getByCategory(category)
-            .filter { it.template == "blog" || it.template.isEmpty() }
+            .filter { isBlogTemplate(it.template) }
             .sortedByDescending { it.date }
         return Page.create(categorizedPosts, page, pageSize)
     }
@@ -53,7 +67,7 @@ class BlogEngine(
     suspend fun getByYear(year: Int): List<Fragment> {
         return repository.getAllVisible()
             .filter { 
-                (it.template == "blog" || it.template.isEmpty()) &&
+                (isBlogTemplate(it.template)) &&
                 it.date?.year == year
             }
             .sortedByDescending { it.date }
@@ -62,7 +76,7 @@ class BlogEngine(
     suspend fun getByYearMonth(year: Int, month: Int): List<Fragment> {
         return repository.getAllVisible()
             .filter { 
-                (it.template == "blog" || it.template.isEmpty()) &&
+                (isBlogTemplate(it.template)) &&
                 it.date?.year == year &&
                 it.date?.monthValue == month
             }
@@ -87,5 +101,16 @@ class BlogEngine(
         val fragment = getPost(year, month, slug)
         val relationships = repository.getRelationships(slug, relationshipConfig)
         return Pair(fragment, relationships)
+    }
+
+    companion object {
+        /**
+         * Template values that identify a fragment as a blog post.
+         *
+         * Set `template: blog` or `template: blog_post` in your Markdown front matter.
+         * Any other value (e.g. `"default"`, `"static"`, or a custom template name)
+         * will cause the fragment to be excluded from all [BlogEngine] results.
+         */
+        val BLOG_TEMPLATES: Set<String> = setOf("blog", "blog_post")
     }
 }

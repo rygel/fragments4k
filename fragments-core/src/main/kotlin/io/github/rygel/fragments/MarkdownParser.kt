@@ -78,9 +78,7 @@ class MarkdownParser(extraExtensions: List<Extension> = emptyList()) {
      * and converting the body to HTML.
      */
     fun parse(markdown: String): ParsedContent {
-        // \n? at end allows files with no trailing newline after the closing ---
-        val frontMatterPattern = Regex("^---\\s*\\n(.*?)\\n---\\s*\\n?", RegexOption.DOT_MATCHES_ALL)
-        val match = frontMatterPattern.find(markdown)
+        val match = FRONT_MATTER_PATTERN.find(markdown)
 
         return if (match != null) {
             val frontMatterYaml = match.groupValues[1]
@@ -104,6 +102,11 @@ class MarkdownParser(extraExtensions: List<Extension> = emptyList()) {
     }
 
     companion object {
+        // \n? at end allows files with no trailing newline after the closing ---
+        private val FRONT_MATTER_PATTERN = Regex("^---\\s*\\n(.*?)\\n---\\s*\\n?", RegexOption.DOT_MATCHES_ALL)
+
+        private val logger = LoggerFactory.getLogger(MarkdownParser::class.java)
+
         private val DATE_TIME_FORMATTERS = listOf(
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"),
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
@@ -132,8 +135,23 @@ class MarkdownParser(extraExtensions: List<Extension> = emptyList()) {
         fun parseDate(dateValue: Any?): LocalDateTime? {
             return when (dateValue) {
                 is java.time.LocalDateTime -> dateValue
-                is java.time.LocalDate -> dateValue.atStartOfDay()
-                is java.util.Date -> dateValue.toInstant().atZone(ZoneOffset.UTC).toLocalDateTime()
+                is java.time.LocalDate -> {
+                    logger.warn(
+                        "Date '{}' has no time or timezone — treating as UTC midnight. " +
+                        "Use 'yyyy-MM-dd''T''HH:mm' to suppress this warning.",
+                        dateValue
+                    )
+                    dateValue.atStartOfDay()
+                }
+                is java.util.Date -> {
+                    logger.warn(
+                        "Date '{}' (java.util.Date from SnakeYAML) has no explicit timezone — " +
+                        "treating as UTC. Use 'yyyy-MM-dd''T''HH:mm' format in your front matter " +
+                        "to suppress this warning.",
+                        dateValue
+                    )
+                    dateValue.toInstant().atZone(ZoneOffset.UTC).toLocalDateTime()
+                }
                 is String -> parseDateString(dateValue)
                 else -> null
             }

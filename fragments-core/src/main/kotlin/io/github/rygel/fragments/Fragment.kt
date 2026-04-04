@@ -56,6 +56,19 @@ enum class FragmentStatus {
     EXPIRED;
 
     companion object {
+        /**
+         * Permitted lifecycle transitions.
+         *
+         * Intentional non-obvious entries:
+         * - `PUBLISHED → DRAFT` — "unpublish" / pull back for editing without archiving.
+         * - `ARCHIVED → PUBLISHED` — re-publish previously archived content (e.g. a seasonal post).
+         * - `ARCHIVED → REVIEW / APPROVED` — restart the editorial workflow for archived content.
+         * - `EXPIRED → PUBLISHED / SCHEDULED` — reinstate expired content (e.g. extend its expiry date).
+         * - `SCHEDULED → PUBLISHED` — the scheduled-publication background job uses this transition.
+         *
+         * Use [FragmentRepository.updateFragmentStatus] with `force = true` to bypass
+         * this map for emergency overrides.
+         */
         private val validTransitions = mapOf(
             DRAFT to setOf(REVIEW, APPROVED, PUBLISHED, SCHEDULED, ARCHIVED),
             REVIEW to setOf(DRAFT, APPROVED, ARCHIVED),
@@ -135,7 +148,7 @@ enum class FragmentStatus {
 data class Fragment(
     val title: String,
     val slug: String,
-    val url: String = "/$slug",
+    val baseUrl: String = "",
     val status: FragmentStatus = FragmentStatus.PUBLISHED,
     val date: LocalDateTime?,
     val publishDate: LocalDateTime?,
@@ -155,8 +168,19 @@ data class Fragment(
     val statusChangeHistory: List<StatusChangeHistory> = emptyList(),
     val seriesSlug: String? = null,
     val seriesPart: Int? = null,
-    val seriesTitle: String? = null
+    val seriesTitle: String? = null,
+    val resolvedUrl: String? = null
 ) {
+    /**
+     * Canonical URL for this fragment.
+     *
+     * Returns [resolvedUrl] when set — populated by the repository's `urlBuilder`,
+     * which allows date-based paths like `/blog/2026/03/hello-world`.
+     * Falls back to `[baseUrl]/[slug]`, or `/[slug]` when [baseUrl] is empty.
+     */
+    val url: String
+        get() = resolvedUrl ?: if (baseUrl.isNotEmpty()) "$baseUrl/$slug" else "/$slug"
+
     /** `true` if the content contains a `<!--more-->` read-more split marker. */
     val hasMoreTag: Boolean
         get() = content.contains("<!--more-->", ignoreCase = true) ||
@@ -164,7 +188,7 @@ data class Fragment(
 
     /** Plain-text version of [preview] with all HTML tags stripped. */
     val previewTextOnly: String
-        get() = preview.replace(Regex("<[^>]*>"), "").trim()
+        get() = preview.replace(HTML_TAG_REGEX, "").trim()
 
     /**
      * Plain-text content up to the `<!--more-->` marker (or the full body
@@ -174,10 +198,10 @@ data class Fragment(
         get() = if (hasMoreTag) {
             content.substringBefore("<!--more-->")
                 .substringBefore("<!-- more -->")
-                .replace(Regex("<[^>]*>"), "")
+                .replace(HTML_TAG_REGEX, "")
                 .trim()
         } else {
-            content.replace(Regex("<[^>]*>"), "").trim()
+            content.replace(HTML_TAG_REGEX, "").trim()
         }
 
     /**
@@ -216,4 +240,8 @@ data class Fragment(
 
     val seriesPartTitle: String?
         get() = seriesTitle?.takeIf { it.isNotEmpty() } ?: seriesPart?.let { "Part $it" }
+
+    companion object {
+        private val HTML_TAG_REGEX = Regex("<[^>]*>")
+    }
 }

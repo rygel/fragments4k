@@ -8,7 +8,11 @@ import io.github.rygel.fragments.sitemap.SitemapGenerator
 import io.github.rygel.fragments.static.StaticPageEngine
 import io.javalin.config.RoutesConfig
 import io.javalin.http.Context
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import java.util.concurrent.CompletableFuture
 
 fun RoutesConfig.fragmentsRoutes(
     staticEngine: StaticPageEngine,
@@ -28,6 +32,22 @@ fun RoutesConfig.fragmentsRoutes(
         siteUrl = siteUrl,
         lastModified = null
     )
+    val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
+    fun Context.handleAsync(block: suspend () -> Unit) {
+        future {
+            val cf = CompletableFuture<Void?>()
+            scope.launch {
+                try {
+                    block()
+                    cf.complete(null)
+                } catch (e: Exception) {
+                    cf.completeExceptionally(e)
+                }
+            }
+            cf
+        }
+    }
 
     val render: (Context, String, Any) -> Unit = { ctx, template, viewModel ->
         val html = renderer?.render(template, viewModel) ?: ""
@@ -39,7 +59,7 @@ fun RoutesConfig.fragmentsRoutes(
     }
 
     get("/") { ctx ->
-        runBlocking {
+        ctx.handleAsync {
             val fragments = staticEngine.getAllStaticPages()
             val viewModel = HomeViewModel(
                 fragments = fragments.map { FragmentViewModel(it) },
@@ -53,7 +73,7 @@ fun RoutesConfig.fragmentsRoutes(
 
     get("/page/{slug}") { ctx ->
         val slug = ctx.pathParam("slug")
-        runBlocking {
+        ctx.handleAsync {
             val fragment = staticEngine.getPage(slug)
             if (fragment != null) {
                 val fragmentViewModel = FragmentViewModel(fragment, isHtmxRequest(ctx))
@@ -71,7 +91,7 @@ fun RoutesConfig.fragmentsRoutes(
     }
 
     get("/blog") { ctx ->
-        runBlocking {
+        ctx.handleAsync {
             val pageResult = blogEngine.getOverview(includeDrafts = false, page = 1)
             val viewModel = BlogOverviewViewModel(
                 fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(ctx)) },
@@ -99,7 +119,7 @@ fun RoutesConfig.fragmentsRoutes(
 
     get("/blog/page/{page}") { ctx ->
         val page = ctx.pathParam("page").toIntOrNull() ?: 1
-        runBlocking {
+        ctx.handleAsync {
             val pageResult = blogEngine.getOverview(includeDrafts = false, page = page)
             val viewModel = BlogOverviewViewModel(
                 fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(ctx)) },
@@ -129,7 +149,7 @@ fun RoutesConfig.fragmentsRoutes(
         val year = ctx.pathParam("year")
         val month = ctx.pathParam("month")
         val slug = ctx.pathParam("slug")
-        runBlocking {
+        ctx.handleAsync {
             val fragment = blogEngine.getPost(year, month, slug)
             if (fragment != null) {
                 val fragmentViewModel = FragmentViewModel(fragment, isHtmxRequest(ctx))
@@ -149,7 +169,7 @@ fun RoutesConfig.fragmentsRoutes(
     get("/blog/tag/{tag}") { ctx ->
         val tag = ctx.pathParam("tag")
         val page = ctx.queryParam("page")?.toIntOrNull() ?: 1
-        runBlocking {
+        ctx.handleAsync {
             val pageResult = blogEngine.getByTag(tag, page)
             val viewModel = BlogOverviewViewModel(
                 fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(ctx)) },
@@ -179,7 +199,7 @@ fun RoutesConfig.fragmentsRoutes(
     get("/blog/category/{category}") { ctx ->
         val category = ctx.pathParam("category")
         val page = ctx.queryParam("page")?.toIntOrNull() ?: 1
-        runBlocking {
+        ctx.handleAsync {
             val pageResult = blogEngine.getByCategory(category, page)
             val viewModel = CategoryViewModel(
                 category = category,
@@ -213,7 +233,7 @@ fun RoutesConfig.fragmentsRoutes(
             ctx.status(400).result("Invalid year")
             return@get
         }
-        runBlocking {
+        ctx.handleAsync {
             val fragments = blogEngine.getByYear(yearInt)
             val viewModel = ArchiveViewModel(
                 type = "year",
@@ -255,7 +275,7 @@ fun RoutesConfig.fragmentsRoutes(
             return@get
         }
 
-        runBlocking {
+        ctx.handleAsync {
             val fragments = blogEngine.getByYearMonth(yearInt, monthInt)
             val viewModel = ArchiveViewModel(
                 type = "year-month",
@@ -284,7 +304,7 @@ fun RoutesConfig.fragmentsRoutes(
     }
 
     get("/rss.xml") { ctx ->
-        runBlocking {
+        ctx.handleAsync {
             val rssXml = rssGenerator.generateFeed(
                 siteTitle = siteTitle,
                 siteDescription = siteDescription,
@@ -297,11 +317,22 @@ fun RoutesConfig.fragmentsRoutes(
     }
 
     get("/sitemap.xml") { ctx ->
-        runBlocking {
+        ctx.handleAsync {
             val sitemapXml = sitemapGenerator.generateSitemap()
             ctx.contentType("application/xml")
             ctx.result(sitemapXml)
         }
+    }
+
+    get("/robots.txt") { ctx ->
+        val body = buildString {
+            appendLine("User-agent: *")
+            appendLine("Allow: /")
+            appendLine()
+            appendLine("Sitemap: $siteUrl/sitemap.xml")
+        }
+        ctx.contentType("text/plain")
+        ctx.result(body)
     }
 
     get("/search") { ctx ->
@@ -310,7 +341,7 @@ fun RoutesConfig.fragmentsRoutes(
             ctx.status(400).result("Query parameter 'q' is required")
             return@get
         }
-        runBlocking {
+        ctx.handleAsync {
             val results = searchEngine.search(query, maxResults = 50)
             val viewModel = SearchViewModel(
                 query = query,

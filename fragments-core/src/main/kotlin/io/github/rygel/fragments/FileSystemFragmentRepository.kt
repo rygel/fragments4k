@@ -28,11 +28,23 @@ import java.time.format.DateTimeFormatter
  * in [Fragment.frontMatter] and accessible from templates.
  *
  * @param basePath Absolute path to the directory containing the Markdown content files.
- * @param urlBuilder Function that computes the canonical URL for each fragment in this
- *   repository. Receives the fully constructed [Fragment] and returns its URL string.
- *   Defaults to `"/slug"` when not provided. Example for a blog repository:
+ * @param baseUrl URL prefix for all fragments in this repository (e.g. `/projects`).
+ *   Combined with each fragment's slug it forms the canonical URL. Leave empty for
+ *   repositories whose fragments are routed individually (e.g. `/about`).
+ * @param urlBuilder Optional factory that computes the canonical URL for each fragment
+ *   after it is parsed, overriding the default `baseUrl/slug` scheme. Use this when
+ *   you need date-based or hierarchical paths. Return a **relative path starting with
+ *   `/`** — the result is stored in [Fragment.resolvedUrl] and returned by
+ *   [Fragment.url]. When non-null, `urlBuilder` takes precedence over `baseUrl`.
+ *   Example — date-based blog URLs:
  *   ```kotlin
- *   urlBuilder = { f -> "/blog/${f.date!!.year}/${f.date.monthValue.toString().padStart(2,'0')}/${f.slug}" }
+ *   FileSystemFragmentRepository(
+ *       basePath = "/content/posts",
+ *       urlBuilder = { fragment ->
+ *           val date = fragment.date ?: return@FileSystemFragmentRepository "/${fragment.slug}"
+ *           "/blog/${date.year}/%02d/${fragment.slug}".format(date.monthValue)
+ *       },
+ *   )
  *   ```
  * @param extension File extension to scan for; defaults to `.md`.
  * @param revisionRepository Storage backend for revision snapshots; defaults to a
@@ -49,7 +61,8 @@ import java.time.format.DateTimeFormatter
  */
 class FileSystemFragmentRepository(
     private val basePath: String,
-    private val urlBuilder: ((Fragment) -> String)? = null,
+    val baseUrl: String = "",
+    val urlBuilder: ((Fragment) -> String)? = null,
     private val extension: String = ".md",
     private val revisionRepository: FragmentRevisionRepository = FileSystemFragmentRevisionRepository(basePath),
     private val parser: MarkdownParser = MarkdownParser(),
@@ -129,11 +142,14 @@ class FileSystemFragmentRepository(
 
             val currentFragment = parseFragmentFile(file)
             if (!force && !FragmentStatus.canTransition(currentFragment.status, status)) {
-                logger.warn("Invalid status transition: ${currentFragment.status} -> $status")
+                val valid = FragmentStatus.getValidTransitions(currentFragment.status)
+                    .joinToString(", ") { it.name.lowercase() }
+                logger.warn("Invalid status transition for '{}': {} -> {}", slug, currentFragment.status, status)
                 return@withContext Result.failure(
                     IllegalStateException(
-                        "Cannot transition from ${currentFragment.status} to $status. " +
-                        "Valid transitions: ${FragmentStatus.getValidTransitions(currentFragment.status)}"
+                        "Cannot transition '$slug' from ${currentFragment.status} to $status. " +
+                        "Valid transitions from ${currentFragment.status}: [$valid]. " +
+                        "Pass force=true to bypass this check."
                     )
                 )
             }
@@ -144,25 +160,9 @@ class FileSystemFragmentRepository(
                 val updatedFrontMatter = parsed.frontMatter.toMutableMap()
                 updatedFrontMatter["status"] = status.name
 
-                val statusChange = StatusChangeHistory(
-                    fromStatus = currentFragment.status,
-                    toStatus = status,
-                    changedBy = changedBy,
-                    reason = reason
-                )
-
-                val existingHistory = parseStatusChangeHistory(currentFragment.statusChangeHistory)
-                val updatedHistory = existingHistory + statusChange
-
-                updatedFrontMatter["statusChangeHistory"] = updatedHistory.map { history ->
-                    mapOf(
-                        "fromStatus" to history.fromStatus.name,
-                        "toStatus" to history.toStatus.name,
-                        "changedAt" to history.changedAt.toString(),
-                        "changedBy" to history.changedBy,
-                        "reason" to history.reason
-                    )
-                }
+                val updatedHistory = currentFragment.statusChangeHistory +
+                    StatusChangeHistory(fromStatus = currentFragment.status, toStatus = status, changedBy = changedBy, reason = reason)
+                updatedFrontMatter["statusChangeHistory"] = serializeStatusHistory(updatedHistory)
 
                 val newContent = buildString {
                     append("---\n")
@@ -185,9 +185,21 @@ class FileSystemFragmentRepository(
         }
     }
 
-    private fun parseStatusChangeHistory(history: List<StatusChangeHistory>): List<StatusChangeHistory> {
-        return history
-    }
+    /**
+     * Serializes a [StatusChangeHistory] list to the YAML-friendly map structure written
+     * into front matter. Centralised here so [updateFragmentStatus] and [scheduleMultiple]
+     * share the same format.
+     */
+    private fun serializeStatusHistory(history: List<StatusChangeHistory>): List<Map<String, Any?>> =
+        history.map { entry ->
+            mapOf(
+                "fromStatus" to entry.fromStatus.name,
+                "toStatus" to entry.toStatus.name,
+                "changedAt" to entry.changedAt.toString(),
+                "changedBy" to entry.changedBy,
+                "reason" to entry.reason
+            )
+        }
 
     @Suppress("INVISIBLE_MEMBER")
     override suspend fun reload() {
@@ -298,24 +310,30 @@ class FileSystemFragmentRepository(
             seriesPart = seriesPart,
             seriesTitle = seriesTitle
         )
-        return if (urlBuilder != null) fragment.copy(url = urlBuilder.invoke(fragment)) else fragment
+        return if (urlBuilder != null) fragment.copy(resolvedUrl = urlBuilder(fragment)) else fragment
     }
 
     private fun generateSlug(name: String): String {
         return name.lowercase()
-            .replace(Regex("[^a-z0-9\\s-]"), "")
-            .replace(Regex("\\s+"), "-")
-            .replace(Regex("-+"), "-")
+            .replace(SLUG_NON_ALPHANUMERIC, "")
+            .replace(SLUG_WHITESPACE, "-")
+            .replace(SLUG_CONSECUTIVE_DASHES, "-")
     }
 
     private fun extractPreview(content: String): String {
-        val moreTagPattern = Regex("<!--\\s*more\\s*-->", RegexOption.IGNORE_CASE)
-        val moreTagIndex = moreTagPattern.find(content)
+        val moreTagIndex = MORE_TAG_PATTERN.find(content)
         return when {
             moreTagIndex != null -> content.substring(0, moreTagIndex.range.first)
             content.length > 200 -> content.substring(0, 200) + "..."
             else -> content
         }
+    }
+
+    companion object {
+        private val SLUG_NON_ALPHANUMERIC = Regex("[^a-z0-9\\s-]")
+        private val SLUG_WHITESPACE = Regex("\\s+")
+        private val SLUG_CONSECUTIVE_DASHES = Regex("-+")
+        private val MORE_TAG_PATTERN = Regex("<!--\\s*more\\s*-->", RegexOption.IGNORE_CASE)
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -441,25 +459,9 @@ class FileSystemFragmentRepository(
                     updatedFrontMatter["status"] = FragmentStatus.SCHEDULED.name
                     updatedFrontMatter["publishDate"] = publishDate.toString()
 
-                    val statusChange = StatusChangeHistory(
-                        fromStatus = currentFragment.status,
-                        toStatus = FragmentStatus.SCHEDULED,
-                        changedBy = changedBy,
-                        reason = reason
-                    )
-
-                    val existingHistory = parseStatusChangeHistory(currentFragment.statusChangeHistory)
-                    val updatedHistory = existingHistory + statusChange
-
-                    updatedFrontMatter["statusChangeHistory"] = updatedHistory.map { history ->
-                        mapOf(
-                            "fromStatus" to history.fromStatus.name,
-                            "toStatus" to history.toStatus.name,
-                            "changedAt" to history.changedAt.toString(),
-                            "changedBy" to history.changedBy,
-                            "reason" to history.reason
-                        )
-                    }
+                    val updatedHistory = currentFragment.statusChangeHistory +
+                        StatusChangeHistory(fromStatus = currentFragment.status, toStatus = FragmentStatus.SCHEDULED, changedBy = changedBy, reason = reason)
+                    updatedFrontMatter["statusChangeHistory"] = serializeStatusHistory(updatedHistory)
 
                     val newContent = buildString {
                         append("---\n")
@@ -582,24 +584,24 @@ class FileSystemFragmentRepository(
         val result = revertedFragment.getOrNull() ?: return@withContext Result.failure(Exception("Revert failed"))
         try {
             val file = getFragmentFile(slug) ?: return@withContext Result.failure(IllegalArgumentException("Fragment file not found: $slug"))
-            
+
             val content = file.readText()
             val parsed = parser.parse(content)
             val updatedFrontMatter = parsed.frontMatter.toMutableMap()
             updatedFrontMatter["title"] = result.title
-            
+
             val newContent = buildString {
                 append("---\n")
                 dumpFrontMatter(updatedFrontMatter, this)
                 append("---\n")
                 append(result.content)
             }
-            
+
             file.writeText(newContent)
-            
+
             val updatedFragment = parseFragmentFile(file)
             cacheUpdatedFragment(updatedFragment)
-            
+
             Result.success(updatedFragment)
         } catch (e: Exception) {
             logger.error("Failed to revert fragment: $slug", e)
