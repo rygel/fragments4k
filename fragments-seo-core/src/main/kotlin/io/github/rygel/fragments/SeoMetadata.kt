@@ -151,6 +151,15 @@ data class SeoMetadata(
             .replace("\t", "\\t")
     }
     
+    /**
+     * Generates a BreadcrumbList JSON-LD string from an explicit list of crumbs.
+     *
+     * Convenience wrapper around [BreadcrumbGenerator.generate].
+     */
+    fun generateBreadcrumbJsonLd(siteUrl: String, crumbs: List<Breadcrumb>): String {
+        return BreadcrumbGenerator.generate(siteUrl, crumbs)
+    }
+
     companion object {
         fun fromFragment(
             fragment: Fragment,
