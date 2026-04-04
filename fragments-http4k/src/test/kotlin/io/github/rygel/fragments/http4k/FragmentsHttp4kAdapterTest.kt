@@ -15,6 +15,7 @@ import org.http4k.server.asServer
 import org.http4k.template.PebbleTemplates
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -174,6 +175,18 @@ class FragmentsHttp4kAdapterTest {
             .execute(server)
         assertEquals(Status.OK, response.status)
         assertEquals("application/xml; charset=utf-8", response.header("Content-Type"))
+    }
+
+    @Test
+    fun robotsTxtReturns200WithCorrectContent() {
+        val response = Request(Method.GET, "http://localhost:${server.port()}/robots.txt")
+            .execute(server)
+        assertEquals(Status.OK, response.status)
+        assertEquals("text/plain; charset=utf-8", response.header("Content-Type"))
+        val body = response.bodyString()
+        assertTrue(body.contains("User-agent: *"))
+        assertTrue(body.contains("Allow: /"))
+        assertTrue(body.contains("Sitemap: http://localhost:8080/sitemap.xml"))
     }
 
     @Test

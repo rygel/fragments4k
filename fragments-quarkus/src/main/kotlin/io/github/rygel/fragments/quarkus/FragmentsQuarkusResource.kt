@@ -175,6 +175,22 @@ class FragmentsQuarkusResource @Inject constructor(
             .build()
     }
 
+    @GET
+    @Path("/robots.txt")
+    @Produces("text/plain")
+    fun robotsTxt(): Response {
+        val body = buildString {
+            appendLine("User-agent: *")
+            appendLine("Allow: /")
+            appendLine()
+            appendLine("Sitemap: $siteUrl/sitemap.xml")
+        }
+        return Response.ok()
+            .header("Content-Type", "text/plain; charset=utf-8")
+            .entity(body)
+            .build()
+    }
+
     data class HomeViewModel(
         val fragments: List<FragmentViewModel>,
         val isPartialRender: Boolean = false

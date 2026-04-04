@@ -33,6 +33,8 @@ data class TableOfContentsItem(
  * @property additionalContext Arbitrary extra values made available to templates
  *   (e.g. site-wide config, feature flags).
  * @property relationships Pre-loaded relationship data; `null` means not loaded yet.
+ * @property siteUrl Base URL of the site (e.g. `"https://example.com"`); used to
+ *   compute [canonicalUrl]. Defaults to empty string (canonical URL unavailable).
  */
 data class FragmentViewModel(
     val fragment: Fragment,
@@ -40,7 +42,8 @@ data class FragmentViewModel(
     val pageTitle: String? = null,
     val additionalContext: Map<String, Any> = emptyMap(),
     private val allFragments: List<Fragment> = emptyList(),
-    val relationships: ContentRelationships? = null
+    val relationships: ContentRelationships? = null,
+    val siteUrl: String = ""
 ) {
     companion object {
         const val HTMX_REQUEST_HEADER = "HX-Request"
@@ -59,6 +62,16 @@ data class FragmentViewModel(
         val isHtmxRequest = headers[HTMX_REQUEST_HEADER]?.lowercase() == "true"
         return copy(isPartialRender = isHtmxRequest)
     }
+
+    /**
+     * Fully qualified canonical URL for this fragment, e.g.
+     * `"https://example.com/blog/2026/03/hello-world"`.
+     *
+     * Requires [siteUrl] to be set; returns an empty string otherwise.
+     * Use this in templates for `<link rel="canonical">` and `<meta property="og:url">`.
+     */
+    val canonicalUrl: String
+        get() = if (siteUrl.isNotEmpty()) "$siteUrl${fragment.url}" else ""
 
     val title: String
         get() = pageTitle ?: fragment.title
