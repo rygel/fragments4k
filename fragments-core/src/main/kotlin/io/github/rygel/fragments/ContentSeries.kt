@@ -28,7 +28,7 @@ data class ContentSeries(
     val categories: List<String> = emptyList(),
     val createdAt: LocalDateTime = LocalDateTime.now(),
     val updatedAt: LocalDateTime = LocalDateTime.now(),
-    val metadata: Map<String, Any> = emptyMap()
+    val metadata: Map<String, Any> = emptyMap(),
 ) {
     val isActive: Boolean
         get() = status == SeriesStatus.ACTIVE
@@ -46,7 +46,9 @@ enum class SeriesStatus {
     INACTIVE,
 
     /** Work-in-progress; not yet published. */
-    DRAFT;
+    DRAFT,
+
+    ;
 
     val isActive: Boolean
         get() = this == ACTIVE
@@ -71,7 +73,7 @@ enum class SeriesStatus {
 data class SeriesPart(
     val fragment: Fragment,
     val partNumber: Int,
-    val partTitle: String? = null
+    val partTitle: String? = null,
 ) {
     /** `true` when this is the first part of the series (`partNumber == 1`). */
     val isFirst: Boolean
@@ -95,7 +97,7 @@ data class SeriesNavigation(
     val currentPart: SeriesPart?,
     val previousPart: SeriesPart?,
     val nextPart: SeriesPart?,
-    val totalParts: Int
+    val totalParts: Int,
 ) {
     /** `true` when [currentPart] is the first entry in the series. */
     val isFirstPart: Boolean
@@ -107,9 +109,10 @@ data class SeriesNavigation(
 
     /** Completion percentage (0–100) of the reader's progress through the series. */
     val progress: Int
-        get() = if (totalParts > 0) {
-            ((currentPart?.partNumber ?: 0) * 100) / totalParts
-        } else {
-            0
-        }
+        get() =
+            if (totalParts > 0) {
+                ((currentPart?.partNumber ?: 0) * 100) / totalParts
+            } else {
+                0
+            }
 }

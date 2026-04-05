@@ -5,49 +5,52 @@ import io.github.rygel.fragments.FragmentRepository
 import io.github.rygel.fragments.sitemap.ChangeFrequency
 import io.github.rygel.fragments.sitemap.SitemapImage
 import io.github.rygel.fragments.sitemap.SitemapUrl
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 class SitemapGenerator(
     private val repository: FragmentRepository,
     private val siteUrl: String,
-    private val lastModified: LocalDateTime? = null
+    private val lastModified: LocalDateTime? = null,
 ) {
-
-    suspend fun generateSitemap(): String {
-        return withContext(Dispatchers.IO) {
+    suspend fun generateSitemap(): String =
+        withContext(Dispatchers.IO) {
             val fragments = repository.getAllVisible()
             val lastModDate = lastModified ?: fragments.mapNotNull { it.date }.maxOrNull() ?: LocalDateTime.now()
             val lastModDateFormatted = lastModDate.format(formatter)
 
-            val urls = fragments.map { fragment ->
-                val url = "$siteUrl${fragment.url}"
-                val modDate = fragment.date?.format(formatter) ?: lastModDateFormatted
-                val changeFreq = ChangeFrequency.fromFragment(fragment, lastModified)
-                val priority = ChangeFrequency.calculatePriority(fragment, lastModified)
-                val image = extractFragmentImage(fragment)
+            val urls =
+                fragments
+                    .map { fragment ->
+                        val url = "$siteUrl${fragment.url}"
+                        val modDate = fragment.date?.format(formatter) ?: lastModDateFormatted
+                        val changeFreq = ChangeFrequency.fromFragment(fragment, lastModified)
+                        val priority = ChangeFrequency.calculatePriority(fragment, lastModified)
+                        val image = extractFragmentImage(fragment)
 
-                SitemapUrl(
-                    loc = url,
-                    lastmod = modDate,
-                    changefreq = changeFreq,
-                    priority = priority,
-                    image = image
-                )
-            }.sortedByDescending { it.priority }.joinToString(separator = "\n") { sitemapUrl ->
-                val imageXml = sitemapUrl.image?.let { image ->
-                    """
+                        SitemapUrl(
+                            loc = url,
+                            lastmod = modDate,
+                            changefreq = changeFreq,
+                            priority = priority,
+                            image = image,
+                        )
+                    }.sortedByDescending { it.priority }
+                    .joinToString(separator = "\n") { sitemapUrl ->
+                        val imageXml =
+                            sitemapUrl.image?.let { image ->
+                                """
                     <image:image>
                         <image:loc>${image.loc}</image:loc>
-                        ${image.caption?.let { "<image:caption>${it}</image:caption>" } ?: ""}
-                        ${image.title?.let { "<image:title>${it}</image:title>" } ?: ""}
+                        ${image.caption?.let { "<image:caption>$it</image:caption>" } ?: ""}
+                        ${image.title?.let { "<image:title>$it</image:title>" } ?: ""}
                     </image:image>
                     """
-                } ?: ""
+                            } ?: ""
 
-                """
+                        """
                 <url>
                     <loc>${sitemapUrl.loc}</loc>
                     <lastmod>${sitemapUrl.lastmod}</lastmod>
@@ -55,7 +58,7 @@ class SitemapGenerator(
                     <priority>${"%.1f".format(sitemapUrl.priority)}</priority>$imageXml
                 </url>
                 """
-            }
+                    }
 
             """
             <?xml version="1.0" encoding="UTF-8"?>
@@ -71,7 +74,6 @@ class SitemapGenerator(
             </urlset>
             """
         }
-    }
 
     private fun extractFragmentImage(fragment: Fragment): SitemapImage? {
         val imageUrl = extractImageUrl(fragment)
@@ -79,7 +81,7 @@ class SitemapGenerator(
             SitemapImage(
                 loc = it,
                 caption = fragment.title,
-                title = fragment.title
+                title = fragment.title,
             )
         }
     }
@@ -88,10 +90,14 @@ class SitemapGenerator(
         fragment.frontMatter["image"]?.let { return it.toString() }
         fragment.frontMatter["og:image"]?.let { return it.toString() }
         fragment.frontMatter["twitter:image"]?.let { return it.toString() }
-        
+
         val imgTagPattern = Regex("""<img[^>]+src=["']([^"']+)["']""", RegexOption.IGNORE_CASE)
-        imgTagPattern.find(fragment.preview)?.groupValues?.get(1)?.let { return it }
-        
+        imgTagPattern
+            .find(fragment.preview)
+            ?.groupValues
+            ?.get(1)
+            ?.let { return it }
+
         return null
     }
 
@@ -99,4 +105,3 @@ class SitemapGenerator(
         private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
     }
 }
-

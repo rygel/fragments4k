@@ -3,9 +3,9 @@ package io.github.rygel.fragments.chat
 import com.vladsch.flexmark.ast.FencedCodeBlock
 import com.vladsch.flexmark.html.HtmlWriter
 import com.vladsch.flexmark.html.renderer.NodeRenderer
-import com.vladsch.flexmark.html.renderer.NodeRenderingHandler
 import com.vladsch.flexmark.html.renderer.NodeRendererContext
 import com.vladsch.flexmark.html.renderer.NodeRendererFactory
+import com.vladsch.flexmark.html.renderer.NodeRenderingHandler
 import com.vladsch.flexmark.util.data.DataHolder
 
 /**
@@ -20,7 +20,6 @@ import com.vladsch.flexmark.util.data.DataHolder
 internal class ChatNodeRenderer(
     private val userSpeakers: Set<String>,
 ) : NodeRenderer {
-
     override fun getNodeRenderingHandlers(): Set<NodeRenderingHandler<*>> =
         setOf(NodeRenderingHandler(FencedCodeBlock::class.java, ::renderFencedCodeBlock))
 
@@ -37,7 +36,11 @@ internal class ChatNodeRenderer(
         val messages = parseMessages(node.contentChars.toString())
         if (messages.isEmpty()) return
 
-        html.attr("class", "chat-container").withAttr().tag("div").line()
+        html
+            .attr("class", "chat-container")
+            .withAttr()
+            .tag("div")
+            .line()
         for (message in messages) {
             val modifier = if (message.isUser) "user" else "assistant"
             html.attr("class", "chat-message chat-message--$modifier").withAttr().tag("div")
@@ -103,7 +106,9 @@ internal class ChatNodeRenderer(
     }
 
     /** Registered with [ChatExtension] to instantiate this renderer per-render. */
-    class Factory(private val userSpeakers: Set<String>) : NodeRendererFactory {
+    class Factory(
+        private val userSpeakers: Set<String>,
+    ) : NodeRendererFactory {
         override fun apply(options: DataHolder): NodeRenderer = ChatNodeRenderer(userSpeakers)
     }
 }

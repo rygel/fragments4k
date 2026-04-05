@@ -8,5 +8,5 @@ data class FooterConfig(
     val githubUrl: String = "",
     val discordUrl: String = "",
     val twitterUrl: String = "",
-    val substackUrl: String = ""
+    val substackUrl: String = "",
 )

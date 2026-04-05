@@ -15,7 +15,6 @@ import java.time.ZoneOffset
  * contexts. Implementations are expected to run I/O on [kotlinx.coroutines.Dispatchers.IO].
  */
 interface FragmentRepository {
-
     /** Returns every fragment regardless of status or visibility. */
     suspend fun getAll(): List<Fragment>
 
@@ -35,7 +34,11 @@ interface FragmentRepository {
      * Finds a fragment by year, month, and slug — used for date-based blog URLs
      * such as `/2024/01/hello-world`.
      */
-    suspend fun getByYearMonthAndSlug(year: String, month: String, slug: String): Fragment?
+    suspend fun getByYearMonthAndSlug(
+        year: String,
+        month: String,
+        slug: String,
+    ): Fragment?
 
     /** Returns all fragments that carry the given [tag] (case-insensitive). */
     suspend fun getByTag(tag: String): List<Fragment>
@@ -84,13 +87,25 @@ interface FragmentRepository {
     ): List<Result<Fragment>>
 
     /** Convenience bulk operation: transitions each slug to [FragmentStatus.PUBLISHED]. */
-    suspend fun publishMultiple(slugs: List<String>, changedBy: String? = null, reason: String? = null): List<Result<Fragment>>
+    suspend fun publishMultiple(
+        slugs: List<String>,
+        changedBy: String? = null,
+        reason: String? = null,
+    ): List<Result<Fragment>>
 
     /** Convenience bulk operation: transitions each slug back to [FragmentStatus.DRAFT]. */
-    suspend fun unpublishMultiple(slugs: List<String>, changedBy: String? = null, reason: String? = null): List<Result<Fragment>>
+    suspend fun unpublishMultiple(
+        slugs: List<String>,
+        changedBy: String? = null,
+        reason: String? = null,
+    ): List<Result<Fragment>>
 
     /** Convenience bulk operation: transitions each slug to [FragmentStatus.ARCHIVED]. */
-    suspend fun archiveMultiple(slugs: List<String>, changedBy: String? = null, reason: String? = null): List<Result<Fragment>>
+    suspend fun archiveMultiple(
+        slugs: List<String>,
+        changedBy: String? = null,
+        reason: String? = null,
+    ): List<Result<Fragment>>
 
     /**
      * Returns all [FragmentStatus.SCHEDULED] fragments whose [Fragment.publishDate]
@@ -140,13 +155,20 @@ interface FragmentRepository {
      *
      * @param config Tuning parameters for relationship discovery (max counts, thresholds).
      */
-    suspend fun getRelationships(slug: String, config: RelationshipConfig = RelationshipConfig()): ContentRelationships?
+    suspend fun getRelationships(
+        slug: String,
+        config: RelationshipConfig = RelationshipConfig(),
+    ): ContentRelationships?
 
     /**
      * Snapshots the current state of the fragment as a [FragmentRevision] for
      * version history / rollback purposes.
      */
-    suspend fun createRevision(slug: String, changedBy: String? = null, reason: String? = null): Result<FragmentRevision>
+    suspend fun createRevision(
+        slug: String,
+        changedBy: String? = null,
+        reason: String? = null,
+    ): Result<FragmentRevision>
 
     /** Returns all stored revisions for the given fragment, oldest first. */
     suspend fun getFragmentRevisions(slug: String): List<FragmentRevision>
@@ -156,5 +178,10 @@ interface FragmentRepository {
      * The current state is NOT automatically snapshotted before reverting — call
      * [createRevision] first if you need a safety checkpoint.
      */
-    suspend fun revertToRevision(slug: String, revisionId: String, changedBy: String? = null, reason: String? = null): Result<Fragment>
+    suspend fun revertToRevision(
+        slug: String,
+        revisionId: String,
+        changedBy: String? = null,
+        reason: String? = null,
+    ): Result<Fragment>
 }

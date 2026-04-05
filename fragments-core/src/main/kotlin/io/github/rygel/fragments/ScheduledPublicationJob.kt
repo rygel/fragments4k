@@ -12,7 +12,7 @@ data class ScheduledPublicationResult(
     val failed: Int = 0,
     val skipped: Int = 0,
     val executionTime: Long = 0,
-    val errors: List<String> = emptyList()
+    val errors: List<String> = emptyList(),
 ) {
     val total: Int
         get() = published + failed + skipped
@@ -23,15 +23,19 @@ data class ScheduledPublicationResult(
 
 interface ScheduledPublicationListener {
     suspend fun onBeforePublications(fragments: List<Fragment>)
+
     suspend fun onAfterPublications(result: ScheduledPublicationResult)
-    suspend fun onPublicationError(fragment: Fragment, error: Throwable)
+
+    suspend fun onPublicationError(
+        fragment: Fragment,
+        error: Throwable,
+    )
 }
 
 class DefaultScheduledPublicationJob(
     private val repository: FragmentRepository,
-    private val listeners: List<ScheduledPublicationListener> = emptyList()
+    private val listeners: List<ScheduledPublicationListener> = emptyList(),
 ) : ScheduledPublicationJob {
-
     override suspend fun execute(threshold: LocalDateTime): ScheduledPublicationResult {
         val startTime = System.currentTimeMillis()
         var publishedCount = 0
@@ -43,7 +47,7 @@ class DefaultScheduledPublicationJob(
         if (fragmentsToPublish.isEmpty()) {
             return ScheduledPublicationResult(
                 skipped = 0,
-                executionTime = System.currentTimeMillis() - startTime
+                executionTime = System.currentTimeMillis() - startTime,
             )
         }
 
@@ -68,12 +72,13 @@ class DefaultScheduledPublicationJob(
             }
         }
 
-        val finalResult = ScheduledPublicationResult(
-            published = publishedCount,
-            failed = failedCount,
-            executionTime = System.currentTimeMillis() - startTime,
-            errors = errors
-        )
+        val finalResult =
+            ScheduledPublicationResult(
+                published = publishedCount,
+                failed = failedCount,
+                executionTime = System.currentTimeMillis() - startTime,
+                errors = errors,
+            )
 
         listeners.forEach { it.onAfterPublications(finalResult) }
 

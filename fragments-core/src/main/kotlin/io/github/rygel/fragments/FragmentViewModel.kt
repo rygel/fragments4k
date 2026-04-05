@@ -15,7 +15,7 @@ import java.time.ZonedDateTime
 data class TableOfContentsItem(
     val level: Int,
     val title: String,
-    val anchor: String
+    val anchor: String,
 )
 
 /**
@@ -43,7 +43,7 @@ data class FragmentViewModel(
     val additionalContext: Map<String, Any> = emptyMap(),
     private val allFragments: List<Fragment> = emptyList(),
     val relationships: ContentRelationships? = null,
-    val siteUrl: String = ""
+    val siteUrl: String = "",
 ) {
     companion object {
         const val HTMX_REQUEST_HEADER = "HX-Request"
@@ -135,22 +135,19 @@ data class FragmentViewModel(
      * ${model.dateInZone(ZoneId.of("Europe/Berlin")).format(DateTimeFormatter.ofPattern("dd MMM yyyy"))}
      * ```
      */
-    fun dateInZone(zoneId: ZoneId): ZonedDateTime? =
-        fragment.date?.atZone(ZoneOffset.UTC)?.withZoneSameInstant(zoneId)
+    fun dateInZone(zoneId: ZoneId): ZonedDateTime? = fragment.date?.atZone(ZoneOffset.UTC)?.withZoneSameInstant(zoneId)
 
     /**
      * Converts [Fragment.publishDate] (UTC) to the given [zoneId].
      * Returns `null` when [Fragment.publishDate] is not set.
      */
-    fun publishDateInZone(zoneId: ZoneId): ZonedDateTime? =
-        fragment.publishDate?.atZone(ZoneOffset.UTC)?.withZoneSameInstant(zoneId)
+    fun publishDateInZone(zoneId: ZoneId): ZonedDateTime? = fragment.publishDate?.atZone(ZoneOffset.UTC)?.withZoneSameInstant(zoneId)
 
     /**
      * Converts [Fragment.expiryDate] (UTC) to the given [zoneId].
      * Returns `null` when [Fragment.expiryDate] is not set.
      */
-    fun expiryDateInZone(zoneId: ZoneId): ZonedDateTime? =
-        fragment.expiryDate?.atZone(ZoneOffset.UTC)?.withZoneSameInstant(zoneId)
+    fun expiryDateInZone(zoneId: ZoneId): ZonedDateTime? = fragment.expiryDate?.atZone(ZoneOffset.UTC)?.withZoneSameInstant(zoneId)
 
     /** Estimated reading time based on [WORDS_PER_MINUTE]. */
     val readingTime: ReadingTime
@@ -170,7 +167,7 @@ data class FragmentViewModel(
     data class ReadingTime(
         val minutes: Int,
         val seconds: Int,
-        val text: String
+        val text: String,
     )
 
     private fun calculateReadingTime(): ReadingTime {
@@ -178,59 +175,62 @@ data class FragmentViewModel(
         val totalSeconds = (words.toDouble() / WORDS_PER_MINUTE) * 60
         val minutes = totalSeconds.toInt() / 60
         val seconds = totalSeconds.toInt() % 60
-        
-        val text = when {
-            minutes == 0 -> "${seconds}s read"
-            seconds == 0 -> "${minutes}m read"
-            else -> "${minutes}m ${seconds}s read"
-        }
-        
+
+        val text =
+            when {
+                minutes == 0 -> "${seconds}s read"
+                seconds == 0 -> "${minutes}m read"
+                else -> "${minutes}m ${seconds}s read"
+            }
+
         return ReadingTime(minutes, seconds, text)
     }
 
     private fun extractTableOfContents(): List<TableOfContentsItem> {
         val items = mutableListOf<TableOfContentsItem>()
         val headerPattern = Regex("^(#{1,6})\\s+(.+)$", RegexOption.MULTILINE)
-        
+
         headerPattern.findAll(content).forEach { match ->
             val level = match.groupValues[1].length
             val title = match.groupValues[2].trim()
-            val anchor = title.lowercase()
-                .replace(Regex("[^a-z0-9\\s-]"), "")
-                .replace(Regex("\\s+"), "-")
-            
+            val anchor =
+                title
+                    .lowercase()
+                    .replace(Regex("[^a-z0-9\\s-]"), "")
+                    .replace(Regex("\\s+"), "-")
+
             items.add(TableOfContentsItem(level, title, anchor))
         }
-        
+
         return items
     }
 
     private fun findRelatedPosts(): List<Fragment> {
         if (allFragments.isEmpty()) return emptyList()
 
-        val scoredFragments = allFragments
-            .filter { it.slug != fragment.slug && it.visible }
-            .map { other ->
-                var score = 0.0
-                
-                tags.forEach { tag ->
-                    if (other.tags.contains(tag)) score += 2.0
-                }
-                
-                categories.forEach { category ->
-                    if (other.categories.contains(category)) score += 1.5
-                }
-                
-                if (fragment.template == "blog" && other.template == "blog") {
-                    score += 0.5
-                }
-                
-                other to score
-            }
-            .sortedByDescending { it.second }
-            .take(5)
-            .map { it.first }
-        
+        val scoredFragments =
+            allFragments
+                .filter { it.slug != fragment.slug && it.visible }
+                .map { other ->
+                    var score = 0.0
+
+                    tags.forEach { tag ->
+                        if (other.tags.contains(tag)) score += 2.0
+                    }
+
+                    categories.forEach { category ->
+                        if (other.categories.contains(category)) score += 1.5
+                    }
+
+                    if (fragment.template == "blog" && other.template == "blog") {
+                        score += 0.5
+                    }
+
+                    other to score
+                }.sortedByDescending { it.second }
+                .take(5)
+                .map { it.first }
+
         return scoredFragments
     }
 }

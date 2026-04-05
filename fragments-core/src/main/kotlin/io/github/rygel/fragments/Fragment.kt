@@ -10,7 +10,10 @@ import java.time.LocalDateTime
  * @property question The FAQ question text.
  * @property answer The FAQ answer text.
  */
-data class FaqEntry(val question: String, val answer: String)
+data class FaqEntry(
+    val question: String,
+    val answer: String,
+)
 
 /**
  * Records a single status transition for audit trail purposes.
@@ -29,7 +32,7 @@ data class StatusChangeHistory(
     val toStatus: FragmentStatus,
     val changedAt: LocalDateTime = LocalDateTime.now(),
     val changedBy: String? = null,
-    val reason: String? = null
+    val reason: String? = null,
 )
 
 /**
@@ -63,7 +66,9 @@ enum class FragmentStatus {
     ARCHIVED,
 
     /** Past its [Fragment.expiryDate]; no longer shown. */
-    EXPIRED;
+    EXPIRED,
+
+    ;
 
     companion object {
         /**
@@ -79,31 +84,31 @@ enum class FragmentStatus {
          * Use [FragmentRepository.updateFragmentStatus] with `force = true` to bypass
          * this map for emergency overrides.
          */
-        private val validTransitions = mapOf(
-            DRAFT to setOf(REVIEW, APPROVED, PUBLISHED, SCHEDULED, ARCHIVED),
-            REVIEW to setOf(DRAFT, APPROVED, ARCHIVED),
-            APPROVED to setOf(DRAFT, PUBLISHED, SCHEDULED, ARCHIVED),
-            PUBLISHED to setOf(ARCHIVED, EXPIRED, DRAFT),
-            SCHEDULED to setOf(PUBLISHED, DRAFT, ARCHIVED),
-            ARCHIVED to setOf(PUBLISHED, DRAFT, EXPIRED, REVIEW, APPROVED),
-            EXPIRED to setOf(DRAFT, SCHEDULED, PUBLISHED, ARCHIVED, REVIEW, APPROVED)
-        )
+        private val validTransitions =
+            mapOf(
+                DRAFT to setOf(REVIEW, APPROVED, PUBLISHED, SCHEDULED, ARCHIVED),
+                REVIEW to setOf(DRAFT, APPROVED, ARCHIVED),
+                APPROVED to setOf(DRAFT, PUBLISHED, SCHEDULED, ARCHIVED),
+                PUBLISHED to setOf(ARCHIVED, EXPIRED, DRAFT),
+                SCHEDULED to setOf(PUBLISHED, DRAFT, ARCHIVED),
+                ARCHIVED to setOf(PUBLISHED, DRAFT, EXPIRED, REVIEW, APPROVED),
+                EXPIRED to setOf(DRAFT, SCHEDULED, PUBLISHED, ARCHIVED, REVIEW, APPROVED),
+            )
 
         /**
          * Returns `true` if transitioning [from] → [to] is a valid lifecycle move.
          * Use [FragmentRepository.updateFragmentStatus] with `force = true` to
          * bypass this check when needed.
          */
-        fun canTransition(from: FragmentStatus, to: FragmentStatus): Boolean {
-            return validTransitions[from]?.contains(to) ?: false
-        }
+        fun canTransition(
+            from: FragmentStatus,
+            to: FragmentStatus,
+        ): Boolean = validTransitions[from]?.contains(to) ?: false
 
         /**
          * Returns all statuses that [from] may legally transition to.
          */
-        fun getValidTransitions(from: FragmentStatus): Set<FragmentStatus> {
-            return validTransitions[from] ?: emptySet()
-        }
+        fun getValidTransitions(from: FragmentStatus): Set<FragmentStatus> = validTransitions[from] ?: emptySet()
     }
 }
 
@@ -185,7 +190,7 @@ data class Fragment(
     val seriesSlug: String? = null,
     val seriesPart: Int? = null,
     val seriesTitle: String? = null,
-    val resolvedUrl: String? = null
+    val resolvedUrl: String? = null,
 ) {
     /**
      * Canonical URL for this fragment.
@@ -199,7 +204,8 @@ data class Fragment(
 
     /** `true` if the content contains a `<!--more-->` read-more split marker. */
     val hasMoreTag: Boolean
-        get() = content.contains("<!--more-->", ignoreCase = true) ||
+        get() =
+            content.contains("<!--more-->", ignoreCase = true) ||
                 content.contains("<!-- more -->", ignoreCase = true)
 
     /** Plain-text version of [preview] with all HTML tags stripped. */
@@ -211,14 +217,16 @@ data class Fragment(
      * when no marker is present), with all HTML tags stripped.
      */
     val contentTextOnly: String
-        get() = if (hasMoreTag) {
-            content.substringBefore("<!--more-->")
-                .substringBefore("<!-- more -->")
-                .replace(HTML_TAG_REGEX, "")
-                .trim()
-        } else {
-            content.replace(HTML_TAG_REGEX, "").trim()
-        }
+        get() =
+            if (hasMoreTag) {
+                content
+                    .substringBefore("<!--more-->")
+                    .substringBefore("<!-- more -->")
+                    .replace(HTML_TAG_REGEX, "")
+                    .trim()
+            } else {
+                content.replace(HTML_TAG_REGEX, "").trim()
+            }
 
     /**
      * The first entry in [authorIds], or [author] when [authorIds] is empty.
@@ -265,8 +273,7 @@ data class Fragment(
 /**
  * Returns the front matter value for [key] as a [String], or `null` if absent or not a string.
  */
-fun Fragment.getString(key: String): String? =
-    frontMatter[key]?.toString()
+fun Fragment.getString(key: String): String? = frontMatter[key]?.toString()
 
 /**
  * Returns the front matter value for [key] as a [Boolean], or `null` if absent.

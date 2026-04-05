@@ -5,20 +5,19 @@ import io.github.rygel.fragments.BreadcrumbGenerator
 import io.github.rygel.fragments.Fragment
 import io.github.rygel.fragments.FragmentStatus
 import io.github.rygel.fragments.SeoMetadata
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.time.LocalDateTime
 
 class BreadcrumbGeneratorTest {
-
     @Test
     fun testManualCrumbListGeneration() {
-        val crumbs = listOf(
-            Breadcrumb("Home", "https://example.com/"),
-            Breadcrumb("Blog", "https://example.com/blog"),
-            Breadcrumb("Hello World", "https://example.com/blog/2026/03/hello-world")
-        )
+        val crumbs =
+            listOf(
+                Breadcrumb("Home", "https://example.com/"),
+                Breadcrumb("Blog", "https://example.com/blog"),
+                Breadcrumb("Hello World", "https://example.com/blog/2026/03/hello-world"),
+            )
 
         val jsonLd = BreadcrumbGenerator.generate("https://example.com", crumbs)
 
@@ -37,17 +36,18 @@ class BreadcrumbGeneratorTest {
 
     @Test
     fun testFromFragmentWithBlogPostUrl() {
-        val fragment = Fragment(
-            title = "Hello World",
-            slug = "hello-world",
-            status = FragmentStatus.PUBLISHED,
-            date = LocalDateTime.of(2026, 3, 15, 10, 0),
-            publishDate = null,
-            preview = "A blog post",
-            content = "<p>Content</p>",
-            frontMatter = emptyMap(),
-            resolvedUrl = "/blog/2026/03/hello-world"
-        )
+        val fragment =
+            Fragment(
+                title = "Hello World",
+                slug = "hello-world",
+                status = FragmentStatus.PUBLISHED,
+                date = LocalDateTime.of(2026, 3, 15, 10, 0),
+                publishDate = null,
+                preview = "A blog post",
+                content = "<p>Content</p>",
+                frontMatter = emptyMap(),
+                resolvedUrl = "/blog/2026/03/hello-world",
+            )
 
         val jsonLd = BreadcrumbGenerator.fromFragment(fragment, "https://example.com")
 
@@ -67,16 +67,17 @@ class BreadcrumbGeneratorTest {
 
     @Test
     fun testFromFragmentWithSimplePageUrl() {
-        val fragment = Fragment(
-            title = "About Us",
-            slug = "about",
-            status = FragmentStatus.PUBLISHED,
-            date = LocalDateTime.of(2026, 1, 1, 0, 0),
-            publishDate = null,
-            preview = "About page",
-            content = "<p>About</p>",
-            frontMatter = emptyMap()
-        )
+        val fragment =
+            Fragment(
+                title = "About Us",
+                slug = "about",
+                status = FragmentStatus.PUBLISHED,
+                date = LocalDateTime.of(2026, 1, 1, 0, 0),
+                publishDate = null,
+                preview = "About page",
+                content = "<p>About</p>",
+                frontMatter = emptyMap(),
+            )
 
         val jsonLd = BreadcrumbGenerator.fromFragment(fragment, "https://example.com")
 
@@ -91,17 +92,18 @@ class BreadcrumbGeneratorTest {
 
     @Test
     fun testFromFragmentWithNestedUrl() {
-        val fragment = Fragment(
-            title = "My Project",
-            slug = "my-project",
-            status = FragmentStatus.PUBLISHED,
-            date = LocalDateTime.of(2026, 1, 1, 0, 0),
-            publishDate = null,
-            preview = "Project description",
-            content = "<p>Project</p>",
-            frontMatter = emptyMap(),
-            resolvedUrl = "/projects/my-project"
-        )
+        val fragment =
+            Fragment(
+                title = "My Project",
+                slug = "my-project",
+                status = FragmentStatus.PUBLISHED,
+                date = LocalDateTime.of(2026, 1, 1, 0, 0),
+                publishDate = null,
+                preview = "Project description",
+                content = "<p>Project</p>",
+                frontMatter = emptyMap(),
+                resolvedUrl = "/projects/my-project",
+            )
 
         val jsonLd = BreadcrumbGenerator.fromFragment(fragment, "https://example.com")
 
@@ -117,10 +119,11 @@ class BreadcrumbGeneratorTest {
 
     @Test
     fun testJsonEscapingOfSpecialCharactersInTitles() {
-        val crumbs = listOf(
-            Breadcrumb("Home", "https://example.com/"),
-            Breadcrumb("He said \"hello\" & left", "https://example.com/test")
-        )
+        val crumbs =
+            listOf(
+                Breadcrumb("Home", "https://example.com/"),
+                Breadcrumb("He said \"hello\" & left", "https://example.com/test"),
+            )
 
         val jsonLd = BreadcrumbGenerator.generate("https://example.com", crumbs)
 
@@ -130,16 +133,18 @@ class BreadcrumbGeneratorTest {
 
     @Test
     fun testSeoMetadataConvenienceMethod() {
-        val seoMetadata = SeoMetadata(
-            title = "Test",
-            description = "Test description",
-            canonicalUrl = "https://example.com/test"
-        )
+        val seoMetadata =
+            SeoMetadata(
+                title = "Test",
+                description = "Test description",
+                canonicalUrl = "https://example.com/test",
+            )
 
-        val crumbs = listOf(
-            Breadcrumb("Home", "https://example.com/"),
-            Breadcrumb("Test", "https://example.com/test")
-        )
+        val crumbs =
+            listOf(
+                Breadcrumb("Home", "https://example.com/"),
+                Breadcrumb("Test", "https://example.com/test"),
+            )
 
         val jsonLd = seoMetadata.generateBreadcrumbJsonLd("https://example.com", crumbs)
 
@@ -150,16 +155,17 @@ class BreadcrumbGeneratorTest {
 
     @Test
     fun testTrailingSlashOnSiteUrlIsNormalized() {
-        val fragment = Fragment(
-            title = "About",
-            slug = "about",
-            status = FragmentStatus.PUBLISHED,
-            date = LocalDateTime.of(2026, 1, 1, 0, 0),
-            publishDate = null,
-            preview = "About",
-            content = "<p>About</p>",
-            frontMatter = emptyMap()
-        )
+        val fragment =
+            Fragment(
+                title = "About",
+                slug = "about",
+                status = FragmentStatus.PUBLISHED,
+                date = LocalDateTime.of(2026, 1, 1, 0, 0),
+                publishDate = null,
+                preview = "About",
+                content = "<p>About</p>",
+                frontMatter = emptyMap(),
+            )
 
         val jsonLd = BreadcrumbGenerator.fromFragment(fragment, "https://example.com/")
 

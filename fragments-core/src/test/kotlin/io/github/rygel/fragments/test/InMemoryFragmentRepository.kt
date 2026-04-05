@@ -10,7 +10,9 @@ import java.time.LocalDateTime
 
 class InMemoryFragmentRepository : FragmentRepository {
     private val fragments = mutableListOf<Fragment>()
-    private val revisionRepository = io.github.rygel.fragments.test.InMemoryFragmentRevisionRepository()
+    private val revisionRepository =
+        io.github.rygel.fragments.test
+            .InMemoryFragmentRevisionRepository()
 
     suspend fun addFragment(fragment: Fragment) {
         fragments.add(fragment)
@@ -21,39 +23,42 @@ class InMemoryFragmentRepository : FragmentRepository {
     override suspend fun getAllVisible(): List<Fragment> {
         val now = java.time.LocalDateTime.now()
         return fragments.filter {
-            it.visible && when (it.status) {
-                io.github.rygel.fragments.FragmentStatus.PUBLISHED -> {
-                    it.expiryDate == null || !it.expiryDate.isBefore(now)
+            it.visible &&
+                when (it.status) {
+                    io.github.rygel.fragments.FragmentStatus.PUBLISHED -> {
+                        it.expiryDate == null || !it.expiryDate.isBefore(now)
+                    }
+                    io.github.rygel.fragments.FragmentStatus.SCHEDULED -> {
+                        it.publishDate != null &&
+                            !it.publishDate.isAfter(now) &&
+                            (it.expiryDate == null || !it.expiryDate.isBefore(now))
+                    }
+                    io.github.rygel.fragments.FragmentStatus.DRAFT,
+                    io.github.rygel.fragments.FragmentStatus.REVIEW,
+                    io.github.rygel.fragments.FragmentStatus.APPROVED,
+                    io.github.rygel.fragments.FragmentStatus.ARCHIVED,
+                    io.github.rygel.fragments.FragmentStatus.EXPIRED,
+                    -> false
                 }
-                io.github.rygel.fragments.FragmentStatus.SCHEDULED -> {
-                    it.publishDate != null && !it.publishDate.isAfter(now) &&
-                    (it.expiryDate == null || !it.expiryDate.isBefore(now))
-                }
-                io.github.rygel.fragments.FragmentStatus.DRAFT,
-                io.github.rygel.fragments.FragmentStatus.REVIEW,
-                io.github.rygel.fragments.FragmentStatus.APPROVED,
-                io.github.rygel.fragments.FragmentStatus.ARCHIVED,
-                io.github.rygel.fragments.FragmentStatus.EXPIRED -> false
-            }
         }
     }
 
-    override suspend fun getBySlug(slug: String): Fragment? =
-        fragments.find { it.slug == slug }
+    override suspend fun getBySlug(slug: String): Fragment? = fragments.find { it.slug == slug }
 
-    override suspend fun getByYearMonthAndSlug(year: String, month: String, slug: String): Fragment? {
-        return fragments.find {
+    override suspend fun getByYearMonthAndSlug(
+        year: String,
+        month: String,
+        slug: String,
+    ): Fragment? =
+        fragments.find {
             it.slug == slug &&
-            it.date?.year == year.toIntOrNull() &&
-            it.date?.monthValue == month.toIntOrNull()
+                it.date?.year == year.toIntOrNull() &&
+                it.date?.monthValue == month.toIntOrNull()
         }
-    }
 
-    override suspend fun getByTag(tag: String): List<Fragment> =
-        fragments.filter { it.tags.contains(tag) }
+    override suspend fun getByTag(tag: String): List<Fragment> = fragments.filter { it.tags.contains(tag) }
 
-    override suspend fun getByCategory(category: String): List<Fragment> =
-        fragments.filter { it.categories.contains(category) }
+    override suspend fun getByCategory(category: String): List<Fragment> = fragments.filter { it.categories.contains(category) }
 
     override suspend fun getByStatus(status: io.github.rygel.fragments.FragmentStatus): List<Fragment> =
         fragments.filter { it.status == status }
@@ -68,91 +73,136 @@ class InMemoryFragmentRepository : FragmentRepository {
             }
         }
 
-    override suspend fun updateFragmentStatus(slug: String, status: io.github.rygel.fragments.FragmentStatus, force: Boolean, changedBy: String?, reason: String?): Result<Fragment> {
+    override suspend fun updateFragmentStatus(
+        slug: String,
+        status: io.github.rygel.fragments.FragmentStatus,
+        force: Boolean,
+        changedBy: String?,
+        reason: String?,
+    ): Result<Fragment> {
         val index = fragments.indexOfFirst { it.slug == slug }
         return if (index < 0) {
             Result.failure(IllegalArgumentException("Fragment not found: $slug"))
         } else {
             val fragment = fragments[index]
-            if (!force && !io.github.rygel.fragments.FragmentStatus.canTransition(fragment.status, status)) {
+            if (!force &&
+                !io.github.rygel.fragments.FragmentStatus
+                    .canTransition(fragment.status, status)
+            ) {
                 Result.failure(
                     IllegalStateException(
                         "Cannot transition from ${fragment.status} to $status. " +
-                        "Valid transitions: ${io.github.rygel.fragments.FragmentStatus.getValidTransitions(fragment.status)}"
-                    )
+                            "Valid transitions: ${io.github.rygel.fragments.FragmentStatus.getValidTransitions(fragment.status)}",
+                    ),
                 )
             } else {
-                val statusChange = io.github.rygel.fragments.StatusChangeHistory(
-                    fromStatus = fragment.status,
-                    toStatus = status,
-                    changedBy = changedBy,
-                    reason = reason
-                )
-                fragments[index] = fragment.copy(
-                    status = status,
-                    statusChangeHistory = fragment.statusChangeHistory + statusChange
-                )
+                val statusChange =
+                    io.github.rygel.fragments.StatusChangeHistory(
+                        fromStatus = fragment.status,
+                        toStatus = status,
+                        changedBy = changedBy,
+                        reason = reason,
+                    )
+                fragments[index] =
+                    fragment.copy(
+                        status = status,
+                        statusChangeHistory = fragment.statusChangeHistory + statusChange,
+                    )
                 Result.success(fragments[index])
             }
         }
     }
 
-    override suspend fun updateMultipleFragmentsStatus(slugs: List<String>, status: io.github.rygel.fragments.FragmentStatus, force: Boolean, changedBy: String?, reason: String?): List<Result<Fragment>> {
-        return slugs.map { slug ->
+    override suspend fun updateMultipleFragmentsStatus(
+        slugs: List<String>,
+        status: io.github.rygel.fragments.FragmentStatus,
+        force: Boolean,
+        changedBy: String?,
+        reason: String?,
+    ): List<Result<Fragment>> =
+        slugs.map { slug ->
             updateFragmentStatus(slug, status, force, changedBy, reason)
         }
-    }
 
-    override suspend fun publishMultiple(slugs: List<String>, changedBy: String?, reason: String?): List<Result<Fragment>> {
-        return slugs.map { slug ->
-            updateFragmentStatus(slug, io.github.rygel.fragments.FragmentStatus.PUBLISHED, force = false, changedBy = changedBy, reason = reason)
+    override suspend fun publishMultiple(
+        slugs: List<String>,
+        changedBy: String?,
+        reason: String?,
+    ): List<Result<Fragment>> =
+        slugs.map { slug ->
+            updateFragmentStatus(
+                slug,
+                io.github.rygel.fragments.FragmentStatus.PUBLISHED,
+                force = false,
+                changedBy = changedBy,
+                reason = reason,
+            )
         }
-    }
 
-    override suspend fun unpublishMultiple(slugs: List<String>, changedBy: String?, reason: String?): List<Result<Fragment>> {
-        return slugs.map { slug ->
-            updateFragmentStatus(slug, io.github.rygel.fragments.FragmentStatus.DRAFT, force = false, changedBy = changedBy, reason = reason)
+    override suspend fun unpublishMultiple(
+        slugs: List<String>,
+        changedBy: String?,
+        reason: String?,
+    ): List<Result<Fragment>> =
+        slugs.map { slug ->
+            updateFragmentStatus(
+                slug,
+                io.github.rygel.fragments.FragmentStatus.DRAFT,
+                force = false,
+                changedBy = changedBy,
+                reason = reason,
+            )
         }
-    }
 
-    override suspend fun archiveMultiple(slugs: List<String>, changedBy: String?, reason: String?): List<Result<Fragment>> {
-        return slugs.map { slug ->
-            updateFragmentStatus(slug, io.github.rygel.fragments.FragmentStatus.ARCHIVED, force = false, changedBy = changedBy, reason = reason)
+    override suspend fun archiveMultiple(
+        slugs: List<String>,
+        changedBy: String?,
+        reason: String?,
+    ): List<Result<Fragment>> =
+        slugs.map { slug ->
+            updateFragmentStatus(
+                slug,
+                io.github.rygel.fragments.FragmentStatus.ARCHIVED,
+                force = false,
+                changedBy = changedBy,
+                reason = reason,
+            )
         }
-    }
 
     override suspend fun reload() {
         fragments.clear()
     }
 
-    override suspend fun getScheduledFragmentsDueForPublication(threshold: LocalDateTime): List<Fragment> {
-        return fragments.filter { fragment ->
+    override suspend fun getScheduledFragmentsDueForPublication(threshold: LocalDateTime): List<Fragment> =
+        fragments.filter { fragment ->
             fragment.status == io.github.rygel.fragments.FragmentStatus.SCHEDULED &&
-            fragment.publishDate != null &&
-            !fragment.publishDate.isAfter(threshold)
+                fragment.publishDate != null &&
+                !fragment.publishDate.isAfter(threshold)
         }
-    }
 
     override suspend fun publishScheduledFragments(threshold: LocalDateTime): List<Result<Fragment>> {
-        val dueFragments = fragments.filter { fragment ->
-            fragment.status == io.github.rygel.fragments.FragmentStatus.SCHEDULED &&
-            fragment.publishDate != null &&
-            !fragment.publishDate.isAfter(threshold)
-        }
+        val dueFragments =
+            fragments.filter { fragment ->
+                fragment.status == io.github.rygel.fragments.FragmentStatus.SCHEDULED &&
+                    fragment.publishDate != null &&
+                    !fragment.publishDate.isAfter(threshold)
+            }
 
         return dueFragments.map { fragment ->
             val index = fragments.indexOfFirst { it.slug == fragment.slug }
             if (index >= 0) {
-                val statusChange = io.github.rygel.fragments.StatusChangeHistory(
-                    fromStatus = fragment.status,
-                    toStatus = io.github.rygel.fragments.FragmentStatus.PUBLISHED,
-                    changedBy = "system",
-                    reason = "Scheduled publication"
-                )
-                fragments[index] = fragment.copy(
-                    status = io.github.rygel.fragments.FragmentStatus.PUBLISHED,
-                    statusChangeHistory = fragment.statusChangeHistory + statusChange
-                )
+                val statusChange =
+                    io.github.rygel.fragments.StatusChangeHistory(
+                        fromStatus = fragment.status,
+                        toStatus = io.github.rygel.fragments.FragmentStatus.PUBLISHED,
+                        changedBy = "system",
+                        reason = "Scheduled publication",
+                    )
+                fragments[index] =
+                    fragment.copy(
+                        status = io.github.rygel.fragments.FragmentStatus.PUBLISHED,
+                        statusChangeHistory = fragment.statusChangeHistory + statusChange,
+                    )
                 Result.success(fragments[index])
             } else {
                 Result.failure(IllegalArgumentException("Fragment not found: ${fragment.slug}"))
@@ -160,57 +210,65 @@ class InMemoryFragmentRepository : FragmentRepository {
         }
     }
 
-    override suspend fun scheduleMultiple(slugs: List<String>, publishDate: LocalDateTime, changedBy: String?, reason: String?): List<Result<Fragment>> {
-        return slugs.map { slug ->
+    override suspend fun scheduleMultiple(
+        slugs: List<String>,
+        publishDate: LocalDateTime,
+        changedBy: String?,
+        reason: String?,
+    ): List<Result<Fragment>> =
+        slugs.map { slug ->
             val index = fragments.indexOfFirst { it.slug == slug }
             if (index >= 0) {
                 val fragment = fragments[index]
-                val statusChange = io.github.rygel.fragments.StatusChangeHistory(
-                    fromStatus = fragment.status,
-                    toStatus = io.github.rygel.fragments.FragmentStatus.SCHEDULED,
-                    changedBy = changedBy,
-                    reason = reason
-                )
-                fragments[index] = fragment.copy(
-                    status = io.github.rygel.fragments.FragmentStatus.SCHEDULED,
-                    publishDate = publishDate,
-                    statusChangeHistory = fragment.statusChangeHistory + statusChange
-                )
+                val statusChange =
+                    io.github.rygel.fragments.StatusChangeHistory(
+                        fromStatus = fragment.status,
+                        toStatus = io.github.rygel.fragments.FragmentStatus.SCHEDULED,
+                        changedBy = changedBy,
+                        reason = reason,
+                    )
+                fragments[index] =
+                    fragment.copy(
+                        status = io.github.rygel.fragments.FragmentStatus.SCHEDULED,
+                        publishDate = publishDate,
+                        statusChangeHistory = fragment.statusChangeHistory + statusChange,
+                    )
                 Result.success(fragments[index])
             } else {
                 Result.failure(IllegalArgumentException("Fragment not found: $slug"))
             }
         }
-    }
 
-    override suspend fun getFragmentsExpiringSoon(threshold: LocalDateTime): List<Fragment> {
-        return fragments.filter { fragment ->
+    override suspend fun getFragmentsExpiringSoon(threshold: LocalDateTime): List<Fragment> =
+        fragments.filter { fragment ->
             fragment.expiryDate != null &&
-            !fragment.expiryDate.isAfter(threshold) &&
-            fragment.status == io.github.rygel.fragments.FragmentStatus.PUBLISHED
+                !fragment.expiryDate.isAfter(threshold) &&
+                fragment.status == io.github.rygel.fragments.FragmentStatus.PUBLISHED
         }
-    }
 
     override suspend fun expireFragments(threshold: LocalDateTime): List<Result<Fragment>> {
-        val expiredFragments = fragments.filter { fragment ->
-            fragment.status == io.github.rygel.fragments.FragmentStatus.PUBLISHED &&
-            fragment.publishDate != null &&
-            fragment.publishDate.isBefore(threshold)
-        }
+        val expiredFragments =
+            fragments.filter { fragment ->
+                fragment.status == io.github.rygel.fragments.FragmentStatus.PUBLISHED &&
+                    fragment.publishDate != null &&
+                    fragment.publishDate.isBefore(threshold)
+            }
 
         return expiredFragments.map { fragment ->
             val index = fragments.indexOfFirst { it.slug == fragment.slug }
             if (index >= 0) {
-                val statusChange = io.github.rygel.fragments.StatusChangeHistory(
-                    fromStatus = fragment.status,
-                    toStatus = io.github.rygel.fragments.FragmentStatus.EXPIRED,
-                    changedBy = "system",
-                    reason = "Content expired"
-                )
-                fragments[index] = fragment.copy(
-                    status = io.github.rygel.fragments.FragmentStatus.EXPIRED,
-                    statusChangeHistory = fragment.statusChangeHistory + statusChange
-                )
+                val statusChange =
+                    io.github.rygel.fragments.StatusChangeHistory(
+                        fromStatus = fragment.status,
+                        toStatus = io.github.rygel.fragments.FragmentStatus.EXPIRED,
+                        changedBy = "system",
+                        reason = "Content expired",
+                    )
+                fragments[index] =
+                    fragment.copy(
+                        status = io.github.rygel.fragments.FragmentStatus.EXPIRED,
+                        statusChangeHistory = fragment.statusChangeHistory + statusChange,
+                    )
                 Result.success(fragments[index])
             } else {
                 Result.failure(IllegalArgumentException("Fragment not found: ${fragment.slug}"))
@@ -218,19 +276,27 @@ class InMemoryFragmentRepository : FragmentRepository {
         }
     }
 
-    override suspend fun getRelationships(slug: String, config: io.github.rygel.fragments.RelationshipConfig): ContentRelationships? {
+    override suspend fun getRelationships(
+        slug: String,
+        config: io.github.rygel.fragments.RelationshipConfig,
+    ): ContentRelationships? {
         val currentFragment = getBySlug(slug) ?: return null
-        val allFragments = getAllVisible()
-            .filter { it.slug != currentFragment.slug }
+        val allFragments =
+            getAllVisible()
+                .filter { it.slug != currentFragment.slug }
 
         return ContentRelationshipGenerator.generateRelationships(
             currentFragment = currentFragment,
             allFragments = allFragments,
-            config = config
+            config = config,
         )
     }
 
-    override suspend fun createRevision(slug: String, changedBy: String?, reason: String?): Result<io.github.rygel.fragments.FragmentRevision> {
+    override suspend fun createRevision(
+        slug: String,
+        changedBy: String?,
+        reason: String?,
+    ): Result<io.github.rygel.fragments.FragmentRevision> {
         val fragment = getBySlug(slug)
         if (fragment == null) {
             return Result.failure(IllegalArgumentException("Fragment not found: $slug"))
@@ -238,11 +304,15 @@ class InMemoryFragmentRepository : FragmentRepository {
         return Result.success(revisionRepository.saveRevision(fragment, changedBy, reason))
     }
 
-    override suspend fun getFragmentRevisions(slug: String): List<io.github.rygel.fragments.FragmentRevision> {
-        return revisionRepository.getRevisions(slug)
-    }
+    override suspend fun getFragmentRevisions(slug: String): List<io.github.rygel.fragments.FragmentRevision> =
+        revisionRepository.getRevisions(slug)
 
-    override suspend fun revertToRevision(slug: String, revisionId: String, changedBy: String?, reason: String?): Result<Fragment> {
+    override suspend fun revertToRevision(
+        slug: String,
+        revisionId: String,
+        changedBy: String?,
+        reason: String?,
+    ): Result<Fragment> {
         val fragment = getBySlug(slug)
         if (fragment == null) {
             return Result.failure(IllegalArgumentException("Fragment not found: $slug"))

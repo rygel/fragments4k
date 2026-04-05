@@ -8,16 +8,15 @@ import java.time.LocalDateTime
  * Factory for creating test ContentSeries objects
  */
 object ContentSeriesFactory {
-    
     /**
      * Create a basic series with required fields
      */
     fun create(
         title: String = "Test Series",
         slug: String = "test-series",
-        description: String = "A test content series"
-    ): ContentSeries {
-        return ContentSeries(
+        description: String = "A test content series",
+    ): ContentSeries =
+        ContentSeries(
             title = title,
             slug = slug,
             description = description,
@@ -27,10 +26,9 @@ object ContentSeriesFactory {
             categories = emptyList(),
             createdAt = LocalDateTime.now(),
             updatedAt = LocalDateTime.now(),
-            metadata = emptyMap()
+            metadata = emptyMap(),
         )
-    }
-    
+
     /**
      * Builder for creating series with custom configuration
      */
@@ -45,7 +43,7 @@ object ContentSeriesFactory {
         private var createdAt: LocalDateTime = LocalDateTime.now()
         private var updatedAt: LocalDateTime = LocalDateTime.now()
         private var metadata: Map<String, Any> = emptyMap()
-        
+
         fun title(title: String) = apply { this.title = title }
 
         fun slug(slug: String) = apply { this.slug = slug }
@@ -65,9 +63,9 @@ object ContentSeriesFactory {
         fun updatedAt(updatedAt: LocalDateTime) = apply { this.updatedAt = updatedAt }
 
         fun metadata(metadata: Map<String, Any>) = apply { this.metadata = metadata }
-        
-        fun build(): ContentSeries {
-            return ContentSeries(
+
+        fun build(): ContentSeries =
+            ContentSeries(
                 title = title,
                 slug = slug,
                 description = description,
@@ -77,42 +75,34 @@ object ContentSeriesFactory {
                 categories = categories,
                 createdAt = createdAt,
                 updatedAt = updatedAt,
-                metadata = metadata
+                metadata = metadata,
             )
-        }
     }
-    
+
     /**
      * Create an active series
      */
-    fun active(): ContentSeries {
-        return Builder().status(SeriesStatus.ACTIVE).build()
-    }
+    fun active(): ContentSeries = Builder().status(SeriesStatus.ACTIVE).build()
 
     /**
      * Create an inactive series
      */
-    fun inactive(): ContentSeries {
-        return Builder().status(SeriesStatus.INACTIVE).build()
-    }
+    fun inactive(): ContentSeries = Builder().status(SeriesStatus.INACTIVE).build()
 
     /**
      * Create a draft series
      */
-    fun draft(): ContentSeries {
-        return Builder().status(SeriesStatus.DRAFT).build()
-    }
-    
+    fun draft(): ContentSeries = Builder().status(SeriesStatus.DRAFT).build()
+
     /**
      * Create multiple series
      */
-    fun createMany(count: Int): List<ContentSeries> {
-        return (1..count).map { i ->
+    fun createMany(count: Int): List<ContentSeries> =
+        (1..count).map { i ->
             create(
                 title = "Test Series $i",
                 slug = "test-series-$i",
-                description = "A test content series number $i"
+                description = "A test content series number $i",
             )
         }
-    }
 }

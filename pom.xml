@@ -55,6 +55,8 @@
         <mockk.version>1.14.9</mockk.version>
         <rest-assured.version>6.0.0</rest-assured.version>
         <ktlint.version>3.5.0</ktlint.version>
+        <detekt.version>1.23.8</detekt.version>
+        <archunit.version>1.4.1</archunit.version>
         
         <!-- Performance benchmarking -->
         <jmh.version>1.37</jmh.version>
@@ -97,6 +99,7 @@
         <module>fragments-quarkus</module>
         <module>fragments-micronaut</module>
         <module>fragments-cli</module>
+        <module>fragments-architecture-tests</module>
         <module>fragments-bom</module>
         <module>demo-spring-boot</module>
         <module>demo-http4k</module>
@@ -215,6 +218,11 @@
                 <groupId>io.rest-assured</groupId>
                 <artifactId>rest-assured</artifactId>
                 <version>${rest-assured.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.tngtech.archunit</groupId>
+                <artifactId>archunit-junit5</artifactId>
+                <version>${archunit.version}</version>
             </dependency>
 
             <dependency>
@@ -347,7 +355,25 @@
                         </execution>
                     </executions>
                 </plugin>
-                
+                <plugin>
+                    <groupId>com.github.ozsie</groupId>
+                    <artifactId>detekt-maven-plugin</artifactId>
+                    <version>${detekt.version}</version>
+                    <configuration>
+                        <input>${project.basedir}/src/main/kotlin</input>
+                        <config>${maven.multiModuleProjectDirectory}/detekt.yml</config>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>check</id>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                            <phase>verify</phase>
+                        </execution>
+                    </executions>
+                </plugin>
+
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
@@ -521,6 +547,14 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>com.github.gantsign.maven</groupId>
+                <artifactId>ktlint-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>com.github.ozsie</groupId>
+                <artifactId>detekt-maven-plugin</artifactId>
             </plugin>
         </plugins>
     </build>

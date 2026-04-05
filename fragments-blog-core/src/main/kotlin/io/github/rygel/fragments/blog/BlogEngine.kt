@@ -17,7 +17,7 @@ import io.github.rygel.fragments.RelationshipConfig
 class BlogEngine(
     private val repository: FragmentRepository,
     private val pageSize: Int = 10,
-    private val relationshipConfig: RelationshipConfig = RelationshipConfig()
+    private val relationshipConfig: RelationshipConfig = RelationshipConfig(),
 ) {
     /**
      * Returns `true` if [template] marks the fragment as a blog post.
@@ -26,85 +26,114 @@ class BlogEngine(
      */
     private fun isBlogTemplate(template: String) = template in BLOG_TEMPLATES
 
-    suspend fun getOverview(includeDrafts: Boolean = false, page: Int): Page<Fragment> {
-        val allFragments = if (includeDrafts) {
-            repository.getAll()
-        } else {
-            repository.getAllVisible()
-        }
-        val blogPosts = allFragments
-            .filter { isBlogTemplate(it.template) }
-            .sortedByDescending { it.date }
+    suspend fun getOverview(
+        includeDrafts: Boolean = false,
+        page: Int,
+    ): Page<Fragment> {
+        val allFragments =
+            if (includeDrafts) {
+                repository.getAll()
+            } else {
+                repository.getAllVisible()
+            }
+        val blogPosts =
+            allFragments
+                .filter { isBlogTemplate(it.template) }
+                .sortedByDescending { it.date }
         return Page.create(blogPosts, page, pageSize)
     }
 
     suspend fun getDrafts(page: Int): Page<Fragment> {
-        val draftFragments = repository.getAll()
-            .filter { isBlogTemplate(it.template) }
-            .filter { it.status == FragmentStatus.DRAFT }
-            .sortedByDescending { it.date }
+        val draftFragments =
+            repository
+                .getAll()
+                .filter { isBlogTemplate(it.template) }
+                .filter { it.status == FragmentStatus.DRAFT }
+                .sortedByDescending { it.date }
         return Page.create(draftFragments, page, pageSize)
     }
 
-    suspend fun getPost(year: String, month: String, slug: String): Fragment? {
-        return repository.getByYearMonthAndSlug(year, month, slug)
-    }
+    suspend fun getPost(
+        year: String,
+        month: String,
+        slug: String,
+    ): Fragment? = repository.getByYearMonthAndSlug(year, month, slug)
 
-    suspend fun getByTag(tag: String, page: Int): Page<Fragment> {
-        val taggedPosts = repository.getByTag(tag)
-            .filter { isBlogTemplate(it.template) }
-            .sortedByDescending { it.date }
+    suspend fun getByTag(
+        tag: String,
+        page: Int,
+    ): Page<Fragment> {
+        val taggedPosts =
+            repository
+                .getByTag(tag)
+                .filter { isBlogTemplate(it.template) }
+                .sortedByDescending { it.date }
         return Page.create(taggedPosts, page, pageSize)
     }
 
-    suspend fun getByCategory(category: String, page: Int): Page<Fragment> {
-        val categorizedPosts = repository.getByCategory(category)
-            .filter { isBlogTemplate(it.template) }
-            .sortedByDescending { it.date }
+    suspend fun getByCategory(
+        category: String,
+        page: Int,
+    ): Page<Fragment> {
+        val categorizedPosts =
+            repository
+                .getByCategory(category)
+                .filter { isBlogTemplate(it.template) }
+                .sortedByDescending { it.date }
         return Page.create(categorizedPosts, page, pageSize)
     }
 
-    suspend fun getByYear(year: Int): List<Fragment> {
-        return repository.getAllVisible()
-            .filter { 
+    suspend fun getByYear(year: Int): List<Fragment> =
+        repository
+            .getAllVisible()
+            .filter {
                 (isBlogTemplate(it.template)) &&
-                it.date?.year == year
-            }
-            .sortedByDescending { it.date }
-    }
+                    it.date?.year == year
+            }.sortedByDescending { it.date }
 
-    suspend fun getByYearMonth(year: Int, month: Int): List<Fragment> {
-        return repository.getAllVisible()
-            .filter { 
+    suspend fun getByYearMonth(
+        year: Int,
+        month: Int,
+    ): List<Fragment> =
+        repository
+            .getAllVisible()
+            .filter {
                 (isBlogTemplate(it.template)) &&
-                it.date?.year == year &&
-                it.date?.monthValue == month
-            }
-            .sortedByDescending { it.date }
-    }
+                    it.date?.year == year &&
+                    it.date?.monthValue == month
+            }.sortedByDescending { it.date }
 
-    suspend fun getByAuthor(authorId: String, page: Int = 1): Page<Fragment> {
-        val authorPosts = repository.getByAuthor(authorId)
-            .filter { isBlogTemplate(it.template) }
-            .sortedByDescending { it.date }
+    suspend fun getByAuthor(
+        authorId: String,
+        page: Int = 1,
+    ): Page<Fragment> {
+        val authorPosts =
+            repository
+                .getByAuthor(authorId)
+                .filter { isBlogTemplate(it.template) }
+                .sortedByDescending { it.date }
         return Page.create(authorPosts, page, pageSize)
     }
 
-    suspend fun getAllTags(): Map<String, Int> {
-        return repository.getAllVisible()
+    suspend fun getAllTags(): Map<String, Int> =
+        repository
+            .getAllVisible()
             .flatMap { it.tags }
             .groupingBy { it }
             .eachCount()
-    }
 
-    suspend fun getAllCategories(): Map<String, Int> {
-        return repository.getAllVisible()
+    suspend fun getAllCategories(): Map<String, Int> =
+        repository
+            .getAllVisible()
             .flatMap { it.categories }
             .groupingBy { it }
             .eachCount()
-    }
 
-    suspend fun getPostWithRelationships(year: String, month: String, slug: String): Pair<Fragment?, ContentRelationships?> {
+    suspend fun getPostWithRelationships(
+        year: String,
+        month: String,
+        slug: String,
+    ): Pair<Fragment?, ContentRelationships?> {
         val fragment = getPost(year, month, slug)
         val relationships = repository.getRelationships(slug, relationshipConfig)
         return Pair(fragment, relationships)

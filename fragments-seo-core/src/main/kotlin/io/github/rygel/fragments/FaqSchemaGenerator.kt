@@ -16,7 +16,6 @@ package io.github.rygel.fragments
  * ```
  */
 object FaqSchemaGenerator {
-
     /**
      * Generates FAQPage JSON-LD from a list of [FaqEntry] objects.
      *
@@ -62,17 +61,14 @@ object FaqSchemaGenerator {
      * @param fragment The fragment whose [Fragment.faq] entries to use.
      * @return A JSON-LD string, or an empty string if the fragment has no FAQ entries.
      */
-    fun fromFragment(fragment: Fragment): String {
-        return generate(fragment.faq)
-    }
+    fun fromFragment(fragment: Fragment): String = generate(fragment.faq)
 
-    private fun escapeJson(text: String): String {
-        return text
+    private fun escapeJson(text: String): String =
+        text
             .replace("\\", "\\\\")
             .replace("\"", "\\\"")
             .replace("\b", "\\b")
             .replace("\n", "\\n")
             .replace("\r", "\\r")
             .replace("\t", "\\t")
-    }
 }

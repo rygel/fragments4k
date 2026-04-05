@@ -1,11 +1,10 @@
 package io.github.rygel.fragments
 
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.time.LocalDateTime
 
 class FragmentViewModelTest {
-
     @Test
     fun canonicalUrlCombinesSiteUrlAndFragmentUrl() {
         val fragment = createFragment(slug = "hello-world", baseUrl = "/blog/2026/03")
@@ -24,10 +23,11 @@ class FragmentViewModelTest {
 
     @Test
     fun canonicalUrlUsesResolvedUrlWhenPresent() {
-        val fragment = createFragment(
-            slug = "hello-world",
-            resolvedUrl = "/blog/2026/03/hello-world"
-        )
+        val fragment =
+            createFragment(
+                slug = "hello-world",
+                resolvedUrl = "/blog/2026/03/hello-world",
+            )
         val vm = FragmentViewModel(fragment = fragment, siteUrl = "https://example.com")
 
         assertEquals("https://example.com/blog/2026/03/hello-world", vm.canonicalUrl)
@@ -36,9 +36,9 @@ class FragmentViewModelTest {
     private fun createFragment(
         slug: String,
         baseUrl: String = "",
-        resolvedUrl: String? = null
-    ): Fragment {
-        return Fragment(
+        resolvedUrl: String? = null,
+    ): Fragment =
+        Fragment(
             title = "Test",
             slug = slug,
             baseUrl = baseUrl,
@@ -47,7 +47,6 @@ class FragmentViewModelTest {
             preview = "Preview",
             content = "Content",
             frontMatter = emptyMap(),
-            resolvedUrl = resolvedUrl
+            resolvedUrl = resolvedUrl,
         )
-    }
 }

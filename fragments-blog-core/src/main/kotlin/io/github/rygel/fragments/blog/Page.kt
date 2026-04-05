@@ -1,7 +1,5 @@
 package io.github.rygel.fragments.blog
 
-import io.github.rygel.fragments.Fragment
-
 /**
  * A single page of results from a paginated query.
  *
@@ -18,7 +16,7 @@ data class Page<T>(
     val totalItems: Int,
     val totalPages: Int,
     val hasNext: Boolean,
-    val hasPrevious: Boolean
+    val hasPrevious: Boolean,
 ) {
     companion object {
         /**
@@ -28,7 +26,11 @@ data class Page<T>(
          * so callers never receive a page with a [currentPage] that doesn't
          * correspond to the returned [items].
          */
-        fun <T> create(items: List<T>, page: Int, pageSize: Int): Page<T> {
+        fun <T> create(
+            items: List<T>,
+            page: Int,
+            pageSize: Int,
+        ): Page<T> {
             val totalItems = items.size
             val totalPages = maxOf(1, (totalItems + pageSize - 1) / pageSize)
             val clampedPage = page.coerceIn(1, totalPages)
@@ -42,7 +44,7 @@ data class Page<T>(
                 totalItems = totalItems,
                 totalPages = totalPages,
                 hasNext = clampedPage < totalPages,
-                hasPrevious = clampedPage > 1
+                hasPrevious = clampedPage > 1,
             )
         }
     }

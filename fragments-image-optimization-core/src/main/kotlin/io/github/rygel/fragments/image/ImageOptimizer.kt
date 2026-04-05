@@ -12,7 +12,7 @@ data class ImageMetadata(
     val hasAlpha: Boolean = false,
     val colorDepth: Int? = null,
     val xDPI: Float? = null,
-    val yDPI: Float? = null
+    val yDPI: Float? = null,
 )
 
 data class OptimizedImage(
@@ -25,7 +25,7 @@ data class OptimizedImage(
     val height: Int,
     val format: String,
     val quality: Float,
-    val metadata: ImageMetadata
+    val metadata: ImageMetadata,
 ) {
     val compressionRatio: Float
         get() {
@@ -44,7 +44,7 @@ data class ImageResizeOptions(
     val maxHeight: Int? = null,
     val maintainAspectRatio: Boolean = true,
     val quality: Float = 0.85f,
-    val format: String = "jpg"
+    val format: String = "jpg",
 ) {
     companion object {
         val THUMBNAIL = ImageResizeOptions(maxWidth = 200, maxHeight = 200, quality = 0.7f)
@@ -61,15 +61,40 @@ data class ResponsiveVariant(
     val height: Int,
     val sizeBytes: Long,
     val format: String,
-    val mediaQuery: String
+    val mediaQuery: String,
 )
 
 interface ImageOptimizer {
-    suspend fun optimize(inputStream: InputStream, outputPath: String, options: ImageResizeOptions): Result<OptimizedImage>
-    suspend fun optimize(filePath: String, options: ImageResizeOptions): Result<OptimizedImage>
-    suspend fun generateResponsiveVariants(imagePath: String, variants: List<ImageResizeOptions>): Result<List<ResponsiveVariant>>
+    suspend fun optimize(
+        inputStream: InputStream,
+        outputPath: String,
+        options: ImageResizeOptions,
+    ): Result<OptimizedImage>
+
+    suspend fun optimize(
+        filePath: String,
+        options: ImageResizeOptions,
+    ): Result<OptimizedImage>
+
+    suspend fun generateResponsiveVariants(
+        imagePath: String,
+        variants: List<ImageResizeOptions>,
+    ): Result<List<ResponsiveVariant>>
+
     suspend fun getMetadata(imagePath: String): Result<ImageMetadata>
-    suspend fun resize(imagePath: String, options: ImageResizeOptions): Result<OptimizedImage>
-    suspend fun convertFormat(imagePath: String, targetFormat: String): Result<OptimizedImage>
-    suspend fun compress(imagePath: String, quality: Float): Result<OptimizedImage>
+
+    suspend fun resize(
+        imagePath: String,
+        options: ImageResizeOptions,
+    ): Result<OptimizedImage>
+
+    suspend fun convertFormat(
+        imagePath: String,
+        targetFormat: String,
+    ): Result<OptimizedImage>
+
+    suspend fun compress(
+        imagePath: String,
+        quality: Float,
+    ): Result<OptimizedImage>
 }

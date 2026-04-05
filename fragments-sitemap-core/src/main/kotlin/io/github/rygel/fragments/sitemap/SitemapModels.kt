@@ -4,33 +4,38 @@ import io.github.rygel.fragments.Fragment
 import io.github.rygel.fragments.FragmentStatus
 import java.time.Duration
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 data class SitemapUrl(
     val loc: String,
     val lastmod: String,
     val changefreq: ChangeFrequency,
     val priority: Double = 0.5,
-    val image: SitemapImage? = null
+    val image: SitemapImage? = null,
 )
 
 data class SitemapImage(
     val loc: String,
     val caption: String? = null,
-    val title: String? = null
+    val title: String? = null,
 )
 
-enum class ChangeFrequency(val value: String) {
+enum class ChangeFrequency(
+    val value: String,
+) {
     ALWAYS("always"),
     HOURLY("hourly"),
     DAILY("daily"),
     WEEKLY("weekly"),
     MONTHLY("monthly"),
     YEARLY("yearly"),
-    NEVER("never");
+    NEVER("never"),
+    ;
 
     companion object {
-        fun fromFragment(fragment: Fragment, lastModified: LocalDateTime?): ChangeFrequency {
+        fun fromFragment(
+            fragment: Fragment,
+            lastModified: LocalDateTime?,
+        ): ChangeFrequency {
             val fragmentDate = fragment.date ?: return NEVER
             if (lastModified == null) return WEEKLY
 
@@ -45,7 +50,10 @@ enum class ChangeFrequency(val value: String) {
             }
         }
 
-        fun calculatePriority(fragment: Fragment, lastModified: LocalDateTime?): Double {
+        fun calculatePriority(
+            fragment: Fragment,
+            lastModified: LocalDateTime?,
+        ): Double {
             val fragmentDate = fragment.date ?: return 0.5
             if (lastModified == null) return 0.8
 

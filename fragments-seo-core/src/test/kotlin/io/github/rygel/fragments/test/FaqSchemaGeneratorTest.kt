@@ -4,18 +4,20 @@ import io.github.rygel.fragments.FaqEntry
 import io.github.rygel.fragments.FaqSchemaGenerator
 import io.github.rygel.fragments.Fragment
 import io.github.rygel.fragments.FragmentStatus
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.time.LocalDateTime
 
 class FaqSchemaGeneratorTest {
-
     @Test
     fun generateProducesValidFaqPageJsonLd() {
-        val entries = listOf(
-            FaqEntry("What is fragments4k?", "A content engine for Kotlin."),
-            FaqEntry("What frameworks?", "HTTP4k, Spring Boot, Javalin, Quarkus, Micronaut.")
-        )
+        val entries =
+            listOf(
+                FaqEntry("What is fragments4k?", "A content engine for Kotlin."),
+                FaqEntry("What frameworks?", "HTTP4k, Spring Boot, Javalin, Quarkus, Micronaut."),
+            )
 
         val jsonLd = FaqSchemaGenerator.generate(entries)
 
@@ -39,12 +41,13 @@ class FaqSchemaGeneratorTest {
 
     @Test
     fun generateEscapesSpecialCharactersInJson() {
-        val entries = listOf(
-            FaqEntry(
-                """How do I use "quotes"?""",
-                "Use a backslash \\ before the quote.\nNew line here."
+        val entries =
+            listOf(
+                FaqEntry(
+                    """How do I use "quotes"?""",
+                    "Use a backslash \\ before the quote.\nNew line here.",
+                ),
             )
-        )
 
         val jsonLd = FaqSchemaGenerator.generate(entries)
 
@@ -56,9 +59,10 @@ class FaqSchemaGeneratorTest {
 
     @Test
     fun generateHandlesSingleEntry() {
-        val entries = listOf(
-            FaqEntry("Only question?", "Only answer.")
-        )
+        val entries =
+            listOf(
+                FaqEntry("Only question?", "Only answer."),
+            )
 
         val jsonLd = FaqSchemaGenerator.generate(entries)
 
@@ -71,20 +75,22 @@ class FaqSchemaGeneratorTest {
 
     @Test
     fun fromFragmentExtractsFaqEntries() {
-        val fragment = Fragment(
-            title = "FAQ Page",
-            slug = "faq-page",
-            status = FragmentStatus.PUBLISHED,
-            date = LocalDateTime.of(2024, 1, 15, 10, 0),
-            publishDate = null,
-            preview = "FAQ content",
-            content = "<p>FAQ content</p>",
-            frontMatter = emptyMap(),
-            faq = listOf(
-                FaqEntry("Question 1?", "Answer 1."),
-                FaqEntry("Question 2?", "Answer 2.")
+        val fragment =
+            Fragment(
+                title = "FAQ Page",
+                slug = "faq-page",
+                status = FragmentStatus.PUBLISHED,
+                date = LocalDateTime.of(2024, 1, 15, 10, 0),
+                publishDate = null,
+                preview = "FAQ content",
+                content = "<p>FAQ content</p>",
+                frontMatter = emptyMap(),
+                faq =
+                    listOf(
+                        FaqEntry("Question 1?", "Answer 1."),
+                        FaqEntry("Question 2?", "Answer 2."),
+                    ),
             )
-        )
 
         val jsonLd = FaqSchemaGenerator.fromFragment(fragment)
 
@@ -97,16 +103,17 @@ class FaqSchemaGeneratorTest {
 
     @Test
     fun fromFragmentReturnsEmptyStringWhenNoFaq() {
-        val fragment = Fragment(
-            title = "No FAQ",
-            slug = "no-faq",
-            status = FragmentStatus.PUBLISHED,
-            date = LocalDateTime.of(2024, 1, 15, 10, 0),
-            publishDate = null,
-            preview = "No FAQ content",
-            content = "<p>No FAQ</p>",
-            frontMatter = emptyMap()
-        )
+        val fragment =
+            Fragment(
+                title = "No FAQ",
+                slug = "no-faq",
+                status = FragmentStatus.PUBLISHED,
+                date = LocalDateTime.of(2024, 1, 15, 10, 0),
+                publishDate = null,
+                preview = "No FAQ content",
+                content = "<p>No FAQ</p>",
+                frontMatter = emptyMap(),
+            )
 
         val jsonLd = FaqSchemaGenerator.fromFragment(fragment)
         assertEquals("", jsonLd)

@@ -2,7 +2,9 @@ package io.github.rygel.fragments.test
 
 import io.github.rygel.fragments.ArchiveNavigationGenerator
 import io.github.rygel.fragments.ArchiveNavigationLink
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class ArchiveNavigationTest {
@@ -24,10 +26,11 @@ class ArchiveNavigationTest {
     @Test
     fun testGenerateYearLinksWithCustomYears() {
         val availableYears = listOf(2021, 2022, 2023, 2024)
-        val yearLinks = ArchiveNavigationGenerator.generateYearLinks(
-            baseUrl = "/blog/archive",
-            availableYears = availableYears
-        )
+        val yearLinks =
+            ArchiveNavigationGenerator.generateYearLinks(
+                baseUrl = "/blog/archive",
+                availableYears = availableYears,
+            )
 
         assertEquals(4, yearLinks.size)
         assertEquals("2024", yearLinks[0].label)
@@ -41,11 +44,12 @@ class ArchiveNavigationTest {
 
     @Test
     fun testGenerateYearLinksWithCurrentYear() {
-        val yearLinks = ArchiveNavigationGenerator.generateYearLinks(
-            baseUrl = "/blog/archive",
-            availableYears = listOf(2023, 2024),
-            currentYear = 2024
-        )
+        val yearLinks =
+            ArchiveNavigationGenerator.generateYearLinks(
+                baseUrl = "/blog/archive",
+                availableYears = listOf(2023, 2024),
+                currentYear = 2024,
+            )
 
         assertEquals(2, yearLinks.size)
         assertTrue(yearLinks[0].isActive)
@@ -57,11 +61,12 @@ class ArchiveNavigationTest {
 
     @Test
     fun testGenerateMonthLinks() {
-        val monthLinks = ArchiveNavigationGenerator.generateMonthLinks(
-            baseUrl = "/blog/archive",
-            year = 2024,
-            currentMonth = null
-        )
+        val monthLinks =
+            ArchiveNavigationGenerator.generateMonthLinks(
+                baseUrl = "/blog/archive",
+                year = 2024,
+                currentMonth = null,
+            )
 
         assertEquals(12, monthLinks.size)
         assertEquals("Jan", monthLinks[0].label)
@@ -86,11 +91,12 @@ class ArchiveNavigationTest {
 
     @Test
     fun testGenerateMonthLinksWithCurrentMonth() {
-        val monthLinks = ArchiveNavigationGenerator.generateMonthLinks(
-            baseUrl = "/blog/archive",
-            year = 2024,
-            currentMonth = 6
-        )
+        val monthLinks =
+            ArchiveNavigationGenerator.generateMonthLinks(
+                baseUrl = "/blog/archive",
+                year = 2024,
+                currentMonth = 6,
+            )
 
         assertEquals(12, monthLinks.size)
 
@@ -106,11 +112,12 @@ class ArchiveNavigationTest {
 
     @Test
     fun testGenerateBreadcrumbsForBlogRoot() {
-        val breadcrumbs = ArchiveNavigationGenerator.generateBreadcrumbs(
-            baseUrl = "/blog",
-            currentYear = null,
-            currentMonth = null
-        )
+        val breadcrumbs =
+            ArchiveNavigationGenerator.generateBreadcrumbs(
+                baseUrl = "/blog",
+                currentYear = null,
+                currentMonth = null,
+            )
 
         assertEquals(1, breadcrumbs.size)
         assertEquals("Blog", breadcrumbs[0].label)
@@ -120,11 +127,12 @@ class ArchiveNavigationTest {
 
     @Test
     fun testGenerateBreadcrumbsForYear() {
-        val breadcrumbs = ArchiveNavigationGenerator.generateBreadcrumbs(
-            baseUrl = "/blog",
-            currentYear = 2024,
-            currentMonth = null
-        )
+        val breadcrumbs =
+            ArchiveNavigationGenerator.generateBreadcrumbs(
+                baseUrl = "/blog",
+                currentYear = 2024,
+                currentMonth = null,
+            )
 
         assertEquals(2, breadcrumbs.size)
 
@@ -139,11 +147,12 @@ class ArchiveNavigationTest {
 
     @Test
     fun testGenerateBreadcrumbsForYearMonth() {
-        val breadcrumbs = ArchiveNavigationGenerator.generateBreadcrumbs(
-            baseUrl = "/blog",
-            currentYear = 2024,
-            currentMonth = 6
-        )
+        val breadcrumbs =
+            ArchiveNavigationGenerator.generateBreadcrumbs(
+                baseUrl = "/blog",
+                currentYear = 2024,
+                currentMonth = 6,
+            )
 
         assertEquals(3, breadcrumbs.size)
 
@@ -162,11 +171,12 @@ class ArchiveNavigationTest {
 
     @Test
     fun testGenerateBreadcrumbsWithCustomBaseUrl() {
-        val breadcrumbs = ArchiveNavigationGenerator.generateBreadcrumbs(
-            baseUrl = "/archives",
-            currentYear = 2024,
-            currentMonth = null
-        )
+        val breadcrumbs =
+            ArchiveNavigationGenerator.generateBreadcrumbs(
+                baseUrl = "/archives",
+                currentYear = 2024,
+                currentMonth = null,
+            )
 
         assertEquals(2, breadcrumbs.size)
         assertEquals("/archives", breadcrumbs[0].url)
@@ -175,11 +185,12 @@ class ArchiveNavigationTest {
 
     @Test
     fun testArchiveNavigationLinkDataClass() {
-        val link = ArchiveNavigationLink(
-            label = "2024",
-            url = "/blog/archive/2024",
-            isActive = true
-        )
+        val link =
+            ArchiveNavigationLink(
+                label = "2024",
+                url = "/blog/archive/2024",
+                isActive = true,
+            )
 
         assertEquals("2024", link.label)
         assertEquals("/blog/archive/2024", link.url)
@@ -188,10 +199,11 @@ class ArchiveNavigationTest {
 
     @Test
     fun testArchiveNavigationLinkDefaultActive() {
-        val link = ArchiveNavigationLink(
-            label = "2024",
-            url = "/blog/archive/2024"
-        )
+        val link =
+            ArchiveNavigationLink(
+                label = "2024",
+                url = "/blog/archive/2024",
+            )
 
         assertFalse(link.isActive)
     }
@@ -199,10 +211,11 @@ class ArchiveNavigationTest {
     @Test
     fun testYearLinksDescendingOrder() {
         val availableYears = listOf(2021, 2023, 2020, 2024, 2022)
-        val yearLinks = ArchiveNavigationGenerator.generateYearLinks(
-            baseUrl = "/blog/archive",
-            availableYears = availableYears
-        )
+        val yearLinks =
+            ArchiveNavigationGenerator.generateYearLinks(
+                baseUrl = "/blog/archive",
+                availableYears = availableYears,
+            )
 
         assertEquals(5, yearLinks.size)
         assertEquals("2024", yearLinks[0].label)
@@ -214,14 +227,28 @@ class ArchiveNavigationTest {
 
     @Test
     fun testMonthLinksAllMonthsPresent() {
-        val monthLinks = ArchiveNavigationGenerator.generateMonthLinks(
-            baseUrl = "/blog/archive",
-            year = 2024,
-            currentMonth = null
-        )
+        val monthLinks =
+            ArchiveNavigationGenerator.generateMonthLinks(
+                baseUrl = "/blog/archive",
+                year = 2024,
+                currentMonth = null,
+            )
 
-        val expectedMonths = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", 
-                                  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+        val expectedMonths =
+            listOf(
+                "Jan",
+                "Feb",
+                "Mar",
+                "Apr",
+                "May",
+                "Jun",
+                "Jul",
+                "Aug",
+                "Sep",
+                "Oct",
+                "Nov",
+                "Dec",
+            )
 
         assertEquals(expectedMonths.size, monthLinks.size)
 
@@ -233,21 +260,23 @@ class ArchiveNavigationTest {
 
     @Test
     fun testMultipleCurrentYearsInBreadcrumbs() {
-        val breadcrumbs1 = ArchiveNavigationGenerator.generateBreadcrumbs(
-            baseUrl = "/blog",
-            currentYear = 2023,
-            currentMonth = null
-        )
+        val breadcrumbs1 =
+            ArchiveNavigationGenerator.generateBreadcrumbs(
+                baseUrl = "/blog",
+                currentYear = 2023,
+                currentMonth = null,
+            )
 
         assertEquals(2, breadcrumbs1.size)
         assertEquals("2023", breadcrumbs1[1].label)
         assertTrue(breadcrumbs1[1].isActive)
 
-        val breadcrumbs2 = ArchiveNavigationGenerator.generateBreadcrumbs(
-            baseUrl = "/blog",
-            currentYear = 2024,
-            currentMonth = null
-        )
+        val breadcrumbs2 =
+            ArchiveNavigationGenerator.generateBreadcrumbs(
+                baseUrl = "/blog",
+                currentYear = 2024,
+                currentMonth = null,
+            )
 
         assertEquals(2, breadcrumbs2.size)
         assertEquals("2024", breadcrumbs2[1].label)
@@ -256,21 +285,23 @@ class ArchiveNavigationTest {
 
     @Test
     fun testMultipleCurrentMonthsInBreadcrumbs() {
-        val breadcrumbs1 = ArchiveNavigationGenerator.generateBreadcrumbs(
-            baseUrl = "/blog",
-            currentYear = 2024,
-            currentMonth = 3
-        )
+        val breadcrumbs1 =
+            ArchiveNavigationGenerator.generateBreadcrumbs(
+                baseUrl = "/blog",
+                currentYear = 2024,
+                currentMonth = 3,
+            )
 
         assertEquals(3, breadcrumbs1.size)
         assertEquals("Mar", breadcrumbs1[2].label)
         assertTrue(breadcrumbs1[2].isActive)
 
-        val breadcrumbs2 = ArchiveNavigationGenerator.generateBreadcrumbs(
-            baseUrl = "/blog",
-            currentYear = 2024,
-            currentMonth = 9
-        )
+        val breadcrumbs2 =
+            ArchiveNavigationGenerator.generateBreadcrumbs(
+                baseUrl = "/blog",
+                currentYear = 2024,
+                currentMonth = 9,
+            )
 
         assertEquals(3, breadcrumbs2.size)
         assertEquals("Sep", breadcrumbs2[2].label)

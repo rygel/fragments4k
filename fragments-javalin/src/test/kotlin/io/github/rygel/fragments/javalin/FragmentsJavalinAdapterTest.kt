@@ -1,6 +1,11 @@
 package io.github.rygel.fragments.javalin
 
-import io.github.rygel.fragments.*
+import io.github.rygel.fragments.ContentRelationships
+import io.github.rygel.fragments.Fragment
+import io.github.rygel.fragments.FragmentRepository
+import io.github.rygel.fragments.FragmentRevision
+import io.github.rygel.fragments.FragmentStatus
+import io.github.rygel.fragments.RelationshipConfig
 import io.github.rygel.fragments.blog.BlogEngine
 import io.github.rygel.fragments.lucene.LuceneSearchEngine
 import io.github.rygel.fragments.static.StaticPageEngine
@@ -16,25 +21,28 @@ import java.time.LocalDateTime
 
 @Tag("integration")
 class FragmentsJavalinAdapterTest {
-
     private lateinit var repo: InMemoryFragmentRepository
     private lateinit var searchEngine: LuceneSearchEngine
 
     @BeforeEach
-    fun setup() = runBlocking {
-        repo = InMemoryFragmentRepository()
-        val tempIndexPath = Files.createTempDirectory("lucene-test")
-        searchEngine = LuceneSearchEngine(repo, tempIndexPath)
-        searchEngine.index()
-    }
+    fun setup() =
+        runBlocking {
+            repo = InMemoryFragmentRepository()
+            val tempIndexPath = Files.createTempDirectory("lucene-test")
+            searchEngine = LuceneSearchEngine(repo, tempIndexPath)
+            searchEngine.index()
+        }
 
-    private fun createTestApp(staticEngine: StaticPageEngine, blogEngine: BlogEngine): Javalin =
+    private fun createTestApp(
+        staticEngine: StaticPageEngine,
+        blogEngine: BlogEngine,
+    ): Javalin =
         Javalin.create { config ->
             config.routes.fragmentsRoutes(
                 staticEngine = staticEngine,
                 blogEngine = blogEngine,
                 renderer = MockTemplateRenderer(),
-                searchEngine = searchEngine
+                searchEngine = searchEngine,
             )
         }
 
@@ -163,46 +171,139 @@ class InMemoryFragmentRepository : FragmentRepository {
     }
 
     override suspend fun getAll(): List<Fragment> = fragments
+
     override suspend fun getAllVisible(): List<Fragment> = fragments.filter { it.visible }
+
     override suspend fun getBySlug(slug: String): Fragment? = fragments.find { it.slug == slug }
-    override suspend fun getByYearMonthAndSlug(year: String, month: String, slug: String): Fragment? {
-        return fragments.find { 
-            it.slug == slug && 
-            it.date?.year == year.toIntOrNull() &&
-            it.date?.monthValue == month.toIntOrNull()
+
+    override suspend fun getByYearMonthAndSlug(
+        year: String,
+        month: String,
+        slug: String,
+    ): Fragment? =
+        fragments.find {
+            it.slug == slug &&
+                it.date?.year == year.toIntOrNull() &&
+                it.date?.monthValue == month.toIntOrNull()
         }
-    }
-    override suspend fun getByTag(tag: String): List<Fragment> = 
-        fragments.filter { it.tags.contains(tag) }
-    override suspend fun getByCategory(category: String): List<Fragment> = 
-        fragments.filter { it.categories.contains(category) }
+
+    override suspend fun getByTag(tag: String): List<Fragment> = fragments.filter { it.tags.contains(tag) }
+
+    override suspend fun getByCategory(category: String): List<Fragment> = fragments.filter { it.categories.contains(category) }
+
     override suspend fun reload() {}
-    override suspend fun getByStatus(status: io.github.rygel.fragments.FragmentStatus): List<Fragment> = fragments.filter { it.status == status }
-    override suspend fun getByAuthor(authorId: String): List<Fragment> = fragments.filter { it.author == authorId || it.authorIds.contains(authorId) }
-    override suspend fun getByAuthors(authorIds: List<String>): List<Fragment> = fragments.filter { fragment -> authorIds.any { fragment.author == it || fragment.authorIds.contains(it) } }
-    override suspend fun updateFragmentStatus(slug: String, status: io.github.rygel.fragments.FragmentStatus, force: Boolean, changedBy: String?, reason: String?): Result<Fragment> {
+
+    override suspend fun getByStatus(status: io.github.rygel.fragments.FragmentStatus): List<Fragment> =
+        fragments.filter {
+            it.status ==
+                status
+        }
+
+    override suspend fun getByAuthor(authorId: String): List<Fragment> =
+        fragments.filter {
+            it.author == authorId ||
+                it.authorIds.contains(authorId)
+        }
+
+    override suspend fun getByAuthors(authorIds: List<String>): List<Fragment> =
+        fragments.filter { fragment ->
+            authorIds.any {
+                fragment.author ==
+                    it ||
+                    fragment.authorIds.contains(it)
+            }
+        }
+
+    override suspend fun updateFragmentStatus(
+        slug: String,
+        status: io.github.rygel.fragments.FragmentStatus,
+        force: Boolean,
+        changedBy: String?,
+        reason: String?,
+    ): Result<Fragment> {
         val f = fragments.find { it.slug == slug }
         return if (f != null) Result.success(f) else Result.failure(IllegalArgumentException("Fragment not found"))
     }
-    override suspend fun updateMultipleFragmentsStatus(slugs: List<String>, status: io.github.rygel.fragments.FragmentStatus, force: Boolean, changedBy: String?, reason: String?): List<Result<Fragment>> = slugs.map { updateFragmentStatus(it, status, force, changedBy, reason) }
-    override suspend fun publishMultiple(slugs: List<String>, changedBy: String?, reason: String?): List<Result<Fragment>> = slugs.map { updateFragmentStatus(it, io.github.rygel.fragments.FragmentStatus.PUBLISHED, false, changedBy, reason) }
-    override suspend fun unpublishMultiple(slugs: List<String>, changedBy: String?, reason: String?): List<Result<Fragment>> = slugs.map { updateFragmentStatus(it, io.github.rygel.fragments.FragmentStatus.DRAFT, false, changedBy, reason) }
-    override suspend fun archiveMultiple(slugs: List<String>, changedBy: String?, reason: String?): List<Result<Fragment>> = slugs.map { updateFragmentStatus(it, io.github.rygel.fragments.FragmentStatus.ARCHIVED, false, changedBy, reason) }
+
+    override suspend fun updateMultipleFragmentsStatus(
+        slugs: List<String>,
+        status: io.github.rygel.fragments.FragmentStatus,
+        force: Boolean,
+        changedBy: String?,
+        reason: String?,
+    ): List<Result<Fragment>> =
+        slugs.map {
+            updateFragmentStatus(it, status, force, changedBy, reason)
+        }
+
+    override suspend fun publishMultiple(
+        slugs: List<String>,
+        changedBy: String?,
+        reason: String?,
+    ): List<Result<Fragment>> =
+        slugs.map {
+            updateFragmentStatus(it, io.github.rygel.fragments.FragmentStatus.PUBLISHED, false, changedBy, reason)
+        }
+
+    override suspend fun unpublishMultiple(
+        slugs: List<String>,
+        changedBy: String?,
+        reason: String?,
+    ): List<Result<Fragment>> =
+        slugs.map {
+            updateFragmentStatus(it, io.github.rygel.fragments.FragmentStatus.DRAFT, false, changedBy, reason)
+        }
+
+    override suspend fun archiveMultiple(
+        slugs: List<String>,
+        changedBy: String?,
+        reason: String?,
+    ): List<Result<Fragment>> =
+        slugs.map {
+            updateFragmentStatus(it, io.github.rygel.fragments.FragmentStatus.ARCHIVED, false, changedBy, reason)
+        }
+
     override suspend fun getScheduledFragmentsDueForPublication(threshold: LocalDateTime): List<Fragment> = emptyList()
+
     override suspend fun publishScheduledFragments(threshold: LocalDateTime): List<Result<Fragment>> = emptyList()
-    override suspend fun scheduleMultiple(slugs: List<String>, publishDate: LocalDateTime, changedBy: String?, reason: String?): List<Result<Fragment>> = emptyList()
+
+    override suspend fun scheduleMultiple(
+        slugs: List<String>,
+        publishDate: LocalDateTime,
+        changedBy: String?,
+        reason: String?,
+    ): List<Result<Fragment>> = emptyList()
+
     override suspend fun expireFragments(threshold: LocalDateTime): List<Result<Fragment>> = emptyList()
+
     override suspend fun getFragmentsExpiringSoon(threshold: LocalDateTime): List<Fragment> = emptyList()
-    override suspend fun getRelationships(slug: String, config: io.github.rygel.fragments.RelationshipConfig): io.github.rygel.fragments.ContentRelationships? = null
-    override suspend fun createRevision(slug: String, changedBy: String?, reason: String?): Result<io.github.rygel.fragments.FragmentRevision> = Result.failure(UnsupportedOperationException())
+
+    override suspend fun getRelationships(
+        slug: String,
+        config: io.github.rygel.fragments.RelationshipConfig,
+    ): io.github.rygel.fragments.ContentRelationships? = null
+
+    override suspend fun createRevision(
+        slug: String,
+        changedBy: String?,
+        reason: String?,
+    ): Result<io.github.rygel.fragments.FragmentRevision> = Result.failure(UnsupportedOperationException())
+
     override suspend fun getFragmentRevisions(slug: String): List<io.github.rygel.fragments.FragmentRevision> = emptyList()
-    override suspend fun revertToRevision(slug: String, revisionId: String, changedBy: String?, reason: String?): Result<Fragment> = Result.failure(UnsupportedOperationException())
+
+    override suspend fun revertToRevision(
+        slug: String,
+        revisionId: String,
+        changedBy: String?,
+        reason: String?,
+    ): Result<Fragment> = Result.failure(UnsupportedOperationException())
 }
 
 class MockTemplateRenderer : TemplateRenderer {
-    override fun render(template: String, viewModel: Any): String {
-        return "<html><body>Mock rendered content for $template</body></html>"
-    }
+    override fun render(
+        template: String,
+        viewModel: Any,
+    ): String = "<html><body>Mock rendered content for $template</body></html>"
 }
 
 private fun createFragment(
@@ -211,9 +312,9 @@ private fun createFragment(
     isBlog: Boolean = false,
     date: LocalDateTime? = null,
     tags: List<String> = emptyList(),
-    categories: List<String> = emptyList()
-): Fragment {
-    return Fragment(
+    categories: List<String> = emptyList(),
+): Fragment =
+    Fragment(
         slug = slug,
         title = title,
         content = "# Test Content\n\nThis is test content.",
@@ -224,9 +325,9 @@ private fun createFragment(
         visible = true,
         tags = tags,
         categories = categories,
-        frontMatter = mutableMapOf(
-            "title" to title,
-            "slug" to slug
-        )
+        frontMatter =
+            mutableMapOf(
+                "title" to title,
+                "slug" to slug,
+            ),
     )
-}

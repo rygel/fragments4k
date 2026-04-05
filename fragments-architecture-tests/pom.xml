@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.github.rygel</groupId>
+        <artifactId>fragments-parent</artifactId>
+        <version>0.6.4</version>
+    </parent>
+
+    <artifactId>fragments-architecture-tests</artifactId>
+    <packaging>jar</packaging>
+
+    <name>Fragments Architecture Tests</name>
+    <description>ArchUnit tests enforcing architectural rules for Fragments CMS</description>
+
+    <dependencies>
+        <!-- All library modules under test -->
+        <dependency>
+            <groupId>io.github.rygel</groupId>
+            <artifactId>fragments-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.rygel</groupId>
+            <artifactId>fragments-static-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.rygel</groupId>
+            <artifactId>fragments-blog-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.rygel</groupId>
+            <artifactId>fragments-cache-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.rygel</groupId>
+            <artifactId>fragments-rss-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.rygel</groupId>
+            <artifactId>fragments-lucene-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.rygel</groupId>
+            <artifactId>fragments-sitemap-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.rygel</groupId>
+            <artifactId>fragments-live-reload</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.rygel</groupId>
+            <artifactId>fragments-chat-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.rygel</groupId>
+            <artifactId>fragments-navigation-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.rygel</groupId>
+            <artifactId>fragments-social-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.rygel</groupId>
+            <artifactId>fragments-seo-core</artifactId>
+        </dependency>
+
+        <!-- Kotlin -->
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-stdlib</artifactId>
+        </dependency>
+
+        <!-- Testing -->
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <sourceDirectory>src/main/kotlin</sourceDirectory>
+        <testSourceDirectory>src/test/kotlin</testSourceDirectory>
+    </build>
+</project>

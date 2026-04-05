@@ -1,18 +1,20 @@
 package io.github.rygel.fragments.spring
 
-import io.github.rygel.fragments.*
+import io.github.rygel.fragments.AuthorRepository
+import io.github.rygel.fragments.AuthorViewModel
+import io.github.rygel.fragments.FragmentRepository
+import io.github.rygel.fragments.FragmentViewModel
+import io.github.rygel.fragments.LlmsTxtGenerator
 import io.github.rygel.fragments.blog.BlogEngine
 import io.github.rygel.fragments.rss.RssGenerator
 import io.github.rygel.fragments.sitemap.SitemapGenerator
-import io.github.rygel.fragments.static.StaticPageEngine
-import io.github.rygel.fragments.FragmentRepository
+import org.springframework.http.MediaType
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.http.MediaType
 
 @Controller
 class FragmentsSpringController(
@@ -22,7 +24,7 @@ class FragmentsSpringController(
     private val siteDescription: String = "My Awesome Blog",
     private val siteUrl: String = "http://localhost:8080",
     private val feedUrl: String = "http://localhost:8080/rss.xml",
-    private val authorRepository: AuthorRepository? = null
+    private val authorRepository: AuthorRepository? = null,
 ) {
     private val rssGenerator: RssGenerator by lazy { RssGenerator(repository) }
     private val sitemapGenerator: SitemapGenerator by lazy { SitemapGenerator(repository, siteUrl, lastModified = null) }
@@ -30,14 +32,17 @@ class FragmentsSpringController(
     @GetMapping("/")
     suspend fun home(
         @RequestHeader(value = FragmentViewModel.HTMX_REQUEST_HEADER, required = false) htmxRequest: String?,
-        model: Model
+        model: Model,
     ): String {
         val fragments = repository.getAllVisible()
         val isPartial = isHtmxRequest(htmxRequest)
-        model.addAttribute("viewModel", HomeViewModel(
-            fragments = fragments.map { FragmentViewModel(it, isPartial) },
-            isPartialRender = isPartial
-        ))
+        model.addAttribute(
+            "viewModel",
+            HomeViewModel(
+                fragments = fragments.map { FragmentViewModel(it, isPartial) },
+                isPartialRender = isPartial,
+            ),
+        )
         return if (isPartial) "index" else "index"
     }
 
@@ -45,7 +50,7 @@ class FragmentsSpringController(
     suspend fun page(
         @PathVariable slug: String,
         @RequestHeader(value = FragmentViewModel.HTMX_REQUEST_HEADER, required = false) htmxRequest: String?,
-        model: Model
+        model: Model,
     ): String {
         val fragment = repository.getBySlug(slug)
         val isPartial = isHtmxRequest(htmxRequest)
@@ -61,18 +66,21 @@ class FragmentsSpringController(
     suspend fun blogOverview(
         @RequestParam(defaultValue = "1") page: Int,
         @RequestHeader(value = FragmentViewModel.HTMX_REQUEST_HEADER, required = false) htmxRequest: String?,
-        model: Model
+        model: Model,
     ): String {
         val pageResult = blogEngine.getOverview(includeDrafts = false, page = page)
         val isPartial = isHtmxRequest(htmxRequest)
-        model.addAttribute("viewModel", BlogOverviewViewModel(
-            fragments = pageResult.items.map { FragmentViewModel(it, isPartial) },
-            currentPage = pageResult.currentPage,
-            totalPages = pageResult.totalPages,
-            hasNext = pageResult.hasNext,
-            hasPrevious = pageResult.hasPrevious,
-            isPartialRender = isPartial
-        ))
+        model.addAttribute(
+            "viewModel",
+            BlogOverviewViewModel(
+                fragments = pageResult.items.map { FragmentViewModel(it, isPartial) },
+                currentPage = pageResult.currentPage,
+                totalPages = pageResult.totalPages,
+                hasNext = pageResult.hasNext,
+                hasPrevious = pageResult.hasPrevious,
+                isPartialRender = isPartial,
+            ),
+        )
         return "blog_overview"
     }
 
@@ -80,10 +88,8 @@ class FragmentsSpringController(
     suspend fun blogOverviewByPath(
         @PathVariable page: Int,
         @RequestHeader(value = FragmentViewModel.HTMX_REQUEST_HEADER, required = false) htmxRequest: String?,
-        model: Model
-    ): String {
-        return blogOverview(page, htmxRequest, model)
-    }
+        model: Model,
+    ): String = blogOverview(page, htmxRequest, model)
 
     @GetMapping("/blog/{year}/{month}/{slug}")
     suspend fun blogPost(
@@ -91,7 +97,7 @@ class FragmentsSpringController(
         @PathVariable month: String,
         @PathVariable slug: String,
         @RequestHeader(value = FragmentViewModel.HTMX_REQUEST_HEADER, required = false) htmxRequest: String?,
-        model: Model
+        model: Model,
     ): String {
         val fragment = blogEngine.getPost(year, month, slug)
         val isPartial = isHtmxRequest(htmxRequest)
@@ -108,19 +114,22 @@ class FragmentsSpringController(
         @PathVariable tag: String,
         @RequestParam(defaultValue = "1") page: Int,
         @RequestHeader(value = FragmentViewModel.HTMX_REQUEST_HEADER, required = false) htmxRequest: String?,
-        model: Model
+        model: Model,
     ): String {
         val pageResult = blogEngine.getByTag(tag, page)
         val isPartial = isHtmxRequest(htmxRequest)
-        model.addAttribute("viewModel", TagViewModel(
-            tag = tag,
-            fragments = pageResult.items.map { FragmentViewModel(it, isPartial) },
-            currentPage = pageResult.currentPage,
-            totalPages = pageResult.totalPages,
-            hasNext = pageResult.hasNext,
-            hasPrevious = pageResult.hasPrevious,
-            isPartialRender = isPartial
-        ))
+        model.addAttribute(
+            "viewModel",
+            TagViewModel(
+                tag = tag,
+                fragments = pageResult.items.map { FragmentViewModel(it, isPartial) },
+                currentPage = pageResult.currentPage,
+                totalPages = pageResult.totalPages,
+                hasNext = pageResult.hasNext,
+                hasPrevious = pageResult.hasPrevious,
+                isPartialRender = isPartial,
+            ),
+        )
         return "blog_overview"
     }
 
@@ -129,19 +138,22 @@ class FragmentsSpringController(
         @PathVariable category: String,
         @RequestParam(defaultValue = "1") page: Int,
         @RequestHeader(value = FragmentViewModel.HTMX_REQUEST_HEADER, required = false) htmxRequest: String?,
-        model: Model
+        model: Model,
     ): String {
         val pageResult = blogEngine.getByCategory(category, page)
         val isPartial = isHtmxRequest(htmxRequest)
-        model.addAttribute("viewModel", CategoryViewModel(
-            category = category,
-            fragments = pageResult.items.map { FragmentViewModel(it, isPartial) },
-            currentPage = pageResult.currentPage,
-            totalPages = pageResult.totalPages,
-            hasNext = pageResult.hasNext,
-            hasPrevious = pageResult.hasPrevious,
-            isPartialRender = isPartial
-        ))
+        model.addAttribute(
+            "viewModel",
+            CategoryViewModel(
+                category = category,
+                fragments = pageResult.items.map { FragmentViewModel(it, isPartial) },
+                currentPage = pageResult.currentPage,
+                totalPages = pageResult.totalPages,
+                hasNext = pageResult.hasNext,
+                hasPrevious = pageResult.hasPrevious,
+                isPartialRender = isPartial,
+            ),
+        )
         return "blog_overview"
     }
 
@@ -150,69 +162,67 @@ class FragmentsSpringController(
         @PathVariable slug: String,
         @RequestParam(defaultValue = "1") page: Int,
         @RequestHeader(value = FragmentViewModel.HTMX_REQUEST_HEADER, required = false) htmxRequest: String?,
-        model: Model
+        model: Model,
     ): String {
         val pageResult = blogEngine.getByAuthor(slug, page)
         val isPartial = isHtmxRequest(htmxRequest)
         val author = authorRepository?.getBySlugOrId(slug)
         val authorViewModel = author?.let { AuthorViewModel(it, postCount = pageResult.totalItems) }
-        model.addAttribute("viewModel", AuthorPageViewModel(
-            authorSlug = slug,
-            authorName = author?.name,
-            author = authorViewModel,
-            fragments = pageResult.items.map { FragmentViewModel(it, isPartial) },
-            currentPage = pageResult.currentPage,
-            totalPages = pageResult.totalPages,
-            hasNext = pageResult.hasNext,
-            hasPrevious = pageResult.hasPrevious,
-            isPartialRender = isPartial
-        ))
+        model.addAttribute(
+            "viewModel",
+            AuthorPageViewModel(
+                authorSlug = slug,
+                authorName = author?.name,
+                author = authorViewModel,
+                fragments = pageResult.items.map { FragmentViewModel(it, isPartial) },
+                currentPage = pageResult.currentPage,
+                totalPages = pageResult.totalPages,
+                hasNext = pageResult.hasNext,
+                hasPrevious = pageResult.hasPrevious,
+                isPartialRender = isPartial,
+            ),
+        )
         return "blog_overview"
     }
 
     @GetMapping(value = ["/rss.xml", "/feed.xml"], produces = [MediaType.APPLICATION_ATOM_XML_VALUE, MediaType.APPLICATION_XML_VALUE])
     suspend fun rss(): String {
-        val rssXml = rssGenerator.generateFeed(
-            siteTitle = siteTitle,
-            siteDescription = siteDescription,
-            siteUrl = siteUrl,
-            feedUrl = feedUrl
-        )
+        val rssXml =
+            rssGenerator.generateFeed(
+                siteTitle = siteTitle,
+                siteDescription = siteDescription,
+                siteUrl = siteUrl,
+                feedUrl = feedUrl,
+            )
         return rssXml
     }
 
     @GetMapping(value = ["/sitemap.xml"], produces = [MediaType.APPLICATION_XML_VALUE])
-    suspend fun sitemap(): String {
-        return sitemapGenerator.generateSitemap()
-    }
+    suspend fun sitemap(): String = sitemapGenerator.generateSitemap()
 
     @GetMapping(value = ["/robots.txt"], produces = [MediaType.TEXT_PLAIN_VALUE])
-    fun robotsTxt(): String {
-        return buildString {
+    fun robotsTxt(): String =
+        buildString {
             appendLine("User-agent: *")
             appendLine("Allow: /")
             appendLine()
             appendLine("Sitemap: $siteUrl/sitemap.xml")
         }
-    }
 
     @GetMapping(value = ["/llms.txt"], produces = [MediaType.TEXT_PLAIN_VALUE])
-    suspend fun llmsTxt(): String {
-        return LlmsTxtGenerator.generate(
+    suspend fun llmsTxt(): String =
+        LlmsTxtGenerator.generate(
             siteTitle = siteTitle,
             siteDescription = siteDescription,
             siteUrl = siteUrl,
-            repositories = listOf(repository)
+            repositories = listOf(repository),
         )
-    }
 
-    private fun isHtmxRequest(header: String?): Boolean {
-        return header?.lowercase() == "true"
-    }
+    private fun isHtmxRequest(header: String?): Boolean = header?.lowercase() == "true"
 
     data class HomeViewModel(
         val fragments: List<FragmentViewModel>,
-        val isPartialRender: Boolean = false
+        val isPartialRender: Boolean = false,
     )
 
     data class BlogOverviewViewModel(
@@ -221,7 +231,7 @@ class FragmentsSpringController(
         val totalPages: Int,
         val hasNext: Boolean = false,
         val hasPrevious: Boolean = false,
-        val isPartialRender: Boolean = false
+        val isPartialRender: Boolean = false,
     )
 
     data class TagViewModel(
@@ -231,7 +241,7 @@ class FragmentsSpringController(
         val totalPages: Int,
         val hasNext: Boolean = false,
         val hasPrevious: Boolean = false,
-        val isPartialRender: Boolean = false
+        val isPartialRender: Boolean = false,
     )
 
     data class AuthorPageViewModel(
@@ -243,7 +253,7 @@ class FragmentsSpringController(
         val totalPages: Int,
         val hasNext: Boolean = false,
         val hasPrevious: Boolean = false,
-        val isPartialRender: Boolean = false
+        val isPartialRender: Boolean = false,
     )
 
     data class CategoryViewModel(
@@ -253,6 +263,6 @@ class FragmentsSpringController(
         val totalPages: Int,
         val hasNext: Boolean = false,
         val hasPrevious: Boolean = false,
-        val isPartialRender: Boolean = false
+        val isPartialRender: Boolean = false,
     )
 }

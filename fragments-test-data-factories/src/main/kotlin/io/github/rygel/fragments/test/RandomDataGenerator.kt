@@ -12,8 +12,9 @@ import kotlin.random.Random
 /**
  * Generator for creating random test data
  */
-class RandomDataGenerator(private val random: Random = Random.Default) {
-    
+class RandomDataGenerator(
+    private val random: Random = Random.Default,
+) {
     /**
      * Generate a random string
      */
@@ -23,21 +24,17 @@ class RandomDataGenerator(private val random: Random = Random.Default) {
             .map { chars[random.nextInt(chars.length)] }
             .joinToString("")
     }
-    
+
     /**
      * Generate a random email
      */
-    fun randomEmail(): String {
-        return "${randomString(8).lowercase()}@${randomString(6).lowercase()}.com"
-    }
-    
+    fun randomEmail(): String = "${randomString(8).lowercase()}@${randomString(6).lowercase()}.com"
+
     /**
      * Generate a random URL
      */
-    fun randomUrl(): String {
-        return "https://${randomString(8).lowercase()}.com/${randomString(10).lowercase()}"
-    }
-    
+    fun randomUrl(): String = "https://${randomString(8).lowercase()}.com/${randomString(10).lowercase()}"
+
     /**
      * Generate a random date within the past year
      */
@@ -45,7 +42,7 @@ class RandomDataGenerator(private val random: Random = Random.Default) {
         val daysBack = random.nextInt(365)
         return LocalDateTime.now().minusDays(daysBack.toLong())
     }
-    
+
     /**
      * Generate a random future date
      */
@@ -53,67 +50,128 @@ class RandomDataGenerator(private val random: Random = Random.Default) {
         val daysForward = random.nextInt(30) + 1
         return LocalDateTime.now().plusDays(daysForward.toLong())
     }
-    
+
     /**
      * Generate a random paragraph
      */
-    fun randomParagraph(sentences: Int = 3): String {
-        return (1..sentences)
+    fun randomParagraph(sentences: Int = 3): String =
+        (1..sentences)
             .map { randomSentence() }
             .joinToString(" ")
-    }
-    
+
     /**
      * Generate a random sentence
      */
-    fun randomSentence(words: Int = 10): String {
-        return (1..words)
+    fun randomSentence(words: Int = 10): String =
+        (1..words)
             .map { randomWord() }
             .joinToString(" ")
             .replaceFirstChar { it.uppercase() } + "."
-    }
-    
+
     /**
      * Generate a random word
      */
     fun randomWord(): String {
-        val words = listOf(
-            "lorem", "ipsum", "dolor", "sit", "amet", "consectetur", "adipiscing", "elit", "sed",
-            "do", "eiusmod", "tempor", "incididunt", "ut", "labore", "et", "dolore", "magna", "aliqua",
-            "test", "example", "fragment", "content", "series", "author", "category", "tag", "search"
-        )
+        val words =
+            listOf(
+                "lorem",
+                "ipsum",
+                "dolor",
+                "sit",
+                "amet",
+                "consectetur",
+                "adipiscing",
+                "elit",
+                "sed",
+                "do",
+                "eiusmod",
+                "tempor",
+                "incididunt",
+                "ut",
+                "labore",
+                "et",
+                "dolore",
+                "magna",
+                "aliqua",
+                "test",
+                "example",
+                "fragment",
+                "content",
+                "series",
+                "author",
+                "category",
+                "tag",
+                "search",
+            )
         return words[random.nextInt(words.size)]
     }
-    
+
     /**
      * Generate a random list of tags
      */
     fun randomTags(count: Int = 3): List<String> {
-        val possibleTags = listOf(
-            "kotlin", "java", "python", "javascript", "typescript", "go", "rust",
-            "programming", "development", "web", "mobile", "database", "api", "testing",
-            "tutorial", "blog", "article", "news", "opinion", "review", "tutorial",
-            "frontend", "backend", "devops", "security", "performance", "optimization"
-        )
+        val possibleTags =
+            listOf(
+                "kotlin",
+                "java",
+                "python",
+                "javascript",
+                "typescript",
+                "go",
+                "rust",
+                "programming",
+                "development",
+                "web",
+                "mobile",
+                "database",
+                "api",
+                "testing",
+                "tutorial",
+                "blog",
+                "article",
+                "news",
+                "opinion",
+                "review",
+                "tutorial",
+                "frontend",
+                "backend",
+                "devops",
+                "security",
+                "performance",
+                "optimization",
+            )
         return possibleTags.shuffled(random).take(count).sorted()
     }
-    
+
     /**
      * Generate a random list of categories
      */
     fun randomCategories(count: Int = 2): List<String> {
-        val possibleCategories = listOf(
-            "technology", "programming", "tutorials", "news", "opinion", "reviews",
-            "web", "mobile", "database", "api", "testing", "security", "performance"
-        )
+        val possibleCategories =
+            listOf(
+                "technology",
+                "programming",
+                "tutorials",
+                "news",
+                "opinion",
+                "reviews",
+                "web",
+                "mobile",
+                "database",
+                "api",
+                "testing",
+                "security",
+                "performance",
+            )
         return possibleCategories.shuffled(random).take(count).sorted()
     }
-    
+
     /**
      * Generate a random fragment
      */
-    fun randomFragment(): Fragment {
-        return FragmentFactory.Builder()
+    fun randomFragment(): Fragment =
+        FragmentFactory
+            .Builder()
             .title("Random Fragment ${randomString(4)}")
             .slug("random-fragment-${randomString(6)}")
             .date(randomDate())
@@ -121,34 +179,28 @@ class RandomDataGenerator(private val random: Random = Random.Default) {
             .categories(randomCategories())
             .tags(randomTags())
             .build()
-    }
-    
+
     /**
      * Generate a random published fragment
      */
-    fun randomPublishedFragment(): Fragment {
-        return randomFragment().copy(status = FragmentStatus.PUBLISHED, visible = true)
-    }
-    
+    fun randomPublishedFragment(): Fragment = randomFragment().copy(status = FragmentStatus.PUBLISHED, visible = true)
+
     /**
      * Generate a random draft fragment
      */
-    fun randomDraftFragment(): Fragment {
-        return randomFragment().copy(status = FragmentStatus.DRAFT, visible = false)
-    }
-    
+    fun randomDraftFragment(): Fragment = randomFragment().copy(status = FragmentStatus.DRAFT, visible = false)
+
     /**
      * Generate multiple random fragments
      */
-    fun randomFragments(count: Int): List<Fragment> {
-        return (1..count).map { randomPublishedFragment() }
-    }
-    
+    fun randomFragments(count: Int): List<Fragment> = (1..count).map { randomPublishedFragment() }
+
     /**
      * Generate a random author
      */
-    fun randomAuthor(): Author {
-        return AuthorFactory.Builder()
+    fun randomAuthor(): Author =
+        AuthorFactory
+            .Builder()
             .id("random-author-${randomString(6)}")
             .name("Random Author ${randomString(6)}")
             .slug("random-author-${randomString(6)}")
@@ -158,28 +210,27 @@ class RandomDataGenerator(private val random: Random = Random.Default) {
             .location("Random City, ST")
             .company("Random Company Inc.")
             .role("Random Role")
-            .socialLinks(mapOf(
-                "twitter" to "@${randomString(8)}",
-                "github" to "${randomString(8)}",
-                "linkedin" to "${randomString(8)}"
-            ))
-            .joinedDate(randomDate())
+            .socialLinks(
+                mapOf(
+                    "twitter" to "@${randomString(8)}",
+                    "github" to "${randomString(8)}",
+                    "linkedin" to "${randomString(8)}",
+                ),
+            ).joinedDate(randomDate())
             .build()
-    }
-    
+
     /**
      * Generate multiple random authors
      */
-    fun randomAuthors(count: Int): List<Author> {
-        return (1..count).map { randomAuthor() }
-    }
-    
+    fun randomAuthors(count: Int): List<Author> = (1..count).map { randomAuthor() }
+
     /**
      * Generate a random content series
      */
     fun randomContentSeries(): ContentSeries {
         val statuses = listOf(SeriesStatus.ACTIVE, SeriesStatus.INACTIVE)
-        return ContentSeriesFactory.Builder()
+        return ContentSeriesFactory
+            .Builder()
             .title("Random Series ${randomString(4)}")
             .slug("random-series-${randomString(6)}")
             .description(randomParagraph(1))
@@ -188,75 +239,101 @@ class RandomDataGenerator(private val random: Random = Random.Default) {
             .updatedAt(randomDate().plusDays(random.nextInt(30).toLong()))
             .build()
     }
-    
+
     /**
      * Generate multiple random content series
      */
-    fun randomContentSeriesList(count: Int): List<ContentSeries> {
-        return (1..count).map { randomContentSeries() }
-    }
-    
+    fun randomContentSeriesList(count: Int): List<ContentSeries> = (1..count).map { randomContentSeries() }
+
     /**
      * Generate a random UUID
      */
-    fun randomUUID(): String {
-        return UUID.randomUUID().toString()
-    }
-    
+    fun randomUUID(): String = UUID.randomUUID().toString()
+
     /**
      * Generate a random number within range
      */
-    fun randomInt(range: IntRange): Int {
-        return random.nextInt(range.first, range.last + 1)
-    }
-    
+    fun randomInt(range: IntRange): Int = random.nextInt(range.first, range.last + 1)
+
     /**
      * Generate a random boolean with probability
      */
-    fun randomBoolean(probability: Double = 0.5): Boolean {
-        return random.nextDouble() < probability
-    }
-    
+    fun randomBoolean(probability: Double = 0.5): Boolean = random.nextDouble() < probability
+
     /**
      * Generate a random element from a list
      */
-    fun <T> randomElement(list: List<T>): T {
-        return list[random.nextInt(list.size)]
-    }
-    
+    fun <T> randomElement(list: List<T>): T = list[random.nextInt(list.size)]
+
     /**
      * Generate a random sublist
      */
-    fun <T> randomSublist(list: List<T>, size: Int): List<T> {
-        return list.shuffled(random).take(size)
-    }
-    
+    fun <T> randomSublist(
+        list: List<T>,
+        size: Int,
+    ): List<T> = list.shuffled(random).take(size)
+
     /**
      * Generate Lorem Ipsum text
      */
     fun loremIpsum(words: Int = 50): String {
-        val loremWords = listOf(
-            "lorem", "ipsum", "dolor", "sit", "amet", "consectetur", "adipiscing", "elit", "sed",
-            "do", "eiusmod", "tempor", "incididunt", "ut", "labore", "et", "dolore", "magna", "aliqua",
-            "enim", "ad", "minim", "veniam", "quis", "nostrud", "exercitation", "ullamco", "laboris", "nisi",
-            "ut", "aliquip", "ex", "ea", "commodo", "consequat", "duis", "aute", "irure", "dolor"
-        )
+        val loremWords =
+            listOf(
+                "lorem",
+                "ipsum",
+                "dolor",
+                "sit",
+                "amet",
+                "consectetur",
+                "adipiscing",
+                "elit",
+                "sed",
+                "do",
+                "eiusmod",
+                "tempor",
+                "incididunt",
+                "ut",
+                "labore",
+                "et",
+                "dolore",
+                "magna",
+                "aliqua",
+                "enim",
+                "ad",
+                "minim",
+                "veniam",
+                "quis",
+                "nostrud",
+                "exercitation",
+                "ullamco",
+                "laboris",
+                "nisi",
+                "ut",
+                "aliquip",
+                "ex",
+                "ea",
+                "commodo",
+                "consequat",
+                "duis",
+                "aute",
+                "irure",
+                "dolor",
+            )
         return (1..words)
             .map { loremWords[random.nextInt(loremWords.size)] }
             .joinToString(" ")
             .replaceFirstChar { it.uppercase() } + "."
     }
-    
+
     /**
      * Generate HTML content
      */
-    fun randomHtmlContent(): String {
-        return "<div class=\"content\">" +
-                "<h1>${randomWord()}</h1>" +
-                "<p>${randomParagraph()}</p>" +
-                "<h2>${randomWord()}</h2>" +
-                "<p>${randomParagraph()}</p>" +
-                "<p>${randomParagraph()}</p>" +
-                "</div>"
-    }
+    fun randomHtmlContent(): String =
+        "<div class=\"content\">" +
+            "<h1>${randomWord()}</h1>" +
+            "<p>${randomParagraph()}</p>" +
+            "<h2>${randomWord()}</h2>" +
+            "<p>${randomParagraph()}</p>" +
+            "<p>${randomParagraph()}</p>" +
+            "</div>"
 }

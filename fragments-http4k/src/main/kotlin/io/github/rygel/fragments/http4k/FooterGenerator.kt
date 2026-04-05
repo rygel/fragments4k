@@ -3,15 +3,18 @@ package io.github.rygel.fragments.http4k
 object FooterGenerator {
     fun generate(
         copyrightText: String = "©",
-        year: Int = java.time.Year.now().value,
+        year: Int =
+            java.time.Year
+                .now()
+                .value,
         poweredByName: String = "Fragments4k",
         poweredByUrl: String = "https://github.com/rygel/fragments4k",
         githubUrl: String = "",
         discordUrl: String = "",
         twitterUrl: String = "",
-        substackUrl: String = ""
-    ): FooterConfig {
-        return FooterConfig(
+        substackUrl: String = "",
+    ): FooterConfig =
+        FooterConfig(
             copyrightText = copyrightText,
             year = year,
             poweredByName = poweredByName,
@@ -19,7 +22,6 @@ object FooterGenerator {
             githubUrl = githubUrl,
             discordUrl = discordUrl,
             twitterUrl = twitterUrl,
-            substackUrl = substackUrl
+            substackUrl = substackUrl,
         )
-    }
 }

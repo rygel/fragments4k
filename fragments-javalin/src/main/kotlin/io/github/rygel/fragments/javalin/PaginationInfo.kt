@@ -5,5 +5,5 @@ data class PaginationInfo(
     val totalPages: Int,
     val hasPrevious: Boolean,
     val hasNext: Boolean,
-    val text: String
+    val text: String,
 )
