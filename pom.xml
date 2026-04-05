@@ -11,6 +11,21 @@
 
     <name>Fragments Parent</name>
     <description>A framework-agnostic Markdown-based blog/static site library with adapters for multiple JVM web frameworks</description>
+    <url>https://github.com/rygel/fragments4k</url>
+
+    <developers>
+        <developer>
+            <name>Alexander Brandt</name>
+            <email>github@a13x.de</email>
+            <url>https://github.com/rygel</url>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:https://github.com/rygel/fragments4k.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/rygel/fragments4k.git</developerConnection>
+        <url>https://github.com/rygel/fragments4k</url>
+    </scm>
 
     <licenses>
         <license>
@@ -22,7 +37,7 @@
 
     <properties>
         <java.version>21</java.version>
-        <kotlin.version>2.3.0</kotlin.version>
+        <kotlin.version>2.2.0</kotlin.version>
         <kotlinx-coroutines.version>1.10.2</kotlinx-coroutines.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
@@ -34,6 +49,7 @@
         <logback.version>1.5.32</logback.version>
         <jte.version>3.2.3</jte.version>
         <lucene.version>10.4.0</lucene.version>
+        <caffeine.version>3.2.3</caffeine.version>
 
         <junit.version>6.0.3</junit.version>
         <mockk.version>1.14.9</mockk.version>
@@ -98,7 +114,32 @@
 
             <dependency>
                 <groupId>com.vladsch.flexmark</groupId>
-                <artifactId>flexmark-all</artifactId>
+                <artifactId>flexmark</artifactId>
+                <version>${flexmark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.vladsch.flexmark</groupId>
+                <artifactId>flexmark-ext-autolink</artifactId>
+                <version>${flexmark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.vladsch.flexmark</groupId>
+                <artifactId>flexmark-ext-footnotes</artifactId>
+                <version>${flexmark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.vladsch.flexmark</groupId>
+                <artifactId>flexmark-ext-gfm-strikethrough</artifactId>
+                <version>${flexmark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.vladsch.flexmark</groupId>
+                <artifactId>flexmark-ext-gfm-tasklist</artifactId>
+                <version>${flexmark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.vladsch.flexmark</groupId>
+                <artifactId>flexmark-ext-tables</artifactId>
                 <version>${flexmark.version}</version>
             </dependency>
             <dependency>
@@ -146,6 +187,12 @@
                 <groupId>org.apache.lucene</groupId>
                 <artifactId>lucene-join</artifactId>
                 <version>${lucene.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.github.ben-manes.caffeine</groupId>
+                <artifactId>caffeine</artifactId>
+                <version>${caffeine.version}</version>
             </dependency>
 
             <dependency>
@@ -405,7 +452,58 @@
                         </execution>
                     </executions>
                 </plugin>
-                
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-source-plugin</artifactId>
+                    <version>3.3.1</version>
+                    <executions>
+                        <execution>
+                            <id>attach-sources</id>
+                            <goals>
+                                <goal>jar-no-fork</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.jetbrains.dokka</groupId>
+                    <artifactId>dokka-maven-plugin</artifactId>
+                    <version>2.0.0</version>
+                    <executions>
+                        <execution>
+                            <id>attach-javadoc</id>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>javadocJar</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-gpg-plugin</artifactId>
+                    <version>3.2.7</version>
+                    <executions>
+                        <execution>
+                            <id>sign-artifacts</id>
+                            <phase>verify</phase>
+                            <goals>
+                                <goal>sign</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.sonatype.central</groupId>
+                    <artifactId>central-publishing-maven-plugin</artifactId>
+                    <version>0.7.0</version>
+                    <extensions>true</extensions>
+                    <configuration>
+                        <publishingServerId>central</publishingServerId>
+                        <autoPublish>false</autoPublish>
+                        <waitUntil>validated</waitUntil>
+                    </configuration>
+                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -432,6 +530,29 @@
                         <configuration>
                             <excludedGroups/>
                         </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.jetbrains.dokka</groupId>
+                        <artifactId>dokka-maven-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
                     </plugin>
                 </plugins>
             </build>
