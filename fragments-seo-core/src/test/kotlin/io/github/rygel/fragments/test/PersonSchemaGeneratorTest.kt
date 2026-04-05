@@ -2,18 +2,19 @@ package io.github.rygel.fragments.test
 
 import io.github.rygel.fragments.Author
 import io.github.rygel.fragments.PersonSchemaGenerator
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.time.LocalDateTime
 
 class PersonSchemaGeneratorTest {
-
     @Test
     fun testGenerateMinimalPerson() {
-        val jsonLd = PersonSchemaGenerator.generate(
-            name = "John Doe",
-            siteUrl = "https://example.com"
-        )
+        val jsonLd =
+            PersonSchemaGenerator.generate(
+                name = "John Doe",
+                siteUrl = "https://example.com",
+            )
 
         assertTrue(jsonLd.contains(""""@context": "https://schema.org""""))
         assertTrue(jsonLd.contains(""""@type": "Person""""))
@@ -27,19 +28,21 @@ class PersonSchemaGeneratorTest {
 
     @Test
     fun testGenerateFullPerson() {
-        val jsonLd = PersonSchemaGenerator.generate(
-            name = "Alexander Brandt",
-            siteUrl = "https://example.com",
-            authorSlug = "alexander-brandt",
-            bio = "Software developer and writer",
-            image = "/images/avatar.jpg",
-            url = "https://alexanderbrandt.dev",
-            socialLinks = listOf(
-                "https://github.com/rygel",
-                "https://x.com/username",
-                "https://linkedin.com/in/alexanderbrandt"
+        val jsonLd =
+            PersonSchemaGenerator.generate(
+                name = "Alexander Brandt",
+                siteUrl = "https://example.com",
+                authorSlug = "alexander-brandt",
+                bio = "Software developer and writer",
+                image = "/images/avatar.jpg",
+                url = "https://alexanderbrandt.dev",
+                socialLinks =
+                    listOf(
+                        "https://github.com/rygel",
+                        "https://x.com/username",
+                        "https://linkedin.com/in/alexanderbrandt",
+                    ),
             )
-        )
 
         assertTrue(jsonLd.contains(""""@id": "https://example.com/blog/author/alexander-brandt#person""""))
         assertTrue(jsonLd.contains(""""name": "Alexander Brandt""""))
@@ -54,45 +57,49 @@ class PersonSchemaGeneratorTest {
 
     @Test
     fun testGenerateWithAbsoluteImageUrl() {
-        val jsonLd = PersonSchemaGenerator.generate(
-            name = "Jane Doe",
-            siteUrl = "https://example.com",
-            image = "https://cdn.example.com/avatar.jpg"
-        )
+        val jsonLd =
+            PersonSchemaGenerator.generate(
+                name = "Jane Doe",
+                siteUrl = "https://example.com",
+                image = "https://cdn.example.com/avatar.jpg",
+            )
 
         assertTrue(jsonLd.contains(""""image": "https://cdn.example.com/avatar.jpg""""))
     }
 
     @Test
     fun testGenerateWithRelativeImageUrl() {
-        val jsonLd = PersonSchemaGenerator.generate(
-            name = "Jane Doe",
-            siteUrl = "https://example.com",
-            image = "/static/avatar.jpg"
-        )
+        val jsonLd =
+            PersonSchemaGenerator.generate(
+                name = "Jane Doe",
+                siteUrl = "https://example.com",
+                image = "/static/avatar.jpg",
+            )
 
         assertTrue(jsonLd.contains(""""image": "https://example.com/static/avatar.jpg""""))
     }
 
     @Test
     fun testGenerateDefaultUrlFromSlug() {
-        val jsonLd = PersonSchemaGenerator.generate(
-            name = "Jane Doe",
-            siteUrl = "https://example.com",
-            authorSlug = "jane-doe"
-        )
+        val jsonLd =
+            PersonSchemaGenerator.generate(
+                name = "Jane Doe",
+                siteUrl = "https://example.com",
+                authorSlug = "jane-doe",
+            )
 
         assertTrue(jsonLd.contains(""""url": "https://example.com/blog/author/jane-doe""""))
     }
 
     @Test
     fun testGenerateExplicitUrlOverridesDefault() {
-        val jsonLd = PersonSchemaGenerator.generate(
-            name = "Jane Doe",
-            siteUrl = "https://example.com",
-            authorSlug = "jane-doe",
-            url = "https://janedoe.dev"
-        )
+        val jsonLd =
+            PersonSchemaGenerator.generate(
+                name = "Jane Doe",
+                siteUrl = "https://example.com",
+                authorSlug = "jane-doe",
+                url = "https://janedoe.dev",
+            )
 
         assertTrue(jsonLd.contains(""""url": "https://janedoe.dev""""))
         // @id still uses the slug-based URL for identity, but url is explicit
@@ -101,18 +108,19 @@ class PersonSchemaGeneratorTest {
 
     @Test
     fun testFromAuthor() {
-        val author = Author(
-            id = "alex",
-            name = "Alexander Brandt",
-            slug = "alexander-brandt",
-            bio = "Kotlin developer",
-            avatar = "/images/alex.jpg",
-            website = "https://alexanderbrandt.dev",
-            twitter = "alexbrandt",
-            github = "rygel",
-            linkedin = "alexanderbrandt",
-            joinedDate = LocalDateTime.of(2024, 1, 1, 0, 0)
-        )
+        val author =
+            Author(
+                id = "alex",
+                name = "Alexander Brandt",
+                slug = "alexander-brandt",
+                bio = "Kotlin developer",
+                avatar = "/images/alex.jpg",
+                website = "https://alexanderbrandt.dev",
+                twitter = "alexbrandt",
+                github = "rygel",
+                linkedin = "alexanderbrandt",
+                joinedDate = LocalDateTime.of(2024, 1, 1, 0, 0),
+            )
 
         val jsonLd = PersonSchemaGenerator.fromAuthor(author, "https://example.com")
 
@@ -129,12 +137,13 @@ class PersonSchemaGeneratorTest {
 
     @Test
     fun testFromAuthorMinimal() {
-        val author = Author(
-            id = "minimal",
-            name = "Minimal Author",
-            slug = "minimal-author",
-            joinedDate = LocalDateTime.of(2024, 1, 1, 0, 0)
-        )
+        val author =
+            Author(
+                id = "minimal",
+                name = "Minimal Author",
+                slug = "minimal-author",
+                joinedDate = LocalDateTime.of(2024, 1, 1, 0, 0),
+            )
 
         val jsonLd = PersonSchemaGenerator.fromAuthor(author, "https://example.com")
 
@@ -147,11 +156,12 @@ class PersonSchemaGeneratorTest {
 
     @Test
     fun testJsonEscapingInPersonSchema() {
-        val jsonLd = PersonSchemaGenerator.generate(
-            name = "John \"JD\" Doe",
-            siteUrl = "https://example.com",
-            bio = "Writes about\nthings & stuff"
-        )
+        val jsonLd =
+            PersonSchemaGenerator.generate(
+                name = "John \"JD\" Doe",
+                siteUrl = "https://example.com",
+                bio = "Writes about\nthings & stuff",
+            )
 
         // Quotes in name should be escaped
         assertTrue(jsonLd.contains("""John \"JD\" Doe"""))

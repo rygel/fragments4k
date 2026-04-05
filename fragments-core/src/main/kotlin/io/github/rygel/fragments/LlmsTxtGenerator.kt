@@ -9,7 +9,6 @@ package io.github.rygel.fragments
  * plain-text preview (max 160 characters).
  */
 object LlmsTxtGenerator {
-
     /**
      * Template values that identify a fragment as a blog post.
      * Kept in sync with `BlogEngine.BLOG_TEMPLATES`.
@@ -29,19 +28,22 @@ object LlmsTxtGenerator {
         siteTitle: String,
         siteDescription: String,
         siteUrl: String,
-        repositories: List<FragmentRepository>
+        repositories: List<FragmentRepository>,
     ): String {
-        val allFragments = repositories
-            .flatMap { it.getAllVisible() }
-            .distinctBy { it.slug }
+        val allFragments =
+            repositories
+                .flatMap { it.getAllVisible() }
+                .distinctBy { it.slug }
 
-        val blogPosts = allFragments
-            .filter { it.template in BLOG_TEMPLATES }
-            .sortedByDescending { it.date }
+        val blogPosts =
+            allFragments
+                .filter { it.template in BLOG_TEMPLATES }
+                .sortedByDescending { it.date }
 
-        val pages = allFragments
-            .filter { it.template !in BLOG_TEMPLATES }
-            .sortedBy { it.title }
+        val pages =
+            allFragments
+                .filter { it.template !in BLOG_TEMPLATES }
+                .sortedBy { it.title }
 
         return buildString {
             appendLine("# $siteTitle")

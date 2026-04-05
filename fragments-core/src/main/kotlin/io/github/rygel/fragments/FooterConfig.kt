@@ -3,7 +3,7 @@ package io.github.rygel.fragments
 data class FooterConfig(
     val copyrightText: String,
     val year: Int,
-    val poweredBy: PoweredByLink?
+    val poweredBy: PoweredByLink?,
 ) {
     val fullCopyrightText: String
         get() = "$copyrightText $year. $poweredByText"
@@ -15,7 +15,7 @@ data class FooterConfig(
 data class PoweredByLink(
     val name: String,
     val url: String,
-    val linkText: String? = null
+    val linkText: String? = null,
 ) {
     val displayText: String
         get() = linkText ?: name
@@ -24,21 +24,26 @@ data class PoweredByLink(
 object FooterGenerator {
     fun generate(
         copyrightText: String = "©",
-        year: Int = java.time.Year.now().value,
+        year: Int =
+            java.time.Year
+                .now()
+                .value,
         poweredByName: String = "Fragments4k",
         poweredByUrl: String = "https://github.com/rygel/fragments4k",
-        poweredByLinkText: String? = null
-    ): FooterConfig {
-        return FooterConfig(
+        poweredByLinkText: String? = null,
+    ): FooterConfig =
+        FooterConfig(
             copyrightText = copyrightText,
             year = year,
-            poweredBy = if (poweredByUrl.isNotEmpty()) {
-                PoweredByLink(
-                    name = poweredByName,
-                    url = poweredByUrl,
-                    linkText = poweredByLinkText
-                )
-            } else null
+            poweredBy =
+                if (poweredByUrl.isNotEmpty()) {
+                    PoweredByLink(
+                        name = poweredByName,
+                        url = poweredByUrl,
+                        linkText = poweredByLinkText,
+                    )
+                } else {
+                    null
+                },
         )
-    }
 }

@@ -1,7 +1,5 @@
 package io.github.rygel.fragments
 
-import kotlin.math.min
-
 /**
  * Generates content relationships between fragments.
  *
@@ -11,13 +9,13 @@ import kotlin.math.min
  * where k is the size of the candidate set — not O(n) over the entire corpus.
  */
 object ContentRelationshipGenerator {
-
-    private val REFERENCE_PATTERNS = listOf(
-        Regex("""\{\{fragment:([^}]+)\}\}"""),
-        Regex("""\{%\s*fragment\s+([^\s%]+)\s*%\}"""),
-        Regex("""\[fragment:([^\]]+)\]"""),
-        Regex("""<fragment\s+id=["']([^"']+)["']>"""),
-    )
+    private val REFERENCE_PATTERNS =
+        listOf(
+            Regex("""\{\{fragment:([^}]+)\}\}"""),
+            Regex("""\{%\s*fragment\s+([^\s%]+)\s*%\}"""),
+            Regex("""\[fragment:([^\]]+)\]"""),
+            Regex("""<fragment\s+id=["']([^"']+)["']>"""),
+        )
 
     /**
      * Generates all relationships for a given fragment.
@@ -28,28 +26,31 @@ object ContentRelationshipGenerator {
     fun generateRelationships(
         currentFragment: Fragment,
         allFragments: List<Fragment>,
-        config: RelationshipConfig = RelationshipConfig()
+        config: RelationshipConfig = RelationshipConfig(),
     ): ContentRelationships {
-        val publishedFragments = allFragments
-            .filter { it.status == FragmentStatus.PUBLISHED }
-            .filter { it.slug != currentFragment.slug }
+        val publishedFragments =
+            allFragments
+                .filter { it.status == FragmentStatus.PUBLISHED }
+                .filter { it.slug != currentFragment.slug }
 
         // Build indexes once — amortises cost across all relationship lookups below.
-        val tagIndex: Map<String, List<Fragment>> = publishedFragments
-            .flatMap { fragment -> fragment.tags.map { tag -> tag to fragment } }
-            .groupBy({ it.first }, { it.second })
+        val tagIndex: Map<String, List<Fragment>> =
+            publishedFragments
+                .flatMap { fragment -> fragment.tags.map { tag -> tag to fragment } }
+                .groupBy({ it.first }, { it.second })
 
-        val categoryIndex: Map<String, List<Fragment>> = publishedFragments
-            .flatMap { fragment -> fragment.categories.map { cat -> cat to fragment } }
-            .groupBy({ it.first }, { it.second })
+        val categoryIndex: Map<String, List<Fragment>> =
+            publishedFragments
+                .flatMap { fragment -> fragment.categories.map { cat -> cat to fragment } }
+                .groupBy({ it.first }, { it.second })
 
         val slugIndex: Map<String, Fragment> = publishedFragments.associateBy { it.slug }
 
-        val translationIndex: Map<String, List<Fragment>> = publishedFragments
-            .mapNotNull { fragment ->
-                (fragment.frontMatter["translation_of"] as? String)?.let { key -> key to fragment }
-            }
-            .groupBy({ it.first }, { it.second })
+        val translationIndex: Map<String, List<Fragment>> =
+            publishedFragments
+                .mapNotNull { fragment ->
+                    (fragment.frontMatter["translation_of"] as? String)?.let { key -> key to fragment }
+                }.groupBy({ it.first }, { it.second })
 
         val previous = findPrevious(currentFragment, publishedFragments)
         val next = findNext(currentFragment, publishedFragments)
@@ -64,7 +65,7 @@ object ContentRelationshipGenerator {
             relatedByTag = relatedByTag,
             relatedByCategory = relatedByCategory,
             relatedByContent = relatedByContent,
-            translations = translations
+            translations = translations,
         )
     }
 
@@ -73,7 +74,7 @@ object ContentRelationshipGenerator {
      */
     private fun findPrevious(
         currentFragment: Fragment,
-        fragments: List<Fragment>
+        fragments: List<Fragment>,
     ): Fragment? {
         val date = currentFragment.date ?: return null
         return fragments
@@ -87,7 +88,7 @@ object ContentRelationshipGenerator {
      */
     private fun findNext(
         currentFragment: Fragment,
-        fragments: List<Fragment>
+        fragments: List<Fragment>,
     ): Fragment? {
         val date = currentFragment.date ?: return null
         return fragments
@@ -105,7 +106,7 @@ object ContentRelationshipGenerator {
     private fun findRelatedByTag(
         currentFragment: Fragment,
         tagIndex: Map<String, List<Fragment>>,
-        config: RelationshipConfig
+        config: RelationshipConfig,
     ): List<Fragment> {
         if (currentFragment.tags.isEmpty()) return emptyList()
 
@@ -138,7 +139,7 @@ object ContentRelationshipGenerator {
     private fun findRelatedByCategory(
         currentFragment: Fragment,
         categoryIndex: Map<String, List<Fragment>>,
-        config: RelationshipConfig
+        config: RelationshipConfig,
     ): List<Fragment> {
         if (currentFragment.categories.isEmpty()) return emptyList()
 
@@ -169,7 +170,7 @@ object ContentRelationshipGenerator {
     private fun findRelatedByContent(
         currentFragment: Fragment,
         slugIndex: Map<String, Fragment>,
-        config: RelationshipConfig
+        config: RelationshipConfig,
     ): List<Fragment> {
         if (currentFragment.contentTextOnly.isBlank()) return emptyList()
 
@@ -188,10 +189,11 @@ object ContentRelationshipGenerator {
     private fun findTranslations(
         currentFragment: Fragment,
         translationIndex: Map<String, List<Fragment>>,
-        config: RelationshipConfig
+        config: RelationshipConfig,
     ): Map<String, Fragment> {
-        val translationKey = currentFragment.frontMatter["translation_of"] as? String
-            ?: return emptyMap()
+        val translationKey =
+            currentFragment.frontMatter["translation_of"] as? String
+                ?: return emptyMap()
 
         return translationIndex[translationKey]
             .orEmpty()
@@ -217,7 +219,10 @@ object ContentRelationshipGenerator {
     /**
      * Calculates similarity score based on shared tags
      */
-    private fun calculateTagSimilarity(fragment1: Fragment, fragment2: Fragment): Float {
+    private fun calculateTagSimilarity(
+        fragment1: Fragment,
+        fragment2: Fragment,
+    ): Float {
         if (fragment1.tags.isEmpty() || fragment2.tags.isEmpty()) return 0f
 
         val intersection = fragment1.tags.intersect(fragment2.tags.toSet()).size
@@ -229,7 +234,10 @@ object ContentRelationshipGenerator {
     /**
      * Calculates similarity score based on shared categories
      */
-    private fun calculateCategorySimilarity(fragment1: Fragment, fragment2: Fragment): Float {
+    private fun calculateCategorySimilarity(
+        fragment1: Fragment,
+        fragment2: Fragment,
+    ): Float {
         if (fragment1.categories.isEmpty() || fragment2.categories.isEmpty()) return 0f
 
         val intersection = fragment1.categories.intersect(fragment2.categories.toSet()).size
@@ -244,10 +252,10 @@ object ContentRelationshipGenerator {
      * (`exclude: slug-a`). Returns an empty set when the field is absent or has an
      * unrecognised type so that no fragments are silently filtered out.
      */
-    private fun parseExcludedSlugs(value: Any?): Set<String> = when (value) {
-        is List<*> -> value.mapNotNull { it?.toString() }.toSet()
-        is String -> setOf(value)
-        else -> emptySet()
-    }
-
+    private fun parseExcludedSlugs(value: Any?): Set<String> =
+        when (value) {
+            is List<*> -> value.mapNotNull { it?.toString() }.toSet()
+            is String -> setOf(value)
+            else -> emptySet()
+        }
 }

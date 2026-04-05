@@ -5,25 +5,30 @@ import io.github.rygel.fragments.FragmentRepository
 import java.time.format.DateTimeFormatter
 
 class RssGenerator(
-    private val repository: FragmentRepository
+    private val repository: FragmentRepository,
 ) {
-
     suspend fun generateFeed(
         siteTitle: String = "My Blog",
         siteDescription: String = "My Awesome Blog",
         siteUrl: String = "http://localhost:8080",
-        feedUrl: String = "http://localhost:8080/rss.xml"
+        feedUrl: String = "http://localhost:8080/rss.xml",
     ): String {
-        val fragments = repository.getAllVisible()
-            .sortedByDescending { it.date }
-            .take(20)
+        val fragments =
+            repository
+                .getAllVisible()
+                .sortedByDescending { it.date }
+                .take(20)
 
-        val lastBuildDate = fragments.firstOrNull()?.date?.format(formatter)
-            ?: java.time.LocalDateTime.now().format(formatter)
+        val lastBuildDate =
+            fragments.firstOrNull()?.date?.format(formatter)
+                ?: java.time.LocalDateTime
+                    .now()
+                    .format(formatter)
 
-        val items = fragments.joinToString(separator = "\n") { fragment ->
-            renderItem(fragment, siteUrl)
-        }
+        val items =
+            fragments.joinToString(separator = "\n") { fragment ->
+                renderItem(fragment, siteUrl)
+            }
 
         return buildString {
             appendLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
@@ -33,14 +38,21 @@ class RssGenerator(
             appendLine("    <description>${escapeXml(siteDescription)}</description>")
             appendLine("    <link>${escapeXml(siteUrl)}</link>")
             appendLine("    <lastBuildDate>$lastBuildDate</lastBuildDate>")
-            appendLine("    <atom:link href=\"${escapeXml(feedUrl)}\" rel=\"self\" type=\"application/rss+xml\" xmlns:atom=\"http://www.w3.org/2005/Atom\" />")
+            appendLine(
+                "    <atom:link href=\"${escapeXml(
+                    feedUrl,
+                )}\" rel=\"self\" type=\"application/rss+xml\" xmlns:atom=\"http://www.w3.org/2005/Atom\" />",
+            )
             appendLine(items)
             appendLine("  </channel>")
             appendLine("</rss>")
         }
     }
 
-    private fun renderItem(fragment: Fragment, siteUrl: String): String {
+    private fun renderItem(
+        fragment: Fragment,
+        siteUrl: String,
+    ): String {
         val pubDate = fragment.date?.format(formatter) ?: ""
         val fullUrl = "$siteUrl${fragment.url}"
 
@@ -64,14 +76,13 @@ class RssGenerator(
         }
     }
 
-    private fun escapeXml(input: String): String {
-        return input
+    private fun escapeXml(input: String): String =
+        input
             .replace("&", "&amp;")
             .replace("<", "&lt;")
             .replace(">", "&gt;")
             .replace("\"", "&quot;")
             .replace("'", "&apos;")
-    }
 
     companion object {
         private val formatter = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss")

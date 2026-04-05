@@ -6,7 +6,10 @@ package io.github.rygel.fragments
  * @property name Human-readable label (e.g. "Home", "Blog", "Hello World").
  * @property url Absolute URL for this breadcrumb level.
  */
-data class Breadcrumb(val name: String, val url: String)
+data class Breadcrumb(
+    val name: String,
+    val url: String,
+)
 
 /**
  * Generates [BreadcrumbList](https://schema.org/BreadcrumbList) JSON-LD
@@ -16,7 +19,6 @@ data class Breadcrumb(val name: String, val url: String)
  * so callers can embed it however they see fit.
  */
 object BreadcrumbGenerator {
-
     /**
      * Builds a BreadcrumbList JSON-LD string from an explicit list of crumbs.
      *
@@ -25,17 +27,21 @@ object BreadcrumbGenerator {
      * @param crumbs Ordered breadcrumb trail from root to leaf.
      * @return JSON-LD string representing the BreadcrumbList.
      */
-    fun generate(siteUrl: String, crumbs: List<Breadcrumb>): String {
-        val items = crumbs.mapIndexed { index, crumb ->
-            buildString {
-                append("{")
-                append("\"@type\":\"ListItem\",")
-                append("\"position\":${index + 1},")
-                append("\"name\":\"${escapeJson(crumb.name)}\",")
-                append("\"item\":\"${escapeJson(crumb.url)}\"")
-                append("}")
+    fun generate(
+        siteUrl: String,
+        crumbs: List<Breadcrumb>,
+    ): String {
+        val items =
+            crumbs.mapIndexed { index, crumb ->
+                buildString {
+                    append("{")
+                    append("\"@type\":\"ListItem\",")
+                    append("\"position\":${index + 1},")
+                    append("\"name\":\"${escapeJson(crumb.name)}\",")
+                    append("\"item\":\"${escapeJson(crumb.url)}\"")
+                    append("}")
+                }
             }
-        }
 
         return buildString {
             append("{")
@@ -64,7 +70,10 @@ object BreadcrumbGenerator {
      * @param siteUrl Base URL of the site without a trailing slash.
      * @return JSON-LD string representing the BreadcrumbList.
      */
-    fun fromFragment(fragment: Fragment, siteUrl: String): String {
+    fun fromFragment(
+        fragment: Fragment,
+        siteUrl: String,
+    ): String {
         val normalizedSiteUrl = siteUrl.trimEnd('/')
         val path = fragment.url.trimStart('/')
         val segments = path.split("/").filter { it.isNotEmpty() }

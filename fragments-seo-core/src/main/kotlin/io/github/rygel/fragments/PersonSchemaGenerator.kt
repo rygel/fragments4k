@@ -8,7 +8,6 @@ package io.github.rygel.fragments
  * creator profiles.
  */
 object PersonSchemaGenerator {
-
     /**
      * Generates a full Person JSON-LD block.
      *
@@ -27,7 +26,7 @@ object PersonSchemaGenerator {
         bio: String? = null,
         image: String? = null,
         url: String? = null,
-        socialLinks: List<String> = emptyList()
+        socialLinks: List<String> = emptyList(),
     ): String {
         val personUrl = url ?: authorSlug?.let { "$siteUrl/blog/author/$it" }
         val personId = authorSlug?.let { "$siteUrl/blog/author/$it#person" }
@@ -66,7 +65,10 @@ object PersonSchemaGenerator {
      * @param author The author to generate structured data for.
      * @param siteUrl Base URL of the site.
      */
-    fun fromAuthor(author: Author, siteUrl: String): String {
+    fun fromAuthor(
+        author: Author,
+        siteUrl: String,
+    ): String {
         val socialUrls = author.allSocialLinks.map { it.second }
         return generate(
             name = author.name,
@@ -75,17 +77,16 @@ object PersonSchemaGenerator {
             bio = author.bio,
             image = author.avatar,
             url = author.website,
-            socialLinks = socialUrls
+            socialLinks = socialUrls,
         )
     }
 
-    private fun escapeJson(text: String): String {
-        return text
+    private fun escapeJson(text: String): String =
+        text
             .replace("\\", "\\\\")
             .replace("\"", "\\\"")
             .replace("\b", "\\b")
             .replace("\n", "\\n")
             .replace("\r", "\\r")
             .replace("\t", "\\t")
-    }
 }

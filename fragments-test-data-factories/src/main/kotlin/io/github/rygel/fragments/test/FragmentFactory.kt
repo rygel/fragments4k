@@ -9,7 +9,6 @@ import java.time.LocalDateTime
  * Factory for creating test Fragment objects
  */
 object FragmentFactory {
-    
     /**
      * Create a basic fragment with required fields
      */
@@ -21,9 +20,9 @@ object FragmentFactory {
         tags: List<String> = emptyList(),
         seriesSlug: String? = null,
         seriesPart: Int? = null,
-        seriesTitle: String? = null
-    ): Fragment {
-        return Fragment(
+        seriesTitle: String? = null,
+    ): Fragment =
+        Fragment(
             title = title,
             slug = slug,
             date = LocalDateTime.now(),
@@ -45,10 +44,9 @@ object FragmentFactory {
             seriesSlug = seriesSlug,
             seriesPart = seriesPart,
             seriesTitle = seriesTitle,
-            statusChangeHistory = emptyList()
+            statusChangeHistory = emptyList(),
         )
-    }
-    
+
     /**
      * Builder for creating fragments with custom configuration
      */
@@ -75,53 +73,53 @@ object FragmentFactory {
         private var seriesPart: Int? = null
         private var seriesTitle: String? = null
         private var statusChangeHistory: List<StatusChangeHistory> = emptyList()
-        
+
         fun title(title: String) = apply { this.title = title }
-        
+
         fun slug(slug: String) = apply { this.slug = slug }
-        
+
         fun date(date: LocalDateTime) = apply { this.date = date }
-        
+
         fun status(status: FragmentStatus) = apply { this.status = status }
-        
+
         fun publishDate(publishDate: LocalDateTime) = apply { this.publishDate = publishDate }
-        
+
         fun expiryDate(expiryDate: LocalDateTime) = apply { this.expiryDate = expiryDate }
-        
+
         fun preview(preview: String) = apply { this.preview = preview }
-        
+
         fun content(content: String) = apply { this.content = content }
-        
+
         fun frontMatter(frontMatter: Map<String, Any>) = apply { this.frontMatter = frontMatter }
-        
+
         fun visible(visible: Boolean) = apply { this.visible = visible }
-        
+
         fun template(template: String) = apply { this.template = template }
-        
+
         fun categories(categories: List<String>) = apply { this.categories = categories }
-        
+
         fun tags(tags: List<String>) = apply { this.tags = tags }
-        
+
         fun order(order: Int) = apply { this.order = order }
-        
+
         fun language(language: String) = apply { this.language = language }
-        
+
         fun languages(languages: Map<String, String>) = apply { this.languages = languages }
-        
+
         fun author(author: String) = apply { this.author = author }
-        
+
         fun authorIds(authorIds: List<String>) = apply { this.authorIds = authorIds }
-        
+
         fun seriesSlug(seriesSlug: String) = apply { this.seriesSlug = seriesSlug }
-        
+
         fun seriesPart(seriesPart: Int?) = apply { this.seriesPart = seriesPart }
 
         fun seriesTitle(seriesTitle: String?) = apply { this.seriesTitle = seriesTitle }
 
         fun statusChangeHistory(statusChangeHistory: List<StatusChangeHistory>) = apply { this.statusChangeHistory = statusChangeHistory }
-        
-        fun build(): Fragment {
-            return Fragment(
+
+        fun build(): Fragment =
+            Fragment(
                 title = title,
                 slug = slug,
                 date = date,
@@ -143,101 +141,87 @@ object FragmentFactory {
                 seriesSlug = seriesSlug,
                 seriesPart = seriesPart,
                 seriesTitle = seriesTitle,
-                statusChangeHistory = statusChangeHistory
+                statusChangeHistory = statusChangeHistory,
             )
-        }
     }
-    
+
     /**
      * Create a published fragment
      */
-    fun published(): Fragment {
-        return Builder().status(FragmentStatus.PUBLISHED).build()
-    }
+    fun published(): Fragment = Builder().status(FragmentStatus.PUBLISHED).build()
 
     /**
      * Create a draft fragment
      */
-    fun draft(): Fragment {
-        return Builder()
+    fun draft(): Fragment =
+        Builder()
             .status(FragmentStatus.DRAFT)
             .visible(false)
             .build()
-    }
 
     /**
      * Create an archived fragment
      */
-    fun archived(): Fragment {
-        return Builder().status(FragmentStatus.ARCHIVED).build()
-    }
+    fun archived(): Fragment = Builder().status(FragmentStatus.ARCHIVED).build()
 
     /**
      * Create a scheduled fragment
      */
-    fun scheduled(publishDate: LocalDateTime): Fragment {
-        return Builder()
+    fun scheduled(publishDate: LocalDateTime): Fragment =
+        Builder()
             .status(FragmentStatus.SCHEDULED)
             .publishDate(publishDate)
             .build()
-    }
 
     /**
      * Create a fragment with expiration
      */
-    fun expiring(expiryDate: LocalDateTime): Fragment {
-        return Builder()
+    fun expiring(expiryDate: LocalDateTime): Fragment =
+        Builder()
             .status(FragmentStatus.PUBLISHED)
             .expiryDate(expiryDate)
             .build()
-    }
-    
+
     /**
      * Create a fragment with categories
      */
-    fun withCategories(vararg categories: String): Fragment {
-        return create(categories = categories.toList())
-    }
-    
+    fun withCategories(vararg categories: String): Fragment = create(categories = categories.toList())
+
     /**
      * Create a fragment with tags
      */
-    fun withTags(vararg tags: String): Fragment {
-        return create(tags = tags.toList())
-    }
-    
+    fun withTags(vararg tags: String): Fragment = create(tags = tags.toList())
+
     /**
      * Create a fragment with series
      */
     fun withSeries(
         seriesSlug: String,
         seriesPart: Int? = null,
-        seriesTitle: String? = null
-    ): Fragment {
-        return create(
+        seriesTitle: String? = null,
+    ): Fragment =
+        create(
             seriesSlug = seriesSlug,
             seriesPart = seriesPart,
-            seriesTitle = seriesTitle
+            seriesTitle = seriesTitle,
         )
-    }
-    
+
     /**
      * Create multiple fragments
      */
-    fun createMany(count: Int): List<Fragment> {
-        return (1..count).map { i ->
+    fun createMany(count: Int): List<Fragment> =
+        (1..count).map { i ->
             create(
                 title = "Test Fragment $i",
-                slug = "test-fragment-$i"
+                slug = "test-fragment-$i",
             )
         }
-    }
-    
+
     /**
      * Create a fragment with all fields populated
      */
-    fun complete(): Fragment {
-        return Builder()
+    fun complete(): Fragment =
+        Builder()
             .title("Complete Test Fragment")
             .slug("complete-test-fragment")
             .content("<p>This is a complete test fragment with all fields populated.</p>")
@@ -249,7 +233,6 @@ object FragmentFactory {
             .seriesPart(1)
             .seriesTitle("Test Series")
             .build()
-    }
 }
 
 /**
@@ -259,15 +242,14 @@ data class FragmentStatusChange(
     val status: FragmentStatus,
     val timestamp: LocalDateTime = LocalDateTime.now(),
     val changedBy: String? = null,
-    val reason: String? = null
+    val reason: String? = null,
 ) {
-    fun toStatusChangeHistory(): StatusChangeHistory {
-        return StatusChangeHistory(
+    fun toStatusChangeHistory(): StatusChangeHistory =
+        StatusChangeHistory(
             fromStatus = FragmentStatus.DRAFT,
             toStatus = status,
             changedAt = timestamp,
             changedBy = changedBy,
-            reason = reason
+            reason = reason,
         )
-    }
 }

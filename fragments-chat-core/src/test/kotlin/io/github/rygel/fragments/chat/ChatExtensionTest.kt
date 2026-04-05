@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class ChatExtensionTest {
-
     private val parser = MarkdownParser(extraExtensions = listOf(ChatExtension.create()))
 
     // -------------------------------------------------------------------------
@@ -46,15 +45,16 @@ class ChatExtensionTest {
 
     @Test
     fun `multiple turns produce multiple message divs`() {
-        val result = render(
-            """
-            ```chat
-            User: First message
-            Assistant: Second message
-            User: Third message
-            ```
-            """.trimIndent(),
-        )
+        val result =
+            render(
+                """
+                ```chat
+                User: First message
+                Assistant: Second message
+                User: Third message
+                ```
+                """.trimIndent(),
+            )
         assertEquals(3, Regex("chat-message--").findAll(result).count(), "Expected 3 chat-message divs")
     }
 
@@ -76,9 +76,10 @@ class ChatExtensionTest {
 
     @Test
     fun `custom user speaker set is respected`() {
-        val customParser = MarkdownParser(
-            extraExtensions = listOf(ChatExtension.create(userSpeakers = setOf("alice"))),
-        )
+        val customParser =
+            MarkdownParser(
+                extraExtensions = listOf(ChatExtension.create(userSpeakers = setOf("alice"))),
+            )
         val result = customParser.parse(wrap("```chat\nAlice: Hi\nBob: Hello\n```")).htmlContent
         assertTrue(result.contains("chat-message--user"), "Alice should be user")
         assertTrue(result.contains("chat-message--assistant"), "Bob should be assistant")
@@ -90,29 +91,31 @@ class ChatExtensionTest {
 
     @Test
     fun `continuation lines are appended to the current message`() {
-        val result = render(
-            """
-            ```chat
-            User: This is a long message
-            that continues on the next line
-            Assistant: Got it
-            ```
-            """.trimIndent(),
-        )
+        val result =
+            render(
+                """
+                ```chat
+                User: This is a long message
+                that continues on the next line
+                Assistant: Got it
+                ```
+                """.trimIndent(),
+            )
         assertTrue(result.contains("This is a long message that continues on the next line"))
     }
 
     @Test
     fun `blank lines inside block are ignored`() {
-        val result = render(
-            """
-            ```chat
-            User: Hello
+        val result =
+            render(
+                """
+                ```chat
+                User: Hello
 
-            Assistant: Hi
-            ```
-            """.trimIndent(),
-        )
+                Assistant: Hi
+                ```
+                """.trimIndent(),
+            )
         assertEquals(2, Regex("chat-message--").findAll(result).count())
     }
 
@@ -157,14 +160,15 @@ class ChatExtensionTest {
     @Test
     fun `line with space in speaker label is treated as continuation`() {
         // "Dr Smith: Hi" has a space — should NOT start a new turn; treated as continuation
-        val result = render(
-            """
-            ```chat
-            User: Hello
-            Dr Smith: response with space in name
-            ```
-            """.trimIndent(),
-        )
+        val result =
+            render(
+                """
+                ```chat
+                User: Hello
+                Dr Smith: response with space in name
+                ```
+                """.trimIndent(),
+            )
         // "Dr Smith: response..." is a continuation of User's message
         assertEquals(1, Regex("chat-message--").findAll(result).count())
     }

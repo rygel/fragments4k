@@ -7,7 +7,6 @@ import java.time.LocalDateTime
  * Factory for creating test Author objects
  */
 object AuthorFactory {
-    
     /**
      * Create a basic author with required fields
      */
@@ -15,9 +14,9 @@ object AuthorFactory {
         id: String = "test-author-id",
         name: String = "Test Author",
         slug: String = "test-author",
-        email: String = "test@example.com"
-    ): Author {
-        return Author(
+        email: String = "test@example.com",
+    ): Author =
+        Author(
             id = id,
             name = name,
             slug = slug,
@@ -28,10 +27,9 @@ object AuthorFactory {
             company = null,
             role = null,
             socialLinks = emptyMap(),
-            joinedDate = LocalDateTime.now()
+            joinedDate = LocalDateTime.now(),
         )
-    }
-    
+
     /**
      * Builder for creating authors with custom configuration
      */
@@ -47,7 +45,7 @@ object AuthorFactory {
         private var role: String? = null
         private var socialLinks: Map<String, String> = emptyMap()
         private var joinedDate: LocalDateTime = LocalDateTime.now()
-        
+
         fun id(id: String) = apply { this.id = id }
 
         fun name(name: String) = apply { this.name = name }
@@ -69,9 +67,9 @@ object AuthorFactory {
         fun socialLinks(socialLinks: Map<String, String>) = apply { this.socialLinks = socialLinks }
 
         fun joinedDate(joinedDate: LocalDateTime) = apply { this.joinedDate = joinedDate }
-        
-        fun build(): Author {
-            return Author(
+
+        fun build(): Author =
+            Author(
                 id = id,
                 name = name,
                 slug = slug,
@@ -82,16 +80,15 @@ object AuthorFactory {
                 company = company,
                 role = role,
                 socialLinks = socialLinks,
-                joinedDate = joinedDate
+                joinedDate = joinedDate,
             )
-        }
     }
-    
+
     /**
      * Create an author with full profile
      */
-    fun fullProfile(): Author {
-        return Builder()
+    fun fullProfile(): Author =
+        Builder()
             .id("full-test-author-id")
             .name("Full Test Author")
             .slug("full-test-author")
@@ -101,36 +98,34 @@ object AuthorFactory {
             .location("San Francisco, CA")
             .company("Test Company")
             .role("Senior Developer")
-            .socialLinks(mapOf(
-                "twitter" to "@testauthor",
-                "github" to "testauthor",
-                "linkedin" to "testauthor",
-                "website" to "https://example.com"
-            ))
-            .joinedDate(LocalDateTime.of(2024, 1, 1, 0, 0))
+            .socialLinks(
+                mapOf(
+                    "twitter" to "@testauthor",
+                    "github" to "testauthor",
+                    "linkedin" to "testauthor",
+                    "website" to "https://example.com",
+                ),
+            ).joinedDate(LocalDateTime.of(2024, 1, 1, 0, 0))
             .build()
-    }
-    
+
     /**
      * Create an author with social links
      */
-    fun withSocialLinks(vararg links: Pair<String, String>): Author {
-        return Builder()
+    fun withSocialLinks(vararg links: Pair<String, String>): Author =
+        Builder()
             .socialLinks(links.toMap())
             .build()
-    }
-    
+
     /**
      * Create multiple authors
      */
-    fun createMany(count: Int): List<Author> {
-        return (1..count).map { i ->
+    fun createMany(count: Int): List<Author> =
+        (1..count).map { i ->
             create(
                 id = "test-author-id-$i",
                 name = "Test Author $i",
                 slug = "test-author-$i",
-                email = "test$i@example.com"
+                email = "test$i@example.com",
             )
         }
-    }
 }

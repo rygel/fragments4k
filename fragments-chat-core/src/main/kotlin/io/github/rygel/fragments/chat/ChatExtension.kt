@@ -50,11 +50,14 @@ import com.vladsch.flexmark.util.misc.Extension
  */
 class ChatExtension private constructor(
     val userSpeakers: Set<String> = DEFAULT_USER_SPEAKERS,
-) : HtmlRenderer.HtmlRendererExtension, Extension {
-
+) : HtmlRenderer.HtmlRendererExtension,
+    Extension {
     override fun rendererOptions(options: MutableDataHolder) {}
 
-    override fun extend(htmlRendererBuilder: HtmlRenderer.Builder, rendererType: String) {
+    override fun extend(
+        htmlRendererBuilder: HtmlRenderer.Builder,
+        rendererType: String,
+    ) {
         htmlRendererBuilder.nodeRendererFactory(ChatNodeRenderer.Factory(userSpeakers))
     }
 

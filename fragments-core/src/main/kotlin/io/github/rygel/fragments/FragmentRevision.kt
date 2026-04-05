@@ -14,7 +14,7 @@ data class FragmentRevision(
     val changedAt: LocalDateTime = LocalDateTime.now(),
     val changeReason: String? = null,
     val previousRevisionId: String? = null,
-    val diff: String? = null
+    val diff: String? = null,
 ) {
     val isInitial: Boolean
         get() = previousRevisionId == null

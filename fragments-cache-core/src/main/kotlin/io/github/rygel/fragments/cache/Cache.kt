@@ -13,32 +13,27 @@ import java.util.concurrent.ConcurrentHashMap
 data class CacheEntry<T>(
     val value: T,
     val createdAt: Instant = Instant.now(),
-    val expiresAt: Instant? = null
+    val expiresAt: Instant? = null,
 ) {
     /**
      * Check if the cache entry has expired
      */
-    fun isExpired(): Boolean {
-        return expiresAt != null && Instant.now().isAfter(expiresAt)
-    }
-    
+    fun isExpired(): Boolean = expiresAt != null && Instant.now().isAfter(expiresAt)
+
     /**
      * Get the age of the cache entry
      */
-    fun getAge(): Duration {
-        return Duration.between(createdAt, Instant.now())
-    }
-    
+    fun getAge(): Duration = Duration.between(createdAt, Instant.now())
+
     /**
      * Get remaining time until expiration
      */
-    fun getTimeToExpiry(): Duration? {
-        return if (expiresAt != null) {
+    fun getTimeToExpiry(): Duration? =
+        if (expiresAt != null) {
             Duration.between(Instant.now(), expiresAt).takeIf { it.isPositive() }
         } else {
             null
         }
-    }
 }
 
 /**
@@ -48,15 +43,15 @@ data class CacheConfiguration(
     val ttl: Duration? = null,
     val maxSize: Long? = null,
     val enableStatistics: Boolean = true,
-    val recordStats: Boolean = true
+    val recordStats: Boolean = true,
 ) {
     companion object {
         val DEFAULT = CacheConfiguration()
-        
+
         val SHORT_LIVED = CacheConfiguration(ttl = Duration.ofMinutes(1))
-        
+
         val MEDIUM_LIVED = CacheConfiguration(ttl = Duration.ofMinutes(5))
-        
+
         val LONG_LIVED = CacheConfiguration(ttl = Duration.ofMinutes(30))
     }
 }
@@ -70,31 +65,30 @@ data class CacheStatistics(
     val loadCount: Long = 0,
     val loadFailureCount: Long = 0,
     val totalLoadTime: Long = 0, // in nanoseconds
-    val evictionCount: Long = 0
+    val evictionCount: Long = 0,
 ) {
     val requestCount: Long
         get() = hitCount + missCount
-    
+
     val hitRate: Double
         get() = if (requestCount > 0) hitCount.toDouble() / requestCount else 0.0
-    
+
     val missRate: Double
         get() = if (requestCount > 0) missCount.toDouble() / requestCount else 0.0
-    
+
     val averageLoadPenalty: Double
         get() = if (loadCount > 0) totalLoadTime.toDouble() / loadCount else 0.0
-    
+
     fun hit(): CacheStatistics = copy(hitCount = hitCount + 1)
-    
+
     fun miss(): CacheStatistics = copy(missCount = missCount + 1)
-    
-    fun load(loadTimeNanos: Long): CacheStatistics = 
-        copy(loadCount = loadCount + 1, totalLoadTime = totalLoadTime + loadTimeNanos)
-    
+
+    fun load(loadTimeNanos: Long): CacheStatistics = copy(loadCount = loadCount + 1, totalLoadTime = totalLoadTime + loadTimeNanos)
+
     fun loadFailure(): CacheStatistics = copy(loadFailureCount = loadFailureCount + 1)
-    
+
     fun eviction(): CacheStatistics = copy(evictionCount = evictionCount + 1)
-    
+
     fun reset(): CacheStatistics = CacheStatistics()
 }
 
@@ -106,57 +100,63 @@ interface Cache<K, V> {
      * Get a value from the cache, returning null if not present or expired
      */
     suspend fun get(key: K): V?
-    
+
     /**
      * Get a value from the cache, or compute it if not present
      */
-    suspend fun getOrCompute(key: K, compute: suspend () -> V): V
-    
+    suspend fun getOrCompute(
+        key: K,
+        compute: suspend () -> V,
+    ): V
+
     /**
      * Put a value into the cache
      */
-    suspend fun put(key: K, value: V)
-    
+    suspend fun put(
+        key: K,
+        value: V,
+    )
+
     /**
      * Put multiple values into the cache
      */
     suspend fun putAll(entries: Map<K, V>)
-    
+
     /**
      * Remove a value from the cache
      */
     suspend fun invalidate(key: K)
-    
+
     /**
      * Remove multiple values from the cache
      */
     suspend fun invalidateAll(keys: Collection<K>)
-    
+
     /**
      * Clear all values from the cache
      */
     suspend fun clear()
-    
+
     /**
      * Get the current cache statistics
      */
     fun getStatistics(): CacheStatistics
-    
+
     /**
      * Reset cache statistics
      */
     fun resetStatistics()
-    
+
     /**
      * Get the approximate size of the cache
      */
     fun size(): Long
-    
+
     /**
      * Get all keys currently in the cache
      */
     fun getKeys(): Set<K>
-    
+
     /**
      * Check if a key exists in the cache
      */
@@ -167,16 +167,15 @@ interface Cache<K, V> {
  * Thread-safe in-memory cache implementation
  */
 class InMemoryCache<K, V>(
-    private val configuration: CacheConfiguration = CacheConfiguration.DEFAULT
+    private val configuration: CacheConfiguration = CacheConfiguration.DEFAULT,
 ) : Cache<K, V> {
-    
     private val logger = LoggerFactory.getLogger(InMemoryCache::class.java)
     private val store = ConcurrentHashMap<K, CacheEntry<V>>()
     private val mutex = Mutex()
     private var statistics = CacheStatistics()
-    
-    override suspend fun get(key: K): V? {
-        return mutex.withLock {
+
+    override suspend fun get(key: K): V? =
+        mutex.withLock {
             val entry = store[key]
             if (entry != null && !entry.isExpired()) {
                 if (configuration.recordStats) {
@@ -196,14 +195,16 @@ class InMemoryCache<K, V>(
                 null
             }
         }
-    }
-    
-    override suspend fun getOrCompute(key: K, compute: suspend () -> V): V {
+
+    override suspend fun getOrCompute(
+        key: K,
+        compute: suspend () -> V,
+    ): V {
         val cached = get(key)
         if (cached != null) {
             return cached
         }
-        
+
         return mutex.withLock {
             val entry = store[key]
             if (entry != null && !entry.isExpired()) {
@@ -215,38 +216,42 @@ class InMemoryCache<K, V>(
                 if (entry != null && entry.isExpired()) {
                     store.remove(key)
                 }
-                
+
                 val startTime = System.nanoTime()
+                var success = false
                 try {
                     val value = compute()
                     val endTime = System.nanoTime()
-                    
+
                     putEntry(key, value)
-                    
+
                     if (configuration.recordStats) {
                         statistics = statistics.load(endTime - startTime)
                         logger.debug("Cache compute and load for key: $key in ${endTime - startTime}ns")
                     }
-                    
+
+                    success = true
                     value
-                } catch (e: Exception) {
-                    if (configuration.recordStats) {
+                } finally {
+                    if (!success && configuration.recordStats) {
                         statistics = statistics.loadFailure()
-                        logger.error("Cache load failure for key: $key", e)
+                        logger.error("Cache load failure for key: $key")
                     }
-                    throw e
                 }
             }
         }
     }
-    
-    override suspend fun put(key: K, value: V) {
+
+    override suspend fun put(
+        key: K,
+        value: V,
+    ) {
         mutex.withLock {
             putEntry(key, value)
             logger.debug("Cache put for key: $key")
         }
     }
-    
+
     override suspend fun putAll(entries: Map<K, V>) {
         mutex.withLock {
             entries.forEach { (key, value) ->
@@ -255,63 +260,67 @@ class InMemoryCache<K, V>(
             logger.debug("Cache putAll for ${entries.size} entries")
         }
     }
-    
+
     override suspend fun invalidate(key: K) {
         mutex.withLock {
             store.remove(key)
             logger.debug("Cache invalidate for key: $key")
         }
     }
-    
+
     override suspend fun invalidateAll(keys: Collection<K>) {
         mutex.withLock {
             keys.forEach { store.remove(it) }
             logger.debug("Cache invalidateAll for ${keys.size} keys")
         }
     }
-    
+
     override suspend fun clear() {
         mutex.withLock {
             store.clear()
             logger.debug("Cache cleared")
         }
     }
-    
+
     override fun getStatistics(): CacheStatistics = statistics
-    
+
     override fun resetStatistics() {
         statistics = statistics.reset()
         logger.debug("Cache statistics reset")
     }
-    
+
     override fun size(): Long = store.size.toLong()
-    
+
     override fun getKeys(): Set<K> = store.keys
-    
-    override suspend fun containsKey(key: K): Boolean {
-        return mutex.withLock {
+
+    override suspend fun containsKey(key: K): Boolean =
+        mutex.withLock {
             val entry = store[key]
             entry != null && !entry.isExpired()
         }
-    }
-    
-    private fun putEntry(key: K, value: V) {
-        val expiresAt = configuration.ttl?.let { ttl ->
-            Instant.now().plus(ttl)
-        }
-        
+
+    private fun putEntry(
+        key: K,
+        value: V,
+    ) {
+        val expiresAt =
+            configuration.ttl?.let { ttl ->
+                Instant.now().plus(ttl)
+            }
+
         store[key] = CacheEntry(value = value, expiresAt = expiresAt)
-        
+
         enforceMaxSize()
     }
-    
+
     private fun enforceMaxSize() {
         val maxSize = configuration.maxSize ?: return
-        
+
         while (store.size > maxSize) {
-            val oldestEntry = store.values
-                .minByOrNull { it.createdAt }
-            
+            val oldestEntry =
+                store.values
+                    .minByOrNull { it.createdAt }
+
             if (oldestEntry != null) {
                 val keyToRemove = store.entries.find { it.value === oldestEntry }?.key
                 if (keyToRemove != null) {

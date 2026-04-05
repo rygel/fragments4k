@@ -14,6 +14,7 @@ import org.yaml.snakeyaml.DumperOptions
 import org.yaml.snakeyaml.LoaderOptions
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.constructor.SafeConstructor
+import org.yaml.snakeyaml.error.YAMLException
 import org.yaml.snakeyaml.nodes.Tag
 import org.yaml.snakeyaml.representer.Representer
 import org.yaml.snakeyaml.resolver.Resolver
@@ -21,6 +22,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 
 /**
  * A SnakeYAML [Resolver] that removes the implicit [Tag.TIMESTAMP] resolver.
@@ -31,7 +33,12 @@ import java.time.format.DateTimeFormatter
  * by [MarkdownParser.Companion.parseDateString].
  */
 private class NoDateResolver : Resolver() {
-    override fun addImplicitResolver(tag: Tag, regexp: java.util.regex.Pattern, first: String?, limit: Int) {
+    override fun addImplicitResolver(
+        tag: Tag,
+        regexp: java.util.regex.Pattern,
+        first: String?,
+        limit: Int,
+    ) {
         if (tag != Tag.TIMESTAMP) {
             super.addImplicitResolver(tag, regexp, first, limit)
         }
@@ -62,34 +69,37 @@ private class NoDateResolver : Resolver() {
  *   default set. Pass extensions here rather than constructing a separate parser
  *   so that the YAML front matter stripping and caching logic is shared.
  */
-class MarkdownParser(extraExtensions: List<Extension> = emptyList()) {
-
+class MarkdownParser(
+    extraExtensions: List<Extension> = emptyList(),
+) {
     private val logger = LoggerFactory.getLogger(MarkdownParser::class.java)
-    private val options = MutableDataSet().apply {
-        set(
-            Parser.EXTENSIONS,
-            listOf(
-                TablesExtension.create(),
-                StrikethroughExtension.create(),
-                TaskListExtension.create(),
-                AutolinkExtension.create(),
-                FootnoteExtension.create(),
-            ) + extraExtensions,
-        )
-    }
+    private val options =
+        MutableDataSet().apply {
+            set(
+                Parser.EXTENSIONS,
+                listOf(
+                    TablesExtension.create(),
+                    StrikethroughExtension.create(),
+                    TaskListExtension.create(),
+                    AutolinkExtension.create(),
+                    FootnoteExtension.create(),
+                ) + extraExtensions,
+            )
+        }
     private val parser = Parser.builder(options).build()
     private val renderer = HtmlRenderer.builder(options).build()
-    private val yaml = run {
-        val loaderOptions = LoaderOptions()
-        val dumperOptions = DumperOptions()
-        Yaml(
-            SafeConstructor(loaderOptions),
-            Representer(dumperOptions),
-            dumperOptions,
-            loaderOptions,
-            NoDateResolver(),
-        )
-    }
+    private val yaml =
+        run {
+            val loaderOptions = LoaderOptions()
+            val dumperOptions = DumperOptions()
+            Yaml(
+                SafeConstructor(loaderOptions),
+                Representer(dumperOptions),
+                dumperOptions,
+                loaderOptions,
+                NoDateResolver(),
+            )
+        }
 
     /**
      * The result of parsing a Markdown file.
@@ -102,7 +112,7 @@ class MarkdownParser(extraExtensions: List<Extension> = emptyList()) {
     data class ParsedContent(
         val frontMatter: Map<String, Any>,
         val content: String,
-        val htmlContent: String
+        val htmlContent: String,
     )
 
     /**
@@ -124,14 +134,16 @@ class MarkdownParser(extraExtensions: List<Extension> = emptyList()) {
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun parseFrontMatter(yamlContent: String): Map<String, Any> {
-        return try {
+    private fun parseFrontMatter(yamlContent: String): Map<String, Any> =
+        try {
             yaml.load(yamlContent) as? Map<String, Any> ?: emptyMap()
-        } catch (e: Exception) {
+        } catch (e: YAMLException) {
+            logger.warn("Failed to parse YAML front matter — returning empty map. Cause: ${e.message}")
+            emptyMap()
+        } catch (e: ClassCastException) {
             logger.warn("Failed to parse YAML front matter — returning empty map. Cause: ${e.message}")
             emptyMap()
         }
-    }
 
     companion object {
         // \n? at end allows files with no trailing newline after the closing ---
@@ -139,11 +151,12 @@ class MarkdownParser(extraExtensions: List<Extension> = emptyList()) {
 
         private val logger = LoggerFactory.getLogger(MarkdownParser::class.java)
 
-        private val DATE_TIME_FORMATTERS = listOf(
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"),
-            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
-        )
-        
+        private val DATE_TIME_FORMATTERS =
+            listOf(
+                DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"),
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"),
+            )
+
         private val DATE_ONLY_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
         /**
@@ -156,58 +169,56 @@ class MarkdownParser(extraExtensions: List<Extension> = emptyList()) {
          *   and `yyyy-MM-dd` (midnight) in that order.
          *
          * Returns `null` for unrecognised types or unparseable strings.
-         */
-        /**
+         *
          * All dates stored in [io.github.rygel.fragments.Fragment] are treated as **UTC**.
          * String dates without timezone information are assumed to be UTC. `java.util.Date`
          * values (produced by SnakeYAML for `yyyy-MM-dd` YAML values) are converted via UTC.
          * Convert to a user-local timezone at display time via
          * [io.github.rygel.fragments.FragmentViewModel.dateInZone].
          */
-        fun parseDate(dateValue: Any?): LocalDateTime? {
-            return when (dateValue) {
+        fun parseDate(dateValue: Any?): LocalDateTime? =
+            when (dateValue) {
                 is java.time.LocalDateTime -> dateValue
                 is java.time.LocalDate -> {
                     logger.warn(
                         "Date '{}' has no time or timezone — treating as UTC midnight. " +
-                        "Use 'yyyy-MM-dd''T''HH:mm' to suppress this warning.",
-                        dateValue
+                            "Use 'yyyy-MM-dd''T''HH:mm' to suppress this warning.",
+                        dateValue,
                     )
                     dateValue.atStartOfDay()
                 }
                 is java.util.Date -> {
                     logger.warn(
                         "Date '{}' (java.util.Date from SnakeYAML) has no explicit timezone — " +
-                        "treating as UTC. Use 'yyyy-MM-dd''T''HH:mm' format in your front matter " +
-                        "to suppress this warning.",
-                        dateValue
+                            "treating as UTC. Use 'yyyy-MM-dd''T''HH:mm' format in your front matter " +
+                            "to suppress this warning.",
+                        dateValue,
                     )
                     dateValue.toInstant().atZone(ZoneOffset.UTC).toLocalDateTime()
                 }
                 is String -> parseDateString(dateValue)
                 else -> null
             }
-        }
-        
+
         private fun parseDateString(dateString: String?): LocalDateTime? {
             if (dateString.isNullOrBlank()) return null
-            
+
             // Try date-time formatters first
             for (formatter in DATE_TIME_FORMATTERS) {
                 try {
                     return LocalDateTime.parse(dateString, formatter)
-                } catch (e: Exception) {
+                } catch (e: DateTimeParseException) {
                     // Continue to next formatter
                 }
             }
-            
+
             // Try date-only format
             try {
                 return LocalDate.parse(dateString, DATE_ONLY_FORMATTER).atStartOfDay()
-            } catch (e: Exception) {
+            } catch (e: DateTimeParseException) {
                 // Continue
             }
-            
+
             return null
         }
     }

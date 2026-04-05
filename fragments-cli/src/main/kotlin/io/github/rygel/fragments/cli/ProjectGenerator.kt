@@ -5,18 +5,22 @@ import java.nio.file.Files
 import java.nio.file.Paths
 
 object ProjectGenerator {
-    
-    fun generate(projectDir: File, projectName: String, framework: String, packageName: String) {
+    fun generate(
+        projectDir: File,
+        projectName: String,
+        framework: String,
+        packageName: String,
+    ) {
         val packagePath = packageName.replace(".", File.separator)
         val groupId = packageName.substringBeforeLast(".", packageName)
-        
+
         createDirectory(projectDir)
-        
+
         createPomXml(projectDir, projectName, framework, packageName, groupId)
         createSourceDirectories(projectDir, framework, packagePath)
         createContentDirectories(projectDir)
         createTemplateDirectories(projectDir, framework)
-        
+
         when (framework) {
             "http4k" -> createHttp4kMainClass(projectDir, packagePath)
             "javalin" -> createJavalinMainClass(projectDir, packagePath)
@@ -24,62 +28,82 @@ object ProjectGenerator {
             "quarkus" -> createQuarkusMainClass(projectDir, packagePath)
             "micronaut" -> createMicronautMainClass(projectDir, packagePath)
         }
-        
+
         createSampleContent(projectDir)
         createTemplates(projectDir, framework)
         createApplicationProperties(projectDir, framework)
         createGitignore(projectDir)
         createReadme(projectDir, framework)
     }
-    
+
     private fun createDirectory(dir: File) {
         dir.mkdirs()
     }
-    
-    private fun createSourceDirectories(projectDir: File, framework: String, packagePath: String) {
+
+    private fun createSourceDirectories(
+        projectDir: File,
+        framework: String,
+        packagePath: String,
+    ) {
         val kotlinSrc = Paths.get(projectDir.absolutePath, "src", "main", "kotlin").toFile()
         val testSrc = Paths.get(projectDir.absolutePath, "src", "test", "kotlin").toFile()
         val resourcesSrc = Paths.get(projectDir.absolutePath, "src", "main", "resources").toFile()
         val resourcesTest = Paths.get(projectDir.absolutePath, "src", "test", "resources").toFile()
-        
+
         val packageDir = Paths.get(kotlinSrc.absolutePath, packagePath).toFile()
-        
+
         createDirectory(kotlinSrc)
         createDirectory(testSrc)
         createDirectory(resourcesSrc)
         createDirectory(resourcesTest)
         createDirectory(packageDir)
     }
-    
+
     private fun createContentDirectories(projectDir: File) {
         val contentDir = Paths.get(projectDir.absolutePath, "content").toFile()
         val pagesDir = Paths.get(contentDir.absolutePath, "pages").toFile()
         val blogDir = Paths.get(contentDir.absolutePath, "blog").toFile()
-        
+
         createDirectory(contentDir)
         createDirectory(pagesDir)
         createDirectory(blogDir)
     }
-    
-    private fun createTemplateDirectories(projectDir: File, framework: String) {
+
+    private fun createTemplateDirectories(
+        projectDir: File,
+        framework: String,
+    ) {
         val templatesDir = Paths.get(projectDir.absolutePath, "src", "main", "resources", "templates").toFile()
         val staticDir = Paths.get(projectDir.absolutePath, "src", "main", "resources", "static").toFile()
-        
+
         createDirectory(templatesDir)
         createDirectory(staticDir)
     }
-    
-    private fun createPomXml(projectDir: File, projectName: String, framework: String, packageName: String, groupId: String) {
+
+    private fun createPomXml(
+        projectDir: File,
+        projectName: String,
+        framework: String,
+        packageName: String,
+        groupId: String,
+    ) {
         val content = generatePomXmlContent(projectName, framework, packageName, groupId)
         val pomFile = Paths.get(projectDir.absolutePath, "pom.xml").toFile()
         pomFile.writeText(content)
     }
-    
-    private fun generatePomXmlContent(projectName: String, framework: String, packageName: String, groupId: String): String {
+
+    private fun generatePomXmlContent(
+        projectName: String,
+        framework: String,
+        packageName: String,
+        groupId: String,
+    ): String {
         val version = "1.0.0-SNAPSHOT"
-        
-        val (frameworkArtifact, frameworkDependency) = when (framework) {
-            "http4k" -> "http4k" to """
+
+        val (frameworkArtifact, frameworkDependency) =
+            when (framework) {
+                "http4k" ->
+                    "http4k" to """
                 <dependency>
                     <groupId>org.http4k</groupId>
                     <artifactId>http4k-core</artifactId>
@@ -96,7 +120,8 @@ object ProjectGenerator {
                     <version>6.31.1.0</version>
                 </dependency>
             """
-            "javalin" -> "javalin" to """
+                "javalin" ->
+                    "javalin" to """
                 <dependency>
                     <groupId>io.javalin</groupId>
                     <artifactId>javalin</artifactId>
@@ -108,7 +133,8 @@ object ProjectGenerator {
                     <version>7.1.0</version>
                 </dependency>
             """
-            "spring-boot" -> "spring-boot" to """
+                "spring-boot" ->
+                    "spring-boot" to """
                 <dependency>
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-starter-web</artifactId>
@@ -120,7 +146,8 @@ object ProjectGenerator {
                     <version>3.3.2</version>
                 </dependency>
             """
-            "quarkus" -> "quarkus" to """
+                "quarkus" ->
+                    "quarkus" to """
                 <dependency>
                     <groupId>io.quarkus</groupId>
                     <artifactId>quarkus-resteasy-reactive</artifactId>
@@ -132,7 +159,8 @@ object ProjectGenerator {
                     <version>3.13.3</version>
                 </dependency>
             """
-            "micronaut" -> "micronaut" to """
+                "micronaut" ->
+                    "micronaut" to """
                 <dependency>
                     <groupId>io.micronaut</groupId>
                     <artifactId>micronaut-http-server-netty</artifactId>
@@ -144,9 +172,9 @@ object ProjectGenerator {
                     <version>4.5.1</version>
                 </dependency>
             """
-            else -> throw IllegalArgumentException("Unknown framework: $framework")
-        }
-        
+                else -> throw IllegalArgumentException("Unknown framework: $framework")
+            }
+
         return """<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -219,11 +247,14 @@ $frameworkDependency
 </project>
 """
     }
-    
-    private fun createHttp4kMainClass(projectDir: File, packagePath: String) {
+
+    private fun createHttp4kMainClass(
+        projectDir: File,
+        packagePath: String,
+    ) {
         val packageDir = Paths.get(projectDir.absolutePath, "src", "main", "kotlin", packagePath).toFile()
         val mainFile = Paths.get(packageDir.absolutePath, "DemoApplication.kt").toFile()
-        
+
         val content = """package ${packagePath.replace(File.separator, ".")}
 
 import io.github.rygel.fragments.FileSystemFragmentRepository
@@ -274,11 +305,14 @@ fun main() {
 """
         mainFile.writeText(content)
     }
-    
-    private fun createJavalinMainClass(projectDir: File, packagePath: String) {
+
+    private fun createJavalinMainClass(
+        projectDir: File,
+        packagePath: String,
+    ) {
         val packageDir = Paths.get(projectDir.absolutePath, "src", "main", "kotlin", packagePath).toFile()
         val mainFile = Paths.get(packageDir.absolutePath, "DemoApplication.kt").toFile()
-        
+
         val content = """package ${packagePath.replace(File.separator, ".")}
 
 import io.github.rygel.fragments.FileSystemFragmentRepository
@@ -327,11 +361,14 @@ fun main() {
 """
         mainFile.writeText(content)
     }
-    
-    private fun createSpringBootMainClass(projectDir: File, packagePath: String) {
+
+    private fun createSpringBootMainClass(
+        projectDir: File,
+        packagePath: String,
+    ) {
         val packageDir = Paths.get(projectDir.absolutePath, "src", "main", "kotlin", packagePath).toFile()
         val mainFile = Paths.get(packageDir.absolutePath, "DemoApplication.kt").toFile()
-        
+
         val content = """package ${packagePath.replace(File.separator, ".")}
 
 import io.github.rygel.fragments.FileSystemFragmentRepository
@@ -390,11 +427,14 @@ class DemoApplication {
 """
         mainFile.writeText(content)
     }
-    
-    private fun createQuarkusMainClass(projectDir: File, packagePath: String) {
+
+    private fun createQuarkusMainClass(
+        projectDir: File,
+        packagePath: String,
+    ) {
         val packageDir = Paths.get(projectDir.absolutePath, "src", "main", "kotlin", packagePath).toFile()
         val mainFile = Paths.get(packageDir.absolutePath, "DemoApplication.kt").toFile()
-        
+
         val content = """package ${packagePath.replace(File.separator, ".")}
 
 import io.github.rygel.fragments.FileSystemFragmentRepository
@@ -439,11 +479,14 @@ class DemoApplication {
 """
         mainFile.writeText(content)
     }
-    
-    private fun createMicronautMainClass(projectDir: File, packagePath: String) {
+
+    private fun createMicronautMainClass(
+        projectDir: File,
+        packagePath: String,
+    ) {
         val packageDir = Paths.get(projectDir.absolutePath, "src", "main", "kotlin", packagePath).toFile()
         val mainFile = Paths.get(packageDir.absolutePath, "DemoApplication.kt").toFile()
-        
+
         val content = """package ${packagePath.replace(File.separator, ".")}
 
 import io.github.rygel.fragments.FileSystemFragmentRepository
@@ -469,19 +512,19 @@ object DemoApplication {
 """
         mainFile.writeText(content)
     }
-    
+
     private fun createSampleContent(projectDir: File) {
         val blogDir = Paths.get(projectDir.absolutePath, "content", "blog").toFile()
         val pagesDir = Paths.get(projectDir.absolutePath, "content", "pages").toFile()
-        
+
         createSampleBlogPost(blogDir)
         createSampleIndexPage(pagesDir)
     }
-    
+
     private fun createSampleBlogPost(blogDir: File) {
         val postFile = Paths.get(blogDir.absolutePath, "2024", "03", "welcome-to-fragments4k.md").toFile()
         postFile.parentFile.mkdirs()
-        
+
         val content = """---
 title: "Welcome to Fragments4k"
 date: 2024-03-04
@@ -511,10 +554,10 @@ Happy blogging!
 """
         postFile.writeText(content)
     }
-    
+
     private fun createSampleIndexPage(pagesDir: File) {
         val indexFile = Paths.get(pagesDir.absolutePath, "index.md").toFile()
-        
+
         val content = """---
 title: "Home"
 slug: index
@@ -534,18 +577,21 @@ This blog is powered by Fragments4k - a framework-agnostic Markdown-based blog l
 """
         indexFile.writeText(content)
     }
-    
-    private fun createTemplates(projectDir: File, framework: String) {
+
+    private fun createTemplates(
+        projectDir: File,
+        framework: String,
+    ) {
         when (framework) {
             "http4k", "javalin" -> createPebbleTemplates(projectDir)
             "spring-boot", "micronaut" -> createThymeleafTemplates(projectDir)
             "quarkus" -> createQuteTemplates(projectDir)
         }
     }
-    
+
     private fun createPebbleTemplates(projectDir: File) {
         val templatesDir = Paths.get(projectDir.absolutePath, "src", "main", "resources", "templates").toFile()
-        
+
         Files.writeString(
             Paths.get(templatesDir.absolutePath, "layout.pebble"),
             """<!DOCTYPE html>
@@ -577,9 +623,9 @@ This blog is powered by Fragments4k - a framework-agnostic Markdown-based blog l
         <p>&copy; 2024 My Fragments Blog. Powered by Fragments4k.</p>
     </footer>
 </body>
-</html>"""
+</html>""",
         )
-        
+
         Files.writeString(
             Paths.get(templatesDir.absolutePath, "index.pebble"),
             """{% extends "layout.pebble" %}
@@ -590,9 +636,9 @@ This blog is powered by Fragments4k - a framework-agnostic Markdown-based blog l
         <div>{{ fragment.content|raw }}</div>
     </div>
 {% endfor %}
-{% endblock %}"""
+{% endblock %}""",
         )
-        
+
         Files.writeString(
             Paths.get(templatesDir.absolutePath, "blog_overview.pebble"),
             """{% extends "layout.pebble" %}
@@ -618,13 +664,13 @@ This blog is powered by Fragments4k - a framework-agnostic Markdown-based blog l
         {% if hasNext %}<a href="/blog?page={{ currentPage + 1 }}">Next</a>{% endif %}
     </div>
 {% endif %}
-{% endblock %}"""
+{% endblock %}""",
         )
     }
-    
+
     private fun createThymeleafTemplates(projectDir: File) {
         val templatesDir = Paths.get(projectDir.absolutePath, "src", "main", "resources", "templates").toFile()
-        
+
         Files.writeString(
             Paths.get(templatesDir.absolutePath, "layout.html"),
             """<!DOCTYPE html>
@@ -656,9 +702,9 @@ This blog is powered by Fragments4k - a framework-agnostic Markdown-based blog l
         <p>&copy; 2024 My Fragments Blog. Powered by Fragments4k.</p>
     </footer>
 </body>
-</html>"""
+</html>""",
         )
-        
+
         Files.writeString(
             Paths.get(templatesDir.absolutePath, "index.html"),
             """<!DOCTYPE html>
@@ -677,9 +723,9 @@ This blog is powered by Fragments4k - a framework-agnostic Markdown-based blog l
         </div>
     </main>
 </body>
-</html>"""
+</html>""",
         )
-        
+
         Files.writeString(
             Paths.get(templatesDir.absolutePath, "blog_overview.html"),
             """<!DOCTYPE html>
@@ -710,13 +756,13 @@ This blog is powered by Fragments4k - a framework-agnostic Markdown-based blog l
         </div>
     </main>
 </body>
-</html>"""
+</html>""",
         )
     }
-    
+
     private fun createQuteTemplates(projectDir: File) {
         val templatesDir = Paths.get(projectDir.absolutePath, "src", "main", "resources", "templates").toFile()
-        
+
         Files.writeString(
             Paths.get(templatesDir.absolutePath, "index.html"),
             """<!DOCTYPE html>
@@ -744,9 +790,9 @@ This blog is powered by Fragments4k - a framework-agnostic Markdown-based blog l
         {/for}
     </main>
 </body>
-</html>"""
+</html>""",
         )
-        
+
         Files.writeString(
             Paths.get(templatesDir.absolutePath, "blog_overview.html"),
             """<!DOCTYPE html>
@@ -782,42 +828,50 @@ This blog is powered by Fragments4k - a framework-agnostic Markdown-based blog l
         {/for}
     </main>
 </body>
-</html>"""
+</html>""",
         )
     }
-    
-    private fun createApplicationProperties(projectDir: File, framework: String) {
+
+    private fun createApplicationProperties(
+        projectDir: File,
+        framework: String,
+    ) {
         val resourcesDir = Paths.get(projectDir.absolutePath, "src", "main", "resources").toFile()
-        
-        val content = when (framework) {
-            "spring-boot" -> """
+
+        val content =
+            when (framework) {
+                "spring-boot" ->
+                    """
 server.port=8080
 server.servlet.context-path=/
 spring.thymeleaf.prefix=classpath:/templates/
 spring.thymeleaf.suffix=.html
 logging.level.io.github.rygel.fragments=INFO
 """
-            "quarkus" -> """
+                "quarkus" ->
+                    """
 quarkus.http.port=8080
 quarkus.application.name=fragments-blog
 quarkus.log.category."io.github.rygel.fragments".level=INFO
 """
-            "micronaut" -> """
+                "micronaut" ->
+                    """
 micronaut.server.port=8080
 micronaut.application.name=fragments-blog
 """
-            else -> ""
-        }
-        
+                else -> ""
+            }
+
         if (content.isNotEmpty()) {
             val propertiesFile = Paths.get(resourcesDir.absolutePath, "application.properties").toFile()
             propertiesFile.writeText(content.trim())
         }
     }
-    
+
     private fun createGitignore(projectDir: File) {
         val gitignoreFile = Paths.get(projectDir.absolutePath, ".gitignore").toFile()
-        gitignoreFile.writeText("""# Maven
+        gitignoreFile.writeText(
+            """# Maven
 target/
 pom.xml.tag
 pom.xml.releaseBackup
@@ -841,21 +895,27 @@ bin/
 # OS
 .DS_Store
 Thumbs.db
-""")
+""",
+        )
     }
-    
-    private fun createReadme(projectDir: File, framework: String) {
+
+    private fun createReadme(
+        projectDir: File,
+        framework: String,
+    ) {
         val readmeFile = Paths.get(projectDir.absolutePath, "README.md").toFile()
-        
-        val runCommand = when (framework) {
-            "http4k", "javalin" -> "mvn exec:java -Dexec.mainClass=${getPackage()}.${getMainClass()}"
-            "spring-boot" -> "mvn spring-boot:run"
-            "quarkus" -> "mvn quarkus:dev"
-            "micronaut" -> "mvn micronaut:run"
-            else -> "mvn exec:java"
-        }
-        
-        readmeFile.writeText("""# My Fragments Blog
+
+        val runCommand =
+            when (framework) {
+                "http4k", "javalin" -> "mvn exec:java -Dexec.mainClass=${getPackage()}.${getMainClass()}"
+                "spring-boot" -> "mvn spring-boot:run"
+                "quarkus" -> "mvn quarkus:dev"
+                "micronaut" -> "mvn micronaut:run"
+                else -> "mvn exec:java"
+            }
+
+        readmeFile.writeText(
+            """# My Fragments Blog
 
 A blog powered by Fragments4k with $framework.
 
@@ -914,19 +974,16 @@ categories: [category]
 - [Fragments4k Documentation](https://github.com/rygel/fragments4k)
 - [Framework Documentation](${getFrameworkDocs(framework)})
 
-""")
+""",
+        )
     }
-    
-    private fun getPackage(): String {
-        return "io.github.rygel.fragments.demo"
-    }
-    
-    private fun getMainClass(): String {
-        return "DemoApplicationKt"
-    }
-    
-    private fun getFrameworkDocs(framework: String): String {
-        return when (framework) {
+
+    private fun getPackage(): String = "io.github.rygel.fragments.demo"
+
+    private fun getMainClass(): String = "DemoApplicationKt"
+
+    private fun getFrameworkDocs(framework: String): String =
+        when (framework) {
             "http4k" -> "https://http4k.org"
             "javalin" -> "https://javalin.io"
             "spring-boot" -> "https://spring.io/projects/spring-boot"
@@ -934,5 +991,4 @@ categories: [category]
             "micronaut" -> "https://micronaut.io"
             else -> ""
         }
-    }
 }

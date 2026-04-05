@@ -5,7 +5,7 @@ object NavigationMenuGenerator {
         siteUrl: String = "/",
         blogUrl: String = "/blog",
         archiveUrl: String? = null,
-        searchUrl: String? = null
+        searchUrl: String? = null,
     ): List<NavigationLink> {
         val links = mutableListOf<NavigationLink>()
         links.add(NavigationLink(label = "Home", url = siteUrl))
@@ -23,7 +23,7 @@ object NavigationMenuGenerator {
         baseUrl: String = "/blog",
         archiveUrl: String? = "/blog/archive",
         currentYear: Int? = null,
-        currentMonth: Int? = null
+        currentMonth: Int? = null,
     ): List<NavigationLink> {
         val links = mutableListOf<NavigationLink>()
         links.add(NavigationLink(label = "Blog Home", url = baseUrl))

@@ -5,5 +5,5 @@ data class SearchFormConfig(
     val paramName: String,
     val placeholderText: String,
     val buttonText: String,
-    val method: String = "get"
+    val method: String = "get",
 )

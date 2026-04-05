@@ -21,7 +21,7 @@ data class Author(
     val company: String? = null,
     val role: String? = null,
     val socialLinks: Map<String, String> = emptyMap(),
-    val joinedDate: LocalDateTime = LocalDateTime.now()
+    val joinedDate: LocalDateTime = LocalDateTime.now(),
 ) {
     /**
      * Gets the display name for the author
@@ -56,7 +56,7 @@ data class Author(
         fun fromFrontMatter(
             authorName: String?,
             frontMatter: Map<String, Any>,
-            id: String = authorName?.slugify() ?: "unknown"
+            id: String = authorName?.slugify() ?: "unknown",
         ): Author? {
             if (authorName == null) return null
 
@@ -73,16 +73,16 @@ data class Author(
                 linkedin = frontMatter["author_linkedin"] as? String,
                 location = frontMatter["author_location"] as? String,
                 company = frontMatter["author_company"] as? String,
-                role = frontMatter["author_role"] as? String
+                role = frontMatter["author_role"] as? String,
             )
         }
 
-        private fun String.slugify(): String {
-            return this.lowercase()
+        private fun String.slugify(): String =
+            this
+                .lowercase()
                 .replace(Regex("[^a-z0-9\\s-]"), "")
                 .replace(Regex("\\s+"), "-")
                 .trim('-')
-        }
     }
 }
 
@@ -91,13 +91,21 @@ data class Author(
  */
 interface AuthorRepository {
     suspend fun getAll(): List<Author>
+
     suspend fun getById(id: String): Author?
+
     suspend fun getByName(name: String): Author?
+
     suspend fun getBySlug(slug: String): Author?
+
     suspend fun getBySlugOrId(identifier: String): Author?
+
     suspend fun register(author: Author)
+
     suspend fun remove(id: String): Boolean
+
     suspend fun clear()
+
     suspend fun count(): Int
 }
 
@@ -106,7 +114,7 @@ interface AuthorRepository {
  */
 data class AuthorViewModel(
     val author: Author,
-    val postCount: Int = 0
+    val postCount: Int = 0,
 ) {
     val id: String
         get() = author.id

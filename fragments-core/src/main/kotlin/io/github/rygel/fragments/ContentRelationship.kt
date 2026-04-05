@@ -9,23 +9,27 @@ data class ContentRelationships(
     val relatedByTag: List<Fragment> = emptyList(),
     val relatedByCategory: List<Fragment> = emptyList(),
     val relatedByContent: List<Fragment> = emptyList(),
-    val translations: Map<String, Fragment> = emptyMap()
+    val translations: Map<String, Fragment> = emptyMap(),
 ) {
     /**
      * Get all related fragments combined and deduplicated
      */
     val allRelated: List<Fragment>
-        get() = (relatedByTag + relatedByCategory + relatedByContent)
-            .distinctBy { it.slug }
-            .filter { it.slug != (previous?.slug) }
-            .filter { it.slug != (next?.slug) }
+        get() =
+            (relatedByTag + relatedByCategory + relatedByContent)
+                .distinctBy { it.slug }
+                .filter { it.slug != (previous?.slug) }
+                .filter { it.slug != (next?.slug) }
 
     /**
      * Check if there are any relationships
      */
     val hasRelationships: Boolean
-        get() = previous != null || next != null ||
-                  allRelated.isNotEmpty() || translations.isNotEmpty()
+        get() =
+            previous != null ||
+                next != null ||
+                allRelated.isNotEmpty() ||
+                translations.isNotEmpty()
 
     /**
      * Check if there is navigation (previous/next)
@@ -55,7 +59,7 @@ enum class RelationshipType {
     RELATED_BY_TAG,
     RELATED_BY_CATEGORY,
     RELATED_BY_CONTENT,
-    TRANSLATION
+    TRANSLATION,
 }
 
 /**
@@ -79,5 +83,5 @@ data class RelationshipConfig(
     val excludeCurrentLanguage: Boolean = false,
     val excludeCurrentAuthor: Boolean = false,
     val minSharedTags: Int = 2,
-    val minSharedCategories: Int = 2
+    val minSharedCategories: Int = 2,
 )

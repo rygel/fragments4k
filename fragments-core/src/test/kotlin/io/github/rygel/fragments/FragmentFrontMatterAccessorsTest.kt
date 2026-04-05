@@ -1,22 +1,23 @@
 package io.github.rygel.fragments
 
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 import java.time.LocalDateTime
 
 class FragmentFrontMatterAccessorsTest {
-
     private val now = LocalDateTime.of(2024, 1, 15, 10, 0)
 
-    private fun fragment(frontMatter: Map<String, Any>) = Fragment(
-        title = "Test",
-        slug = "test",
-        date = now,
-        publishDate = null,
-        preview = "",
-        content = "",
-        frontMatter = frontMatter
-    )
+    private fun fragment(frontMatter: Map<String, Any>) =
+        Fragment(
+            title = "Test",
+            slug = "test",
+            date = now,
+            publishDate = null,
+            preview = "",
+            content = "",
+            frontMatter = frontMatter,
+        )
 
     // getString
 

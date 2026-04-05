@@ -2,28 +2,32 @@ package io.github.rygel.fragments.test
 
 import io.github.rygel.fragments.SocialPlatform
 import io.github.rygel.fragments.SocialShareGenerator
-import io.github.rygel.fragments.SocialShareLink
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class SocialShareLinkTest {
     @Test
     fun testSocialShareGeneration() {
-        val shareLinks = SocialShareGenerator.generateShareLinks(
-            title = "Test Post Title",
-            url = "https://example.com/blog/test-post"
-        )
+        val shareLinks =
+            SocialShareGenerator.generateShareLinks(
+                title = "Test Post Title",
+                url = "https://example.com/blog/test-post",
+            )
 
         assertEquals(SocialPlatform.entries.size, shareLinks.size)
     }
 
     @Test
     fun testTwitterShareLink() {
-        val shareLinks = SocialShareGenerator.generateShareLinks(
-            title = "Test Post",
-            url = "https://example.com/blog/test",
-            platforms = listOf(SocialPlatform.TWITTER)
-        )
+        val shareLinks =
+            SocialShareGenerator.generateShareLinks(
+                title = "Test Post",
+                url = "https://example.com/blog/test",
+                platforms = listOf(SocialPlatform.TWITTER),
+            )
 
         assertEquals(1, shareLinks.size)
         val twitterLink = shareLinks[0]
@@ -36,11 +40,12 @@ class SocialShareLinkTest {
 
     @Test
     fun testFacebookShareLink() {
-        val shareLinks = SocialShareGenerator.generateShareLinks(
-            title = "Test Post",
-            url = "https://example.com/blog/test",
-            platforms = listOf(SocialPlatform.FACEBOOK)
-        )
+        val shareLinks =
+            SocialShareGenerator.generateShareLinks(
+                title = "Test Post",
+                url = "https://example.com/blog/test",
+                platforms = listOf(SocialPlatform.FACEBOOK),
+            )
 
         assertEquals(1, shareLinks.size)
         val facebookLink = shareLinks[0]
@@ -52,11 +57,12 @@ class SocialShareLinkTest {
 
     @Test
     fun testLinkedInShareLink() {
-        val shareLinks = SocialShareGenerator.generateShareLinks(
-            title = "Test Post",
-            url = "https://example.com/blog/test",
-            platforms = listOf(SocialPlatform.LINKEDIN)
-        )
+        val shareLinks =
+            SocialShareGenerator.generateShareLinks(
+                title = "Test Post",
+                url = "https://example.com/blog/test",
+                platforms = listOf(SocialPlatform.LINKEDIN),
+            )
 
         assertEquals(1, shareLinks.size)
         val linkedInLink = shareLinks[0]
@@ -68,11 +74,12 @@ class SocialShareLinkTest {
 
     @Test
     fun testRedditShareLink() {
-        val shareLinks = SocialShareGenerator.generateShareLinks(
-            title = "Test Post",
-            url = "https://example.com/blog/test",
-            platforms = listOf(SocialPlatform.REDDIT)
-        )
+        val shareLinks =
+            SocialShareGenerator.generateShareLinks(
+                title = "Test Post",
+                url = "https://example.com/blog/test",
+                platforms = listOf(SocialPlatform.REDDIT),
+            )
 
         assertEquals(1, shareLinks.size)
         val redditLink = shareLinks[0]
@@ -85,11 +92,12 @@ class SocialShareLinkTest {
 
     @Test
     fun testWhatsAppShareLink() {
-        val shareLinks = SocialShareGenerator.generateShareLinks(
-            title = "Test Post",
-            url = "https://example.com/blog/test",
-            platforms = listOf(SocialPlatform.WHATSAPP)
-        )
+        val shareLinks =
+            SocialShareGenerator.generateShareLinks(
+                title = "Test Post",
+                url = "https://example.com/blog/test",
+                platforms = listOf(SocialPlatform.WHATSAPP),
+            )
 
         assertEquals(1, shareLinks.size)
         val whatsappLink = shareLinks[0]
@@ -101,11 +109,12 @@ class SocialShareLinkTest {
 
     @Test
     fun testEmailShareLink() {
-        val shareLinks = SocialShareGenerator.generateShareLinks(
-            title = "Test Post",
-            url = "https://example.com/blog/test",
-            platforms = listOf(SocialPlatform.EMAIL)
-        )
+        val shareLinks =
+            SocialShareGenerator.generateShareLinks(
+                title = "Test Post",
+                url = "https://example.com/blog/test",
+                platforms = listOf(SocialPlatform.EMAIL),
+            )
 
         assertEquals(1, shareLinks.size)
         val emailLink = shareLinks[0]
@@ -118,10 +127,11 @@ class SocialShareLinkTest {
 
     @Test
     fun testAllPlatformsShareLink() {
-        val shareLinks = SocialShareGenerator.generateShareLinks(
-            title = "Test Post",
-            url = "https://example.com/blog/test"
-        )
+        val shareLinks =
+            SocialShareGenerator.generateShareLinks(
+                title = "Test Post",
+                url = "https://example.com/blog/test",
+            )
 
         assertTrue(shareLinks.any { it.platform == SocialPlatform.TWITTER })
         assertTrue(shareLinks.any { it.platform == SocialPlatform.FACEBOOK })
@@ -133,10 +143,11 @@ class SocialShareLinkTest {
 
     @Test
     fun testUrlEncoding() {
-        val shareLinks = SocialShareGenerator.generateShareLinks(
-            title = "Test Post with Spaces & Special! Chars@#",
-            url = "https://example.com/blog/test?param=value&other=123"
-        )
+        val shareLinks =
+            SocialShareGenerator.generateShareLinks(
+                title = "Test Post with Spaces & Special! Chars@#",
+                url = "https://example.com/blog/test?param=value&other=123",
+            )
 
         val twitterLink = shareLinks.find { it.platform == SocialPlatform.TWITTER }
         assertNotNull(twitterLink)
@@ -146,10 +157,11 @@ class SocialShareLinkTest {
 
     @Test
     fun testEmptyTitleAndUrl() {
-        val shareLinks = SocialShareGenerator.generateShareLinks(
-            title = "",
-            url = ""
-        )
+        val shareLinks =
+            SocialShareGenerator.generateShareLinks(
+                title = "",
+                url = "",
+            )
 
         val twitterLink = shareLinks.find { it.platform == SocialPlatform.TWITTER }
         assertNotNull(twitterLink)
@@ -159,17 +171,19 @@ class SocialShareLinkTest {
 
     @Test
     fun testMultiplePlatformsSelection() {
-        val selectedPlatforms = listOf(
-            SocialPlatform.TWITTER,
-            SocialPlatform.FACEBOOK,
-            SocialPlatform.LINKEDIN
-        )
+        val selectedPlatforms =
+            listOf(
+                SocialPlatform.TWITTER,
+                SocialPlatform.FACEBOOK,
+                SocialPlatform.LINKEDIN,
+            )
 
-        val shareLinks = SocialShareGenerator.generateShareLinks(
-            title = "Test Post",
-            url = "https://example.com/blog/test",
-            platforms = selectedPlatforms
-        )
+        val shareLinks =
+            SocialShareGenerator.generateShareLinks(
+                title = "Test Post",
+                url = "https://example.com/blog/test",
+                platforms = selectedPlatforms,
+            )
 
         assertEquals(3, shareLinks.size)
         assertEquals(SocialPlatform.TWITTER, shareLinks[0].platform)

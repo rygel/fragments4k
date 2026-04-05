@@ -6,14 +6,13 @@ object SearchFormGenerator {
         paramName: String = "q",
         placeholderText: String = "Search articles...",
         buttonText: String = "Search",
-        method: String = "get"
-    ): SearchFormConfig {
-        return SearchFormConfig(
+        method: String = "get",
+    ): SearchFormConfig =
+        SearchFormConfig(
             actionUrl = actionUrl,
             paramName = paramName,
             placeholderText = placeholderText,
             buttonText = buttonText,
-            method = method
+            method = method,
         )
-    }
 }
