@@ -18,6 +18,7 @@ class BlogEngine(
     private val repository: FragmentRepository,
     private val pageSize: Int = 10,
     private val relationshipConfig: RelationshipConfig = RelationshipConfig(),
+    private val blogUrlPrefix: String = "/blog",
 ) {
     fun getRepository(): FragmentRepository = repository
 
@@ -27,6 +28,25 @@ class BlogEngine(
      * rather than silently excluding posts.
      */
     private fun isBlogTemplate(template: String) = template in BLOG_TEMPLATES
+
+    /**
+     * Resolves a blog post's URL to include the date-based path prefix,
+     * e.g. `/blog/2026/03/hello-world`. If the fragment has no date, falls
+     * back to `blogUrlPrefix/slug`.
+     */
+    private fun resolveUrl(fragment: Fragment): Fragment {
+        if (fragment.resolvedUrl != null) return fragment
+        val date = fragment.date
+        val url =
+            if (date != null) {
+                "$blogUrlPrefix/${date.year}/${String.format(java.util.Locale.US, "%02d", date.monthValue)}/${fragment.slug}"
+            } else {
+                "$blogUrlPrefix/${fragment.slug}"
+            }
+        return fragment.copy(resolvedUrl = url)
+    }
+
+    private fun List<Fragment>.withResolvedUrls(): List<Fragment> = map { resolveUrl(it) }
 
     suspend fun getOverview(
         includeDrafts: Boolean = false,
@@ -41,6 +61,7 @@ class BlogEngine(
         val blogPosts =
             allFragments
                 .filter { isBlogTemplate(it.template) }
+                .withResolvedUrls()
                 .sortedByDescending { it.date }
         return Page.create(blogPosts, page, pageSize)
     }
@@ -51,6 +72,7 @@ class BlogEngine(
                 .getAll()
                 .filter { isBlogTemplate(it.template) }
                 .filter { it.status == FragmentStatus.DRAFT }
+                .withResolvedUrls()
                 .sortedByDescending { it.date }
         return Page.create(draftFragments, page, pageSize)
     }
@@ -59,7 +81,7 @@ class BlogEngine(
         year: String,
         month: String,
         slug: String,
-    ): Fragment? = repository.getByYearMonthAndSlug(year, month, slug)
+    ): Fragment? = repository.getByYearMonthAndSlug(year, month, slug)?.let { resolveUrl(it) }
 
     suspend fun getByTag(
         tag: String,
@@ -69,6 +91,7 @@ class BlogEngine(
             repository
                 .getByTag(tag)
                 .filter { isBlogTemplate(it.template) }
+                .withResolvedUrls()
                 .sortedByDescending { it.date }
         return Page.create(taggedPosts, page, pageSize)
     }
@@ -81,6 +104,7 @@ class BlogEngine(
             repository
                 .getByCategory(category)
                 .filter { isBlogTemplate(it.template) }
+                .withResolvedUrls()
                 .sortedByDescending { it.date }
         return Page.create(categorizedPosts, page, pageSize)
     }
@@ -91,7 +115,8 @@ class BlogEngine(
             .filter {
                 (isBlogTemplate(it.template)) &&
                     it.date?.year == year
-            }.sortedByDescending { it.date }
+            }.withResolvedUrls()
+            .sortedByDescending { it.date }
 
     suspend fun getByYearMonth(
         year: Int,
@@ -103,7 +128,8 @@ class BlogEngine(
                 (isBlogTemplate(it.template)) &&
                     it.date?.year == year &&
                     it.date?.monthValue == month
-            }.sortedByDescending { it.date }
+            }.withResolvedUrls()
+            .sortedByDescending { it.date }
 
     suspend fun getByAuthor(
         authorId: String,
@@ -113,6 +139,7 @@ class BlogEngine(
             repository
                 .getByAuthor(authorId)
                 .filter { isBlogTemplate(it.template) }
+                .withResolvedUrls()
                 .sortedByDescending { it.date }
         return Page.create(authorPosts, page, pageSize)
     }
@@ -136,7 +163,7 @@ class BlogEngine(
         month: String,
         slug: String,
     ): Pair<Fragment?, ContentRelationships?> {
-        val fragment = getPost(year, month, slug)
+        val fragment = getPost(year, month, slug) // already resolved via getPost
         val relationships = repository.getRelationships(slug, relationshipConfig)
         return Pair(fragment, relationships)
     }
