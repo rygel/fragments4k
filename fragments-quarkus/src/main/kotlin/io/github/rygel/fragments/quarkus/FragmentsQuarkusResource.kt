@@ -2,6 +2,7 @@ package io.github.rygel.fragments.quarkus
 
 import io.github.rygel.fragments.AuthorRepository
 import io.github.rygel.fragments.AuthorViewModel
+import io.github.rygel.fragments.FragmentRepository
 import io.github.rygel.fragments.FragmentViewModel
 import io.github.rygel.fragments.LlmsTxtGenerator
 import io.github.rygel.fragments.blog.BlogEngine
@@ -29,16 +30,14 @@ class FragmentsQuarkusResource
         private val siteUrl: String = "http://localhost:8080",
         private val feedUrl: String = "http://localhost:8080/rss.xml",
         private val authorRepository: AuthorRepository? = null,
+        private val additionalRepositories: List<FragmentRepository> = emptyList(),
     ) {
-        private val rssGenerator: RssGenerator by lazy {
-            RssGenerator(repositories = listOf(staticEngine.getRepository(), blogEngine.getRepository()))
+        private val allRepositories: List<FragmentRepository> by lazy {
+            listOf(staticEngine.getRepository(), blogEngine.getRepository()) + additionalRepositories
         }
+        private val rssGenerator: RssGenerator by lazy { RssGenerator(allRepositories) }
         private val sitemapGenerator: SitemapGenerator by lazy {
-            SitemapGenerator(
-                repositories = listOf(staticEngine.getRepository(), blogEngine.getRepository()),
-                siteUrl = siteUrl,
-                lastModified = null,
-            )
+            SitemapGenerator(allRepositories, siteUrl, lastModified = null)
         }
 
         @GET
@@ -246,7 +245,7 @@ class FragmentsQuarkusResource
                     siteTitle = siteTitle,
                     siteDescription = siteDescription,
                     siteUrl = siteUrl,
-                    repositories = listOf(staticEngine.getRepository(), blogEngine.getRepository()),
+                    repositories = allRepositories,
                 )
             return Response
                 .ok()

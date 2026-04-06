@@ -25,8 +25,9 @@ class FragmentsSpringController(
     private val siteUrl: String = "http://localhost:8080",
     private val feedUrl: String = "http://localhost:8080/rss.xml",
     private val authorRepository: AuthorRepository? = null,
+    private val additionalRepositories: List<FragmentRepository> = emptyList(),
 ) {
-    private val allRepositories by lazy { listOf(repository, blogEngine.getRepository()) }
+    private val allRepositories by lazy { listOf(repository, blogEngine.getRepository()) + additionalRepositories }
     private val rssGenerator: RssGenerator by lazy { RssGenerator(allRepositories) }
     private val sitemapGenerator: SitemapGenerator by lazy { SitemapGenerator(allRepositories, siteUrl, lastModified = null) }
 
