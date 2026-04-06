@@ -2,13 +2,13 @@ package io.github.rygel.fragments.sitemap
 
 import io.github.rygel.fragments.Fragment
 import io.github.rygel.fragments.FragmentRepository
-import io.github.rygel.fragments.sitemap.ChangeFrequency
-import io.github.rygel.fragments.sitemap.SitemapImage
-import io.github.rygel.fragments.sitemap.SitemapUrl
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.StringWriter
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import javax.xml.stream.XMLOutputFactory
+import javax.xml.stream.XMLStreamWriter
 
 class SitemapGenerator(
     private val repository: FragmentRepository,
@@ -38,42 +38,73 @@ class SitemapGenerator(
                             image = image,
                         )
                     }.sortedByDescending { it.priority }
-                    .joinToString(separator = "\n") { sitemapUrl ->
-                        val imageXml =
-                            sitemapUrl.image?.let { image ->
-                                """
-                    <image:image>
-                        <image:loc>${image.loc}</image:loc>
-                        ${image.caption?.let { "<image:caption>$it</image:caption>" } ?: ""}
-                        ${image.title?.let { "<image:title>$it</image:title>" } ?: ""}
-                    </image:image>
-                    """
-                            } ?: ""
 
-                        """
-                <url>
-                    <loc>${sitemapUrl.loc}</loc>
-                    <lastmod>${sitemapUrl.lastmod}</lastmod>
-                    <changefreq>${sitemapUrl.changefreq.value}</changefreq>
-                    <priority>${"%.1f".format(sitemapUrl.priority)}</priority>$imageXml
-                </url>
-                """
-                    }
+            val writer = StringWriter()
+            val xml = XMLOutputFactory.newInstance().createXMLStreamWriter(writer)
 
-            """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-                    xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
-                <url>
-                    <loc>$siteUrl</loc>
-                    <lastmod>$lastModDateFormatted</lastmod>
-                    <changefreq>weekly</changefreq>
-                    <priority>1.0</priority>
-                </url>
-                $urls
-            </urlset>
-            """
+            xml.writeStartDocument("UTF-8", "1.0")
+            xml.writeStartElement("urlset")
+            xml.writeDefaultNamespace(SITEMAP_NS)
+            xml.writeNamespace("image", IMAGE_NS)
+
+            writeUrl(xml, siteUrl, lastModDateFormatted, "weekly", 1.0, null)
+
+            for (url in urls) {
+                writeUrl(xml, url.loc, url.lastmod, url.changefreq.value, url.priority, url.image)
+            }
+
+            xml.writeEndElement()
+            xml.writeEndDocument()
+            xml.flush()
+
+            writer.toString()
         }
+
+    private fun writeUrl(
+        xml: XMLStreamWriter,
+        loc: String,
+        lastmod: String,
+        changefreq: String,
+        priority: Double,
+        image: SitemapImage?,
+    ) {
+        xml.writeStartElement("url")
+        writeElement(xml, "loc", loc)
+        writeElement(xml, "lastmod", lastmod)
+        writeElement(xml, "changefreq", changefreq)
+        writeElement(xml, "priority", String.format(java.util.Locale.US, "%.1f", priority))
+
+        if (image != null) {
+            xml.writeStartElement(IMAGE_NS, "image")
+            writeElement(xml, IMAGE_NS, "loc", image.loc)
+            image.caption?.let { writeElement(xml, IMAGE_NS, "caption", it) }
+            image.title?.let { writeElement(xml, IMAGE_NS, "title", it) }
+            xml.writeEndElement()
+        }
+
+        xml.writeEndElement()
+    }
+
+    private fun writeElement(
+        xml: XMLStreamWriter,
+        name: String,
+        value: String,
+    ) {
+        xml.writeStartElement(name)
+        xml.writeCharacters(value)
+        xml.writeEndElement()
+    }
+
+    private fun writeElement(
+        xml: XMLStreamWriter,
+        ns: String,
+        name: String,
+        value: String,
+    ) {
+        xml.writeStartElement(ns, name)
+        xml.writeCharacters(value)
+        xml.writeEndElement()
+    }
 
     private fun extractFragmentImage(fragment: Fragment): SitemapImage? {
         val imageUrl = extractImageUrl(fragment)
@@ -102,6 +133,8 @@ class SitemapGenerator(
     }
 
     companion object {
+        private const val SITEMAP_NS = "http://www.sitemaps.org/schemas/sitemap/0.9"
+        private const val IMAGE_NS = "http://www.google.com/schemas/sitemap-image/1.1"
         private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
     }
 }
