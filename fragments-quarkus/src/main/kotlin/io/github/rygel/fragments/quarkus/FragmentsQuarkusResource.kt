@@ -30,9 +30,15 @@ class FragmentsQuarkusResource
         private val feedUrl: String = "http://localhost:8080/rss.xml",
         private val authorRepository: AuthorRepository? = null,
     ) {
-        private val rssGenerator: RssGenerator by lazy { RssGenerator(repository = staticEngine.getRepository()) }
+        private val rssGenerator: RssGenerator by lazy {
+            RssGenerator(repositories = listOf(staticEngine.getRepository(), blogEngine.getRepository()))
+        }
         private val sitemapGenerator: SitemapGenerator by lazy {
-            SitemapGenerator(repository = staticEngine.getRepository(), siteUrl = siteUrl, lastModified = null)
+            SitemapGenerator(
+                repositories = listOf(staticEngine.getRepository(), blogEngine.getRepository()),
+                siteUrl = siteUrl,
+                lastModified = null,
+            )
         }
 
         @GET
@@ -240,7 +246,7 @@ class FragmentsQuarkusResource
                     siteTitle = siteTitle,
                     siteDescription = siteDescription,
                     siteUrl = siteUrl,
-                    repositories = listOf(staticEngine.getRepository()),
+                    repositories = listOf(staticEngine.getRepository(), blogEngine.getRepository()),
                 )
             return Response
                 .ok()
