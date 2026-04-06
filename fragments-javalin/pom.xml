@@ -48,11 +48,7 @@
     <dependencies>
         <dependency>
             <groupId>io.github.rygel</groupId>
-            <artifactId>fragments-static-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.github.rygel</groupId>
-            <artifactId>fragments-blog-core</artifactId>
+            <artifactId>fragments-adapter-core</artifactId>
         </dependency>
         <dependency>
             <groupId>io.javalin</groupId>
@@ -61,22 +57,6 @@
         <dependency>
             <groupId>io.javalin</groupId>
             <artifactId>javalin-rendering-pebble</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.github.rygel</groupId>
-            <artifactId>fragments-rss-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.github.rygel</groupId>
-            <artifactId>fragments-sitemap-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.github.rygel</groupId>
-            <artifactId>fragments-lucene-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.github.rygel</groupId>
-            <artifactId>fragments-navigation-core</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>

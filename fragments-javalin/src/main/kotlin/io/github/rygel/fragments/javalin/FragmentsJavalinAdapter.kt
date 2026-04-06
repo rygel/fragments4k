@@ -1,21 +1,13 @@
 package io.github.rygel.fragments.javalin
 
-import io.github.rygel.fragments.ArchiveNavigationGenerator
 import io.github.rygel.fragments.ArchiveNavigationLink
-import io.github.rygel.fragments.AuthorRepository
 import io.github.rygel.fragments.AuthorViewModel
-import io.github.rygel.fragments.FooterConfig
-import io.github.rygel.fragments.FooterGenerator
-import io.github.rygel.fragments.FragmentRepository
 import io.github.rygel.fragments.FragmentViewModel
-import io.github.rygel.fragments.LlmsTxtGenerator
 import io.github.rygel.fragments.NavigationLink
-import io.github.rygel.fragments.NavigationMenuGenerator
-import io.github.rygel.fragments.blog.BlogEngine
-import io.github.rygel.fragments.lucene.LuceneSearchEngine
-import io.github.rygel.fragments.rss.RssGenerator
-import io.github.rygel.fragments.sitemap.SitemapGenerator
-import io.github.rygel.fragments.static.StaticPageEngine
+import io.github.rygel.fragments.adapter.FooterConfig
+import io.github.rygel.fragments.adapter.FragmentsEngine
+import io.github.rygel.fragments.adapter.PaginationInfo
+import io.github.rygel.fragments.adapter.SearchFormConfig
 import io.javalin.config.RoutesConfig
 import io.javalin.http.Context
 import kotlinx.coroutines.CoroutineScope
@@ -26,26 +18,9 @@ import java.io.IOException
 import java.util.concurrent.CompletableFuture
 
 fun RoutesConfig.fragmentsRoutes(
-    staticEngine: StaticPageEngine,
-    blogEngine: BlogEngine,
+    engine: FragmentsEngine,
     renderer: TemplateRenderer?,
-    searchEngine: LuceneSearchEngine,
-    siteTitle: String = "My Blog",
-    siteDescription: String = "My Awesome Blog",
-    siteUrl: String = "http://localhost:8080",
-    feedUrl: String = "http://localhost:8080/rss.xml",
-    authorRepository: AuthorRepository? = null,
-    additionalRepositories: List<FragmentRepository> = emptyList(),
 ) {
-    val allRepositories: List<FragmentRepository> =
-        listOf(staticEngine.getRepository(), blogEngine.getRepository()) + additionalRepositories
-    val rssGenerator = RssGenerator(repositories = allRepositories)
-    val sitemapGenerator =
-        SitemapGenerator(
-            repositories = allRepositories,
-            siteUrl = siteUrl,
-            lastModified = null,
-        )
     val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     fun Context.handleAsync(block: suspend () -> Unit) {
@@ -69,18 +44,18 @@ fun RoutesConfig.fragmentsRoutes(
     }
 
     val isHtmxRequest: (Context) -> Boolean = { ctx ->
-        ctx.header(FragmentViewModel.HTMX_REQUEST_HEADER)?.lowercase() == "true"
+        engine.isHtmxRequest(ctx.header(FragmentViewModel.HTMX_REQUEST_HEADER))
     }
 
     get("/") { ctx ->
         ctx.handleAsync {
-            val fragments = staticEngine.getAllStaticPages()
+            val fragments = engine.getHome()
             val viewModel =
                 HomeViewModel(
                     fragments = fragments.map { FragmentViewModel(it) },
                     isPartialRender = isHtmxRequest(ctx),
-                    navigationMenu = NavigationMenuGenerator.generateMainMenu(),
-                    footer = FooterGenerator.generate(),
+                    navigationMenu = engine.nav(),
+                    footer = engine.footer(),
                 )
             render(ctx, "index", viewModel)
         }
@@ -89,15 +64,15 @@ fun RoutesConfig.fragmentsRoutes(
     get("/page/{slug}") { ctx ->
         val slug = ctx.pathParam("slug")
         ctx.handleAsync {
-            val fragment = staticEngine.getPage(slug)
+            val fragment = engine.getPage(slug)
             if (fragment != null) {
                 val fragmentViewModel = FragmentViewModel(fragment, isHtmxRequest(ctx))
                 val viewModel =
                     ContentViewModel(
                         viewModel = fragmentViewModel,
                         templateName = fragment.template,
-                        navigationMenu = NavigationMenuGenerator.generateMainMenu(),
-                        footer = FooterGenerator.generate(),
+                        navigationMenu = engine.nav(),
+                        footer = engine.footer(),
                     )
                 render(ctx, fragment.template, viewModel)
             } else {
@@ -108,7 +83,7 @@ fun RoutesConfig.fragmentsRoutes(
 
     get("/blog") { ctx ->
         ctx.handleAsync {
-            val pageResult = blogEngine.getOverview(includeDrafts = false, page = 1)
+            val pageResult = engine.getBlogOverview(page = 1)
             val viewModel =
                 BlogOverviewViewModel(
                     fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(ctx)) },
@@ -117,20 +92,14 @@ fun RoutesConfig.fragmentsRoutes(
                     hasNext = pageResult.hasNext,
                     hasPrevious = pageResult.hasPrevious,
                     isPartialRender = isHtmxRequest(ctx),
-                    navigationMenu =
-                        NavigationMenuGenerator.generateMainMenu(
-                            siteUrl = "/",
-                            blogUrl = "/blog",
-                            archiveUrl = "/blog/archive",
-                            searchUrl = "/search",
-                        ),
+                    navigationMenu = engine.nav(),
                     pagination =
-                        PaginationGenerator.generateSimpleControls(
+                        engine.pagination(
                             currentPage = pageResult.currentPage,
                             totalPages = pageResult.totalPages,
                             basePath = "/blog",
                         ),
-                    footer = FooterGenerator.generate(),
+                    footer = engine.footer(),
                 )
             render(ctx, "blog_overview", viewModel)
         }
@@ -139,7 +108,7 @@ fun RoutesConfig.fragmentsRoutes(
     get("/blog/page/{page}") { ctx ->
         val page = ctx.pathParam("page").toIntOrNull() ?: 1
         ctx.handleAsync {
-            val pageResult = blogEngine.getOverview(includeDrafts = false, page = page)
+            val pageResult = engine.getBlogOverview(page = page)
             val viewModel =
                 BlogOverviewViewModel(
                     fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(ctx)) },
@@ -148,20 +117,14 @@ fun RoutesConfig.fragmentsRoutes(
                     hasNext = pageResult.hasNext,
                     hasPrevious = pageResult.hasPrevious,
                     isPartialRender = isHtmxRequest(ctx),
-                    navigationMenu =
-                        NavigationMenuGenerator.generateMainMenu(
-                            siteUrl = "/",
-                            blogUrl = "/blog",
-                            archiveUrl = "/blog/archive",
-                            searchUrl = "/search",
-                        ),
+                    navigationMenu = engine.nav(),
                     pagination =
-                        PaginationGenerator.generateSimpleControls(
+                        engine.pagination(
                             currentPage = pageResult.currentPage,
                             totalPages = pageResult.totalPages,
                             basePath = "/blog",
                         ),
-                    footer = FooterGenerator.generate(),
+                    footer = engine.footer(),
                 )
             render(ctx, "blog_overview", viewModel)
         }
@@ -172,15 +135,15 @@ fun RoutesConfig.fragmentsRoutes(
         val month = ctx.pathParam("month")
         val slug = ctx.pathParam("slug")
         ctx.handleAsync {
-            val fragment = blogEngine.getPost(year, month, slug)
+            val fragment = engine.getBlogPost(year, month, slug)
             if (fragment != null) {
                 val fragmentViewModel = FragmentViewModel(fragment, isHtmxRequest(ctx))
                 val viewModel =
                     ContentViewModel(
                         viewModel = fragmentViewModel,
                         templateName = fragment.template,
-                        navigationMenu = NavigationMenuGenerator.generateMainMenu(),
-                        footer = FooterGenerator.generate(),
+                        navigationMenu = engine.nav(),
+                        footer = engine.footer(),
                     )
                 render(ctx, fragment.template, viewModel)
             } else {
@@ -193,7 +156,7 @@ fun RoutesConfig.fragmentsRoutes(
         val tag = ctx.pathParam("tag")
         val page = ctx.queryParam("page")?.toIntOrNull() ?: 1
         ctx.handleAsync {
-            val pageResult = blogEngine.getByTag(tag, page)
+            val pageResult = engine.getByTag(tag, page)
             val viewModel =
                 BlogOverviewViewModel(
                     fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(ctx)) },
@@ -203,20 +166,14 @@ fun RoutesConfig.fragmentsRoutes(
                     hasPrevious = pageResult.hasPrevious,
                     tag = tag,
                     isPartialRender = isHtmxRequest(ctx),
-                    navigationMenu =
-                        NavigationMenuGenerator.generateMainMenu(
-                            siteUrl = "/",
-                            blogUrl = "/blog",
-                            archiveUrl = "/blog/archive",
-                            searchUrl = "/search",
-                        ),
+                    navigationMenu = engine.nav(),
                     pagination =
-                        PaginationGenerator.generateSimpleControls(
+                        engine.pagination(
                             currentPage = pageResult.currentPage,
                             totalPages = pageResult.totalPages,
                             basePath = "/blog",
                         ),
-                    footer = FooterGenerator.generate(),
+                    footer = engine.footer(),
                 )
             render(ctx, "blog_overview", viewModel)
         }
@@ -226,7 +183,7 @@ fun RoutesConfig.fragmentsRoutes(
         val category = ctx.pathParam("category")
         val page = ctx.queryParam("page")?.toIntOrNull() ?: 1
         ctx.handleAsync {
-            val pageResult = blogEngine.getByCategory(category, page)
+            val pageResult = engine.getByCategory(category, page)
             val viewModel =
                 CategoryViewModel(
                     category = category,
@@ -236,20 +193,14 @@ fun RoutesConfig.fragmentsRoutes(
                     hasNext = pageResult.hasNext,
                     hasPrevious = pageResult.hasPrevious,
                     isPartialRender = isHtmxRequest(ctx),
-                    navigationMenu =
-                        NavigationMenuGenerator.generateMainMenu(
-                            siteUrl = "/",
-                            blogUrl = "/blog",
-                            archiveUrl = "/blog/archive",
-                            searchUrl = "/search",
-                        ),
+                    navigationMenu = engine.nav(),
                     pagination =
-                        PaginationGenerator.generateSimpleControls(
+                        engine.pagination(
                             currentPage = pageResult.currentPage,
                             totalPages = pageResult.totalPages,
                             basePath = "/blog",
                         ),
-                    footer = FooterGenerator.generate(),
+                    footer = engine.footer(),
                 )
             render(ctx, "blog_overview", viewModel)
         }
@@ -259,13 +210,12 @@ fun RoutesConfig.fragmentsRoutes(
         val slug = ctx.pathParam("slug")
         val page = ctx.queryParam("page")?.toIntOrNull() ?: 1
         ctx.handleAsync {
-            val pageResult = blogEngine.getByAuthor(slug, page)
-            val author = authorRepository?.getBySlugOrId(slug)
-            val authorViewModel = author?.let { AuthorViewModel(it, postCount = pageResult.totalItems) }
+            val pageResult = engine.getByAuthor(slug, page)
+            val authorViewModel = engine.getAuthor(slug)
             val viewModel =
                 AuthorPageViewModel(
                     authorSlug = slug,
-                    authorName = author?.name,
+                    authorName = authorViewModel?.name,
                     author = authorViewModel,
                     fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(ctx)) },
                     currentPage = pageResult.currentPage,
@@ -273,20 +223,14 @@ fun RoutesConfig.fragmentsRoutes(
                     hasNext = pageResult.hasNext,
                     hasPrevious = pageResult.hasPrevious,
                     isPartialRender = isHtmxRequest(ctx),
-                    navigationMenu =
-                        NavigationMenuGenerator.generateMainMenu(
-                            siteUrl = "/",
-                            blogUrl = "/blog",
-                            archiveUrl = "/blog/archive",
-                            searchUrl = "/search",
-                        ),
+                    navigationMenu = engine.nav(),
                     pagination =
-                        PaginationGenerator.generateSimpleControls(
+                        engine.pagination(
                             currentPage = pageResult.currentPage,
                             totalPages = pageResult.totalPages,
                             basePath = "/blog/author/$slug",
                         ),
-                    footer = FooterGenerator.generate(),
+                    footer = engine.footer(),
                 )
             render(ctx, "blog_overview", viewModel)
         }
@@ -300,29 +244,21 @@ fun RoutesConfig.fragmentsRoutes(
             return@get
         }
         ctx.handleAsync {
-            val fragments = blogEngine.getByYear(yearInt)
+            val fragments = engine.getByYear(yearInt)
             val viewModel =
                 ArchiveViewModel(
                     type = "year",
                     year = year,
                     fragments = fragments.map { FragmentViewModel(it) },
-                    siteTitle = siteTitle,
-                    navigationMenu =
-                        NavigationMenuGenerator.generateMainMenu(
-                            siteUrl = "/",
-                            blogUrl = "/blog",
-                            archiveUrl = "/blog/archive",
-                            searchUrl = "/search",
-                        ),
-                    footer = FooterGenerator.generate(),
+                    siteTitle = engine.siteTitle,
+                    navigationMenu = engine.nav(),
+                    footer = engine.footer(),
                     archiveYearLinks =
-                        ArchiveNavigationGenerator.generateYearLinks(
-                            baseUrl = "/blog/archive",
-                            availableYears = emptyList(),
+                        engine.generateArchiveYearLinks(
                             currentYear = yearInt,
                         ),
                     archiveBreadcrumbs =
-                        ArchiveNavigationGenerator.generateBreadcrumbs(
+                        engine.generateArchiveBreadcrumbs(
                             currentYear = yearInt,
                         ),
                 )
@@ -346,29 +282,23 @@ fun RoutesConfig.fragmentsRoutes(
         }
 
         ctx.handleAsync {
-            val fragments = blogEngine.getByYearMonth(yearInt, monthInt)
+            val fragments = engine.getByYearMonth(yearInt, monthInt)
             val viewModel =
                 ArchiveViewModel(
                     type = "year-month",
                     year = year,
                     month = month,
                     fragments = fragments.map { FragmentViewModel(it) },
-                    siteTitle = siteTitle,
-                    navigationMenu =
-                        NavigationMenuGenerator.generateMainMenu(
-                            siteUrl = "/",
-                            blogUrl = "/blog",
-                            archiveUrl = "/blog/archive",
-                            searchUrl = "/search",
-                        ),
-                    footer = FooterGenerator.generate(),
+                    siteTitle = engine.siteTitle,
+                    navigationMenu = engine.nav(),
+                    footer = engine.footer(),
                     archiveMonthLinks =
-                        ArchiveNavigationGenerator.generateMonthLinks(
+                        engine.generateArchiveMonthLinks(
                             year = yearInt,
                             currentMonth = monthInt,
                         ),
                     archiveBreadcrumbs =
-                        ArchiveNavigationGenerator.generateBreadcrumbs(
+                        engine.generateArchiveBreadcrumbs(
                             currentYear = yearInt,
                             currentMonth = monthInt,
                         ),
@@ -379,13 +309,7 @@ fun RoutesConfig.fragmentsRoutes(
 
     get("/rss.xml") { ctx ->
         ctx.handleAsync {
-            val rssXml =
-                rssGenerator.generateFeed(
-                    siteTitle = siteTitle,
-                    siteDescription = siteDescription,
-                    siteUrl = siteUrl,
-                    feedUrl = feedUrl,
-                )
+            val rssXml = engine.generateRssFeed()
             ctx.contentType("application/rss+xml")
             ctx.result(rssXml)
         }
@@ -393,33 +317,21 @@ fun RoutesConfig.fragmentsRoutes(
 
     get("/sitemap.xml") { ctx ->
         ctx.handleAsync {
-            val sitemapXml = sitemapGenerator.generateSitemap()
+            val sitemapXml = engine.generateSitemap()
             ctx.contentType("application/xml")
             ctx.result(sitemapXml)
         }
     }
 
     get("/robots.txt") { ctx ->
-        val body =
-            buildString {
-                appendLine("User-agent: *")
-                appendLine("Allow: /")
-                appendLine()
-                appendLine("Sitemap: $siteUrl/sitemap.xml")
-            }
+        val body = engine.generateRobotsTxt()
         ctx.contentType("text/plain")
         ctx.result(body)
     }
 
     get("/llms.txt") { ctx ->
         ctx.handleAsync {
-            val body =
-                LlmsTxtGenerator.generate(
-                    siteTitle = siteTitle,
-                    siteDescription = siteDescription,
-                    siteUrl = siteUrl,
-                    repositories = allRepositories,
-                )
+            val body = engine.generateLlmsTxt()
             ctx.contentType("text/plain")
             ctx.result(body)
         }
@@ -432,28 +344,15 @@ fun RoutesConfig.fragmentsRoutes(
             return@get
         }
         ctx.handleAsync {
-            val results = searchEngine.search(query, maxResults = 50)
+            val results = engine.search(query)
             val viewModel =
                 SearchViewModel(
                     query = query,
                     results = results.map { FragmentViewModel(it.fragment) },
-                    siteTitle = siteTitle,
-                    navigationMenu =
-                        NavigationMenuGenerator.generateMainMenu(
-                            siteUrl = "/",
-                            blogUrl = "/blog",
-                            archiveUrl = "/blog/archive",
-                            searchUrl = null,
-                        ),
-                    footer = FooterGenerator.generate(),
-                    searchForm =
-                        SearchFormGenerator.generate(
-                            actionUrl = "/search",
-                            paramName = "q",
-                            placeholderText = "Search articles...",
-                            buttonText = "Search",
-                            method = "get",
-                        ),
+                    siteTitle = engine.siteTitle,
+                    navigationMenu = engine.nav(),
+                    footer = engine.footer(),
+                    searchForm = engine.searchForm(),
                 )
             render(ctx, "search", viewModel)
         }

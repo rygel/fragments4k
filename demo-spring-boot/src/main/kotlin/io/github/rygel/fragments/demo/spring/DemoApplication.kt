@@ -1,33 +1,15 @@
 package io.github.rygel.fragments.demo.spring
 
-import io.github.rygel.fragments.FileSystemFragmentRepository
-import io.github.rygel.fragments.FragmentRepository
-import io.github.rygel.fragments.blog.BlogEngine
-import io.github.rygel.fragments.static.StaticPageEngine
 import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 import org.springframework.context.ApplicationContextException
-import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.ComponentScan
 import kotlin.system.exitProcess
 
 @SpringBootApplication
-class DemoApplication {
-    @Bean
-    fun fragmentRepository(): FragmentRepository {
-        val fragmentsPath =
-            System.getProperty("fragments.path")
-                ?: System.getenv("FRAGMENTS_PATH")
-                ?: "./content"
-        return FileSystemFragmentRepository(fragmentsPath)
-    }
-
-    @Bean
-    fun staticPageEngine(repository: FragmentRepository): StaticPageEngine = StaticPageEngine(repository)
-
-    @Bean
-    fun blogEngine(repository: FragmentRepository): BlogEngine = BlogEngine(repository)
-}
+@ComponentScan(basePackages = ["io.github.rygel.fragments.spring", "io.github.rygel.fragments.demo.spring"])
+class DemoApplication
 
 fun main(args: Array<String>) {
     val logger = LoggerFactory.getLogger("DemoApplication")

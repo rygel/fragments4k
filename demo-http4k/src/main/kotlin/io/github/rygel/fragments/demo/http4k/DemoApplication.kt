@@ -1,6 +1,7 @@
 package io.github.rygel.fragments.demo.http4k
 
 import io.github.rygel.fragments.FileSystemFragmentRepository
+import io.github.rygel.fragments.adapter.FragmentsEngine
 import io.github.rygel.fragments.blog.BlogEngine
 import io.github.rygel.fragments.http4k.FragmentsHttp4kAdapter
 import io.github.rygel.fragments.lucene.LuceneSearchEngine
@@ -35,17 +36,18 @@ fun main() {
         val searchEngine = LuceneSearchEngine(repository, null)
         searchEngine.index()
 
-        val renderer = PebbleTemplates().HotReload("src/main/resources/templates")
-        val adapter =
-            FragmentsHttp4kAdapter(
+        val engine =
+            FragmentsEngine(
                 staticEngine = staticEngine,
                 blogEngine = blogEngine,
-                renderer = renderer,
                 searchEngine = searchEngine,
                 siteTitle = "Fragments4k HTTP4k Demo",
                 siteDescription = "A demo blog powered by Fragments4k with HTTP4k",
                 siteUrl = "http://localhost:8080",
             )
+
+        val renderer = PebbleTemplates().HotReload("src/main/resources/templates")
+        val adapter = FragmentsHttp4kAdapter(engine, renderer)
 
         val errorHandler: Filter =
             CatchAll { e ->

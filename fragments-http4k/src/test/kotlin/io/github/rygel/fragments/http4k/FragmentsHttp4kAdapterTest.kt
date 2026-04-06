@@ -6,6 +6,7 @@ import io.github.rygel.fragments.FragmentRepository
 import io.github.rygel.fragments.FragmentRevision
 import io.github.rygel.fragments.FragmentStatus
 import io.github.rygel.fragments.RelationshipConfig
+import io.github.rygel.fragments.adapter.FragmentsEngine
 import io.github.rygel.fragments.blog.BlogEngine
 import io.github.rygel.fragments.lucene.LuceneSearchEngine
 import io.github.rygel.fragments.static.StaticPageEngine
@@ -44,15 +45,20 @@ class FragmentsHttp4kAdapterTest {
             searchEngine = LuceneSearchEngine(repo, tempIndexPath)
             searchEngine.index()
 
-            val adapter =
-                FragmentsHttp4kAdapter(
+            val engine =
+                FragmentsEngine(
                     staticEngine = staticEngine,
                     blogEngine = blogEngine,
-                    renderer = renderer,
                     searchEngine = searchEngine,
                     siteTitle = "Test Blog",
                     siteDescription = "Test Description",
                     siteUrl = "http://localhost:8080",
+                )
+
+            val adapter =
+                FragmentsHttp4kAdapter(
+                    engine = engine,
+                    renderer = renderer,
                 )
 
             server = adapter.createRoutes().asServer(SunHttp(0))

@@ -1,8 +1,8 @@
-package io.github.rygel.fragments.http4k
+package io.github.rygel.fragments.adapter
 
 object FooterGenerator {
     fun generate(
-        copyrightText: String = "©",
+        copyrightText: String = "\u00a9",
         year: Int =
             java.time.Year
                 .now()

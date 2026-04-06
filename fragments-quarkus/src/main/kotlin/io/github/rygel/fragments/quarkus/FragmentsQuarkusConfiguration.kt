@@ -2,7 +2,9 @@ package io.github.rygel.fragments.quarkus
 
 import io.github.rygel.fragments.FileSystemFragmentRepository
 import io.github.rygel.fragments.FragmentRepository
+import io.github.rygel.fragments.adapter.FragmentsEngine
 import io.github.rygel.fragments.blog.BlogEngine
+import io.github.rygel.fragments.lucene.LuceneSearchEngine
 import io.github.rygel.fragments.static.StaticPageEngine
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.enterprise.inject.Produces
@@ -24,4 +26,21 @@ class FragmentsQuarkusConfiguration(
     @Produces
     @ApplicationScoped
     fun blogEngine(repository: FragmentRepository): BlogEngine = BlogEngine(repository)
+
+    @Produces
+    @ApplicationScoped
+    fun searchEngine(repository: FragmentRepository): LuceneSearchEngine = LuceneSearchEngine(repository)
+
+    @Produces
+    @ApplicationScoped
+    fun fragmentsEngine(
+        staticEngine: StaticPageEngine,
+        blogEngine: BlogEngine,
+        searchEngine: LuceneSearchEngine,
+    ): FragmentsEngine =
+        FragmentsEngine(
+            staticEngine = staticEngine,
+            blogEngine = blogEngine,
+            searchEngine = searchEngine,
+        )
 }
