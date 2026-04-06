@@ -2,6 +2,7 @@ package io.github.rygel.fragments.rss
 
 import io.github.rygel.fragments.Fragment
 import io.github.rygel.fragments.FragmentRepository
+import io.github.rygel.fragments.FragmentTemplates
 import java.io.StringWriter
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -23,6 +24,7 @@ class RssGenerator(
     ): String {
         val fragments =
             (resolvedFragments ?: repositories.flatMap { it.getAllVisible() })
+                .filter { it.template in FragmentTemplates.BLOG_TEMPLATES }
                 .distinctBy { it.slug }
                 .sortedByDescending { it.date }
                 .take(MAX_ITEMS)

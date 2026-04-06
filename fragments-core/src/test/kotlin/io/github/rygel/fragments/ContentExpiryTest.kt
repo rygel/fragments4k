@@ -158,7 +158,7 @@ class ContentExpiryTest {
                     status = FragmentStatus.PUBLISHED,
                     date = now.minusDays(10),
                     publishDate = now.minusDays(10),
-                    expiryDate = null,
+                    expiryDate = now.minusDays(1),
                     preview = "Preview",
                     content = "Content",
                     frontMatter = emptyMap(),
@@ -333,7 +333,7 @@ class ContentExpiryTest {
         }
 
     @Test
-    fun testExpiryDateNullDoesNotCauseExpiryDateExpiration() =
+    fun testExpiryDateNullDoesNotCauseExpiration() =
         runBlocking {
             val noExpiryFragment =
                 Fragment(
@@ -353,9 +353,9 @@ class ContentExpiryTest {
             val expiringSoon = repository.getFragmentsExpiringSoon(now.plusDays(7))
             assertFalse(expiringSoon.any { it.slug == "no-expiry" })
 
-            val results = repository.expireFragments(now.minusDays(1))
-            assertEquals(1, results.size)
-            assertEquals(FragmentStatus.EXPIRED, repository.getBySlug("no-expiry")?.status)
+            val results = repository.expireFragments(now)
+            assertEquals(0, results.size, "fragment with null expiryDate must never be expired automatically")
+            assertEquals(FragmentStatus.PUBLISHED, repository.getBySlug("no-expiry")?.status)
         }
 
     @Test

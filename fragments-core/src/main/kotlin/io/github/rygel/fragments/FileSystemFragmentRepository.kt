@@ -225,7 +225,6 @@ class FileSystemFragmentRepository(
             )
         }
 
-    @Suppress("INVISIBLE_MEMBER")
     override suspend fun reload() {
         withContext(Dispatchers.IO) {
             cachedFragments = loadFragmentsFromDisk()
@@ -580,8 +579,8 @@ class FileSystemFragmentRepository(
             val expiredFragments =
                 loadFragments().filter { fragment ->
                     fragment.status == FragmentStatus.PUBLISHED &&
-                        fragment.publishDate != null &&
-                        fragment.publishDate.isBefore(threshold)
+                        fragment.expiryDate != null &&
+                        fragment.expiryDate.isBefore(threshold)
                 }
 
             expiredFragments.map { fragment ->
@@ -600,19 +599,58 @@ class FileSystemFragmentRepository(
         output: StringBuilder,
     ) {
         frontMatter.forEach { (key, value) ->
-            when (value) {
-                is String -> output.append("$key: \"${value.yamlEscape()}\"\n")
-                is Boolean -> output.append("$key: $value\n")
-                is Number -> output.append("$key: $value\n")
-                is List<*> -> {
-                    output.append("$key:\n")
-                    value.forEach { item ->
-                        output.append("  - \"${item?.toString().orEmpty().yamlEscape()}\"\n")
+            dumpValue(key, value, output, indent = "")
+        }
+    }
+
+    private fun dumpValue(
+        key: String,
+        value: Any?,
+        output: StringBuilder,
+        indent: String,
+    ) {
+        when (value) {
+            null -> output.append("$indent$key: null\n")
+            is String -> output.append("$indent$key: \"${value.yamlEscape()}\"\n")
+            is Boolean -> output.append("$indent$key: $value\n")
+            is Number -> output.append("$indent$key: $value\n")
+            is LocalDateTime -> output.append("$indent$key: \"$value\"\n")
+            is Map<*, *> -> {
+                output.append("$indent$key:\n")
+                value.forEach { (k, v) -> dumpValue(k.toString(), v, output, "$indent  ") }
+            }
+            is List<*> -> {
+                output.append("$indent$key:\n")
+                value.forEach { item -> dumpListItem(item, output, "$indent  ") }
+            }
+            else -> output.append("$indent$key: \"${value.toString().yamlEscape()}\"\n")
+        }
+    }
+
+    private fun dumpListItem(
+        item: Any?,
+        output: StringBuilder,
+        indent: String,
+    ) {
+        when (item) {
+            is Map<*, *> -> {
+                val entries = item.entries.toList()
+                if (entries.isEmpty()) {
+                    output.append("$indent- {}\n")
+                    return
+                }
+                // First key uses block sequence indicator `- `; subsequent keys align under it.
+                val innerIndent = "$indent  "
+                entries.forEachIndexed { index, (k, v) ->
+                    if (index == 0) {
+                        output.append("$indent- ")
+                        dumpValue(k.toString(), v, output, "")
+                    } else {
+                        dumpValue(k.toString(), v, output, innerIndent)
                     }
                 }
-                is LocalDateTime -> output.append("$key: \"$value\"\n")
-                else -> output.append("$key: \"${value.toString().yamlEscape()}\"\n")
             }
+            else -> output.append("$indent- \"${item?.toString().orEmpty().yamlEscape()}\"\n")
         }
     }
 
