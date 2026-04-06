@@ -78,20 +78,39 @@ class RssGeneratorTest {
         }
 
     @Test
-    fun `feed includes fragments from multiple repositories`() =
+    fun `feed includes blog posts from multiple repositories`() =
         runBlocking {
             val staticRepo = mockk<FragmentRepository>()
             val blogRepo = mockk<FragmentRepository>()
-            coEvery { staticRepo.getAllVisible() } returns listOf(fragment("about", "About"))
-            coEvery { blogRepo.getAllVisible() } returns listOf(fragment("post", "Blog Post"))
+            coEvery { staticRepo.getAllVisible() } returns listOf(fragment("about", "About", template = "static"))
+            coEvery { blogRepo.getAllVisible() } returns listOf(fragment("post", "Blog Post", template = "blog"))
 
             val generator = RssGenerator(listOf(staticRepo, blogRepo))
 
             val xml = generator.generateFeed(siteUrl = "https://example.com")
             assertValidXml(xml)
 
-            assertTrue(xml.contains("/about"), "should contain static page")
-            assertTrue(xml.contains("/post"), "should contain blog post")
+            assertFalse(xml.contains("/about"), "static pages must not appear in RSS feed")
+            assertTrue(xml.contains("/post"), "blog posts must appear in RSS feed")
+        }
+
+    @Test
+    fun `feed excludes non-blog templates`() =
+        runBlocking {
+            coEvery { repository.getAllVisible() } returns
+                listOf(
+                    fragment("blog-post", "Blog Post", template = "blog"),
+                    fragment("about-page", "About", template = "static"),
+                    fragment("contact-page", "Contact", template = "default"),
+                )
+            val generator = RssGenerator(repository)
+
+            val xml = generator.generateFeed(siteUrl = "https://example.com")
+            assertValidXml(xml)
+
+            assertTrue(xml.contains("/blog-post"), "blog posts must appear in feed")
+            assertFalse(xml.contains("/about-page"), "static pages must not appear in feed")
+            assertFalse(xml.contains("/contact-page"), "default-template pages must not appear in feed")
         }
 
     @Test
@@ -199,6 +218,7 @@ class RssGeneratorTest {
                     status = FragmentStatus.PUBLISHED,
                     visible = true,
                     resolvedUrl = "/no-date",
+                    template = "blog",
                 )
             coEvery { repository.getAllVisible() } returns listOf(frag)
             val generator = RssGenerator(repository)
@@ -224,6 +244,7 @@ class RssGeneratorTest {
                     status = FragmentStatus.PUBLISHED,
                     visible = true,
                     resolvedUrl = "/special",
+                    template = "blog",
                 )
             coEvery { repository.getAllVisible() } returns listOf(frag)
             val generator = RssGenerator(repository)
@@ -283,6 +304,7 @@ class RssGeneratorTest {
         tags: List<String> = emptyList(),
         url: String = "/$slug",
         date: LocalDateTime = LocalDateTime.of(2026, 1, 15, 10, 0),
+        template: String = "blog",
     ): Fragment =
         Fragment(
             title = title,
@@ -297,5 +319,6 @@ class RssGeneratorTest {
             resolvedUrl = url,
             categories = categories,
             tags = tags,
+            template = template,
         )
 }
