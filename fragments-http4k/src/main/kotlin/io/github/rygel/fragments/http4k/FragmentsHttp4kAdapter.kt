@@ -6,6 +6,7 @@ import io.github.rygel.fragments.AuthorRepository
 import io.github.rygel.fragments.AuthorViewModel
 import io.github.rygel.fragments.FooterConfig
 import io.github.rygel.fragments.FooterGenerator
+import io.github.rygel.fragments.FragmentRepository
 import io.github.rygel.fragments.FragmentViewModel
 import io.github.rygel.fragments.LlmsTxtGenerator
 import io.github.rygel.fragments.NavigationLink
@@ -32,16 +33,6 @@ class FragmentsHttp4kAdapter(
     private val blogEngine: BlogEngine,
     private val renderer: TemplateRenderer,
     private val searchEngine: LuceneSearchEngine,
-    private val rssGenerator: RssGenerator =
-        RssGenerator(
-            repositories = listOf(staticEngine.getRepository(), blogEngine.getRepository()),
-        ),
-    private val sitemapGenerator: SitemapGenerator =
-        SitemapGenerator(
-            repositories = listOf(staticEngine.getRepository(), blogEngine.getRepository()),
-            siteUrl = "http://localhost:8080",
-            lastModified = null,
-        ),
     private val siteTitle: String = "My Blog",
     private val siteDescription: String = "My Awesome Blog",
     private val siteUrl: String = "http://localhost:8080",
@@ -49,7 +40,16 @@ class FragmentsHttp4kAdapter(
     private val navigationMenu: List<NavigationLink>? = null,
     private val footer: FooterConfig? = null,
     private val authorRepository: AuthorRepository? = null,
+    private val additionalRepositories: List<FragmentRepository> = emptyList(),
 ) {
+    private val allRepositories: List<FragmentRepository> by lazy {
+        listOf(staticEngine.getRepository(), blogEngine.getRepository()) + additionalRepositories
+    }
+    private val rssGenerator: RssGenerator by lazy { RssGenerator(allRepositories) }
+    private val sitemapGenerator: SitemapGenerator by lazy {
+        SitemapGenerator(allRepositories, siteUrl)
+    }
+
     private fun nav() = navigationMenu ?: NavigationMenuGenerator.generateMainMenu()
 
     private fun footer() = footer ?: FooterGenerator.generate()
@@ -293,7 +293,7 @@ class FragmentsHttp4kAdapter(
                     siteTitle = siteTitle,
                     siteDescription = siteDescription,
                     siteUrl = siteUrl,
-                    repositories = listOf(staticEngine.getRepository(), blogEngine.getRepository()),
+                    repositories = allRepositories,
                 )
             Response(Status.OK)
                 .header("Content-Type", "text/plain; charset=utf-8")
