@@ -250,8 +250,8 @@ class InMemoryFragmentRepository : FragmentRepository {
         val expiredFragments =
             fragments.filter { fragment ->
                 fragment.status == io.github.rygel.fragments.FragmentStatus.PUBLISHED &&
-                    fragment.publishDate != null &&
-                    fragment.publishDate.isBefore(threshold)
+                    fragment.expiryDate != null &&
+                    fragment.expiryDate.isBefore(threshold)
             }
 
         return expiredFragments.map { fragment ->
