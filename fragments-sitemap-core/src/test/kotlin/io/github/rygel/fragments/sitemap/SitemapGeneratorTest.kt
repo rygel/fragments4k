@@ -202,6 +202,25 @@ class SitemapGeneratorTest {
             assertTrue(xml.contains("<priority>1.0</priority>"), "root URL should have priority 1.0")
         }
 
+    @Test
+    fun `sitemap excludes fragments with excluded templates`() =
+        runBlocking {
+            coEvery { repository.getAllVisible() } returns
+                listOf(
+                    fragment("public-page", "Public Page"),
+                    fragment("email-template", "Email Template").copy(template = "email"),
+                    fragment("draft-preview", "Draft Preview").copy(template = "draft-preview"),
+                )
+            val generator = SitemapGenerator(repository, "https://example.com", excludedTemplates = setOf("email", "draft-preview"))
+
+            val xml = generator.generateSitemap()
+            assertValidXml(xml)
+
+            assertTrue(xml.contains("/public-page"), "non-excluded fragment should be present")
+            assertFalse(xml.contains("/email-template"), "email template should be excluded")
+            assertFalse(xml.contains("/draft-preview"), "draft-preview template should be excluded")
+        }
+
     private fun assertValidXml(xml: String) {
         val factory =
             DocumentBuilderFactory.newInstance().apply {

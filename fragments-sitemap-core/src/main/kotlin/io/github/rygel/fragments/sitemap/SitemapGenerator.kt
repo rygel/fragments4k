@@ -14,18 +14,28 @@ class SitemapGenerator(
     private val repositories: List<FragmentRepository>,
     private val siteUrl: String,
     private val lastModified: LocalDateTime? = null,
+    /**
+     * Template names to exclude from the sitemap entirely.
+     *
+     * By default all visible fragments are included. Pass template names
+     * (e.g. `setOf("email", "draft-preview")`) to suppress fragments that
+     * should never appear in public sitemaps.
+     */
+    private val excludedTemplates: Set<String> = emptySet(),
 ) {
     constructor(
         repository: FragmentRepository,
         siteUrl: String,
         lastModified: LocalDateTime? = null,
-    ) : this(listOf(repository), siteUrl, lastModified)
+        excludedTemplates: Set<String> = emptySet(),
+    ) : this(listOf(repository), siteUrl, lastModified, excludedTemplates)
 
     suspend fun generateSitemap(resolvedFragments: List<Fragment>? = null): String =
         withContext(Dispatchers.IO) {
             val fragments =
                 (resolvedFragments ?: repositories.flatMap { it.getAllVisible() })
                     .distinctBy { it.slug }
+                    .filter { it.template !in excludedTemplates }
             val lastModDate = lastModified ?: fragments.mapNotNull { it.date }.maxOrNull() ?: LocalDateTime.now()
             val lastModDateFormatted = lastModDate.format(formatter)
 

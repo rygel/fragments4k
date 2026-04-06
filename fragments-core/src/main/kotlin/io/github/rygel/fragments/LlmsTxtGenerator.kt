@@ -9,11 +9,7 @@ package io.github.rygel.fragments
  * plain-text preview (max 160 characters).
  */
 object LlmsTxtGenerator {
-    /**
-     * Template values that identify a fragment as a blog post.
-     * Kept in sync with `BlogEngine.BLOG_TEMPLATES`.
-     */
-    private val BLOG_TEMPLATES: Set<String> = setOf("blog", "blog_post")
+    private val BLOG_TEMPLATES: Set<String> = FragmentTemplates.BLOG_TEMPLATES
 
     /**
      * Generates the llms.txt content.
