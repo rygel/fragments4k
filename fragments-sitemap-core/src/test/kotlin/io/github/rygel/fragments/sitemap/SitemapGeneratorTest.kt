@@ -144,6 +144,53 @@ class SitemapGeneratorTest {
         }
 
     @Test
+    fun `sitemap includes fragments from multiple repositories`() =
+        runBlocking {
+            val staticRepo = mockk<FragmentRepository>()
+            val blogRepo = mockk<FragmentRepository>()
+            coEvery { staticRepo.getAllVisible() } returns listOf(fragment("about", "About Us"))
+            coEvery { blogRepo.getAllVisible() } returns
+                listOf(
+                    fragment("hello-world", "Hello World", url = "/blog/hello-world"),
+                    fragment("second-post", "Second Post", url = "/blog/second-post"),
+                )
+
+            val generator =
+                SitemapGenerator(
+                    repositories = listOf(staticRepo, blogRepo),
+                    siteUrl = "https://example.com",
+                )
+
+            val xml = generator.generateSitemap()
+            assertValidXml(xml)
+
+            assertTrue(xml.contains("/about"), "should contain static page")
+            assertTrue(xml.contains("/blog/hello-world"), "should contain blog post")
+            assertTrue(xml.contains("/blog/second-post"), "should contain second blog post")
+        }
+
+    @Test
+    fun `sitemap deduplicates fragments across repositories by slug`() =
+        runBlocking {
+            val repo1 = mockk<FragmentRepository>()
+            val repo2 = mockk<FragmentRepository>()
+            coEvery { repo1.getAllVisible() } returns listOf(fragment("about", "About Us"))
+            coEvery { repo2.getAllVisible() } returns listOf(fragment("about", "About Us Duplicate"))
+
+            val generator =
+                SitemapGenerator(
+                    repositories = listOf(repo1, repo2),
+                    siteUrl = "https://example.com",
+                )
+
+            val xml = generator.generateSitemap()
+            assertValidXml(xml)
+
+            val aboutCount = Regex("/about</loc>").findAll(xml).count()
+            assertTrue(aboutCount == 1, "duplicate slug should appear only once, found $aboutCount")
+        }
+
+    @Test
     fun `root URL always has priority 1_0`() =
         runBlocking {
             coEvery { repository.getAllVisible() } returns listOf(fragment("post", "A Post"))

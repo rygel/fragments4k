@@ -19,6 +19,8 @@ class BlogEngine(
     private val pageSize: Int = 10,
     private val relationshipConfig: RelationshipConfig = RelationshipConfig(),
 ) {
+    fun getRepository(): FragmentRepository = repository
+
     /**
      * Returns `true` if [template] marks the fragment as a blog post.
      * Centralised here so a mistyped template value produces a visible miss
