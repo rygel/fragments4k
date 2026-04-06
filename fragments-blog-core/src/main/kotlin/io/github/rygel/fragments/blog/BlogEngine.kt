@@ -66,6 +66,19 @@ class BlogEngine(
         return Page.create(blogPosts, page, pageSize)
     }
 
+    suspend fun getAllPosts(includeDrafts: Boolean = false): List<Fragment> {
+        val allFragments =
+            if (includeDrafts) {
+                repository.getAll()
+            } else {
+                repository.getAllVisible()
+            }
+        return allFragments
+            .filter { isBlogTemplate(it.template) }
+            .withResolvedUrls()
+            .sortedByDescending { it.date }
+    }
+
     suspend fun getDrafts(page: Int): Page<Fragment> {
         val draftFragments =
             repository

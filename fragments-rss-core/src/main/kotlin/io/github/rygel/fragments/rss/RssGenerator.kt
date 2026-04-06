@@ -19,10 +19,10 @@ class RssGenerator(
         siteDescription: String = "My Awesome Blog",
         siteUrl: String = "http://localhost:8080",
         feedUrl: String = "http://localhost:8080/rss.xml",
+        resolvedFragments: List<Fragment>? = null,
     ): String {
         val fragments =
-            repositories
-                .flatMap { it.getAllVisible() }
+            (resolvedFragments ?: repositories.flatMap { it.getAllVisible() })
                 .distinctBy { it.slug }
                 .sortedByDescending { it.date }
                 .take(MAX_ITEMS)

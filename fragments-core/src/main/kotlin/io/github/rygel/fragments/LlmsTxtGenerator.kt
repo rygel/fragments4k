@@ -23,16 +23,19 @@ object LlmsTxtGenerator {
      * @param siteUrl       Absolute base URL (no trailing slash) for building links.
      * @param repositories  One or more [FragmentRepository] instances whose visible
      *                      fragments should appear in the output.
+     * @param resolvedFragments When provided, used instead of loading from [repositories].
+     *                      Pass pre-resolved fragments (with [Fragment.resolvedUrl] set)
+     *                      to ensure correct date-based blog URLs appear in the output.
      */
     suspend fun generate(
         siteTitle: String,
         siteDescription: String,
         siteUrl: String,
         repositories: List<FragmentRepository>,
+        resolvedFragments: List<Fragment>? = null,
     ): String {
         val allFragments =
-            repositories
-                .flatMap { it.getAllVisible() }
+            (resolvedFragments ?: repositories.flatMap { it.getAllVisible() })
                 .distinctBy { it.slug }
 
         val blogPosts =
