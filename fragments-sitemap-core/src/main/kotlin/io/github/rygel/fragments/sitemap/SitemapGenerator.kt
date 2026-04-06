@@ -21,11 +21,10 @@ class SitemapGenerator(
         lastModified: LocalDateTime? = null,
     ) : this(listOf(repository), siteUrl, lastModified)
 
-    suspend fun generateSitemap(): String =
+    suspend fun generateSitemap(resolvedFragments: List<Fragment>? = null): String =
         withContext(Dispatchers.IO) {
             val fragments =
-                repositories
-                    .flatMap { it.getAllVisible() }
+                (resolvedFragments ?: repositories.flatMap { it.getAllVisible() })
                     .distinctBy { it.slug }
             val lastModDate = lastModified ?: fragments.mapNotNull { it.date }.maxOrNull() ?: LocalDateTime.now()
             val lastModDateFormatted = lastModDate.format(formatter)

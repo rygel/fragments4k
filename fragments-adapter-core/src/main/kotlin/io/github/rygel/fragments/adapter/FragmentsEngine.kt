@@ -34,7 +34,7 @@ class FragmentsEngine(
     val siteUrl: String = "http://localhost:8080",
     val feedUrl: String = "$siteUrl/rss.xml",
     val authorRepository: AuthorRepository? = null,
-    additionalRepositories: List<FragmentRepository> = emptyList(),
+    private val additionalRepositories: List<FragmentRepository> = emptyList(),
     val navigationMenu: List<NavigationLink>? = null,
     val footer: FooterConfig? = null,
 ) {
@@ -114,15 +114,28 @@ class FragmentsEngine(
 
     // -- Feed generation ------------------------------------------------------
 
+    /**
+     * Collects all visible fragments with their URLs fully resolved
+     * (date-based blog paths, page prefixes, etc.) so that sitemap/RSS/llms
+     * generators emit correct absolute URLs rather than raw slug paths.
+     */
+    private suspend fun collectResolvedFragments(): List<Fragment> {
+        val staticPages = staticEngine.getAllStaticPages()
+        val blogPosts = blogEngine.getAllPosts()
+        val additional = additionalRepositories.flatMap { it.getAllVisible() }
+        return (staticPages + blogPosts + additional).distinctBy { it.slug }
+    }
+
     suspend fun generateRssFeed(): String =
         rssGenerator.generateFeed(
             siteTitle = siteTitle,
             siteDescription = siteDescription,
             siteUrl = siteUrl,
             feedUrl = feedUrl,
+            resolvedFragments = collectResolvedFragments(),
         )
 
-    suspend fun generateSitemap(): String = sitemapGenerator.generateSitemap()
+    suspend fun generateSitemap(): String = sitemapGenerator.generateSitemap(collectResolvedFragments())
 
     fun generateRobotsTxt(): String =
         buildString {
@@ -138,6 +151,7 @@ class FragmentsEngine(
             siteDescription = siteDescription,
             siteUrl = siteUrl,
             repositories = allRepositories,
+            resolvedFragments = collectResolvedFragments(),
         )
 
     // -- Archive navigation ---------------------------------------------------
