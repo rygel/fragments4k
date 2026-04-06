@@ -613,12 +613,12 @@
 
     <distributionManagement>
         <repository>
-            <id>github</id>
+            <id>github-rygel</id>
             <name>GitHub Packages</name>
             <url>https://maven.pkg.github.com/rygel/fragments4k</url>
         </repository>
         <snapshotRepository>
-            <id>github</id>
+            <id>github-rygel</id>
             <name>GitHub Packages</name>
             <url>https://maven.pkg.github.com/rygel/fragments4k</url>
         </snapshotRepository>
