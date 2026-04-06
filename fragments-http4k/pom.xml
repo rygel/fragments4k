@@ -32,27 +32,7 @@
     <dependencies>
         <dependency>
             <groupId>io.github.rygel</groupId>
-            <artifactId>fragments-static-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.github.rygel</groupId>
-            <artifactId>fragments-blog-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.github.rygel</groupId>
-            <artifactId>fragments-rss-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.github.rygel</groupId>
-            <artifactId>fragments-sitemap-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.github.rygel</groupId>
-            <artifactId>fragments-lucene-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.github.rygel</groupId>
-            <artifactId>fragments-navigation-core</artifactId>
+            <artifactId>fragments-adapter-core</artifactId>
         </dependency>
         <dependency>
             <groupId>org.http4k</groupId>

@@ -93,6 +93,7 @@
         <module>fragments-navigation-core</module>
         <module>fragments-social-core</module>
         <module>fragments-seo-core</module>
+        <module>fragments-adapter-core</module>
         <module>fragments-http4k</module>
         <module>fragments-javalin</module>
         <module>fragments-spring-boot</module>
@@ -273,6 +274,11 @@
             <dependency>
                 <groupId>io.github.rygel</groupId>
                 <artifactId>fragments-sitemap-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.rygel</groupId>
+                <artifactId>fragments-adapter-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

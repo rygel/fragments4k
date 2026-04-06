@@ -32,19 +32,7 @@
     <dependencies>
         <dependency>
             <groupId>io.github.rygel</groupId>
-            <artifactId>fragments-static-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.github.rygel</groupId>
-            <artifactId>fragments-blog-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.github.rygel</groupId>
-            <artifactId>fragments-rss-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.github.rygel</groupId>
-            <artifactId>fragments-sitemap-core</artifactId>
+            <artifactId>fragments-adapter-core</artifactId>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>

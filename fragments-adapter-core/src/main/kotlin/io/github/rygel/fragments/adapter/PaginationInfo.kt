@@ -1,4 +1,4 @@
-package io.github.rygel.fragments.http4k
+package io.github.rygel.fragments.adapter
 
 data class PaginationInfo(
     val currentPage: Int,
