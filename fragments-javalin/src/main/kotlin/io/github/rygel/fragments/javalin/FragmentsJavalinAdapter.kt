@@ -6,6 +6,7 @@ import io.github.rygel.fragments.AuthorRepository
 import io.github.rygel.fragments.AuthorViewModel
 import io.github.rygel.fragments.FooterConfig
 import io.github.rygel.fragments.FooterGenerator
+import io.github.rygel.fragments.FragmentRepository
 import io.github.rygel.fragments.FragmentViewModel
 import io.github.rygel.fragments.LlmsTxtGenerator
 import io.github.rygel.fragments.NavigationLink
@@ -34,14 +35,14 @@ fun RoutesConfig.fragmentsRoutes(
     siteUrl: String = "http://localhost:8080",
     feedUrl: String = "http://localhost:8080/rss.xml",
     authorRepository: AuthorRepository? = null,
+    additionalRepositories: List<FragmentRepository> = emptyList(),
 ) {
-    val rssGenerator =
-        RssGenerator(
-            repositories = listOf(staticEngine.getRepository(), blogEngine.getRepository()),
-        )
+    val allRepositories: List<FragmentRepository> =
+        listOf(staticEngine.getRepository(), blogEngine.getRepository()) + additionalRepositories
+    val rssGenerator = RssGenerator(repositories = allRepositories)
     val sitemapGenerator =
         SitemapGenerator(
-            repositories = listOf(staticEngine.getRepository(), blogEngine.getRepository()),
+            repositories = allRepositories,
             siteUrl = siteUrl,
             lastModified = null,
         )
@@ -417,7 +418,7 @@ fun RoutesConfig.fragmentsRoutes(
                     siteTitle = siteTitle,
                     siteDescription = siteDescription,
                     siteUrl = siteUrl,
-                    repositories = listOf(staticEngine.getRepository(), blogEngine.getRepository()),
+                    repositories = allRepositories,
                 )
             ctx.contentType("text/plain")
             ctx.result(body)
