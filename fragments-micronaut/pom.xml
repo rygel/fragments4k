@@ -14,7 +14,7 @@
     <description>Micronaut web framework adapter</description>
 
     <properties>
-        <micronaut.version>4.5.1</micronaut.version>
+        <micronaut.version>4.10.11</micronaut.version>
     </properties>
 
     <dependencyManagement>
