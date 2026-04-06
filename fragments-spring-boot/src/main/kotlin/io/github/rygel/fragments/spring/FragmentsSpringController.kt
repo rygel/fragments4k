@@ -1,13 +1,8 @@
 package io.github.rygel.fragments.spring
 
-import io.github.rygel.fragments.AuthorRepository
 import io.github.rygel.fragments.AuthorViewModel
-import io.github.rygel.fragments.FragmentRepository
 import io.github.rygel.fragments.FragmentViewModel
-import io.github.rygel.fragments.LlmsTxtGenerator
-import io.github.rygel.fragments.blog.BlogEngine
-import io.github.rygel.fragments.rss.RssGenerator
-import io.github.rygel.fragments.sitemap.SitemapGenerator
+import io.github.rygel.fragments.adapter.FragmentsEngine
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
@@ -18,26 +13,15 @@ import org.springframework.web.bind.annotation.RequestParam
 
 @Controller
 class FragmentsSpringController(
-    private val repository: FragmentRepository,
-    private val blogEngine: BlogEngine,
-    private val siteTitle: String = "My Blog",
-    private val siteDescription: String = "My Awesome Blog",
-    private val siteUrl: String = "http://localhost:8080",
-    private val feedUrl: String = "http://localhost:8080/rss.xml",
-    private val authorRepository: AuthorRepository? = null,
-    private val additionalRepositories: List<FragmentRepository> = emptyList(),
+    private val engine: FragmentsEngine,
 ) {
-    private val allRepositories by lazy { listOf(repository, blogEngine.getRepository()) + additionalRepositories }
-    private val rssGenerator: RssGenerator by lazy { RssGenerator(allRepositories) }
-    private val sitemapGenerator: SitemapGenerator by lazy { SitemapGenerator(allRepositories, siteUrl, lastModified = null) }
-
     @GetMapping("/")
     suspend fun home(
         @RequestHeader(value = FragmentViewModel.HTMX_REQUEST_HEADER, required = false) htmxRequest: String?,
         model: Model,
     ): String {
-        val fragments = repository.getAllVisible()
-        val isPartial = isHtmxRequest(htmxRequest)
+        val fragments = engine.getHome()
+        val isPartial = engine.isHtmxRequest(htmxRequest)
         model.addAttribute(
             "viewModel",
             HomeViewModel(
@@ -54,8 +38,8 @@ class FragmentsSpringController(
         @RequestHeader(value = FragmentViewModel.HTMX_REQUEST_HEADER, required = false) htmxRequest: String?,
         model: Model,
     ): String {
-        val fragment = repository.getBySlug(slug)
-        val isPartial = isHtmxRequest(htmxRequest)
+        val fragment = engine.getPage(slug)
+        val isPartial = engine.isHtmxRequest(htmxRequest)
         return if (fragment != null) {
             model.addAttribute("viewModel", FragmentViewModel(fragment, isPartial))
             fragment.template
@@ -70,8 +54,8 @@ class FragmentsSpringController(
         @RequestHeader(value = FragmentViewModel.HTMX_REQUEST_HEADER, required = false) htmxRequest: String?,
         model: Model,
     ): String {
-        val pageResult = blogEngine.getOverview(includeDrafts = false, page = page)
-        val isPartial = isHtmxRequest(htmxRequest)
+        val pageResult = engine.getBlogOverview(page)
+        val isPartial = engine.isHtmxRequest(htmxRequest)
         model.addAttribute(
             "viewModel",
             BlogOverviewViewModel(
@@ -101,8 +85,8 @@ class FragmentsSpringController(
         @RequestHeader(value = FragmentViewModel.HTMX_REQUEST_HEADER, required = false) htmxRequest: String?,
         model: Model,
     ): String {
-        val fragment = blogEngine.getPost(year, month, slug)
-        val isPartial = isHtmxRequest(htmxRequest)
+        val fragment = engine.getBlogPost(year, month, slug)
+        val isPartial = engine.isHtmxRequest(htmxRequest)
         return if (fragment != null) {
             model.addAttribute("viewModel", FragmentViewModel(fragment, isPartial))
             fragment.template
@@ -118,8 +102,8 @@ class FragmentsSpringController(
         @RequestHeader(value = FragmentViewModel.HTMX_REQUEST_HEADER, required = false) htmxRequest: String?,
         model: Model,
     ): String {
-        val pageResult = blogEngine.getByTag(tag, page)
-        val isPartial = isHtmxRequest(htmxRequest)
+        val pageResult = engine.getByTag(tag, page)
+        val isPartial = engine.isHtmxRequest(htmxRequest)
         model.addAttribute(
             "viewModel",
             TagViewModel(
@@ -142,8 +126,8 @@ class FragmentsSpringController(
         @RequestHeader(value = FragmentViewModel.HTMX_REQUEST_HEADER, required = false) htmxRequest: String?,
         model: Model,
     ): String {
-        val pageResult = blogEngine.getByCategory(category, page)
-        val isPartial = isHtmxRequest(htmxRequest)
+        val pageResult = engine.getByCategory(category, page)
+        val isPartial = engine.isHtmxRequest(htmxRequest)
         model.addAttribute(
             "viewModel",
             CategoryViewModel(
@@ -166,16 +150,15 @@ class FragmentsSpringController(
         @RequestHeader(value = FragmentViewModel.HTMX_REQUEST_HEADER, required = false) htmxRequest: String?,
         model: Model,
     ): String {
-        val pageResult = blogEngine.getByAuthor(slug, page)
-        val isPartial = isHtmxRequest(htmxRequest)
-        val author = authorRepository?.getBySlugOrId(slug)
-        val authorViewModel = author?.let { AuthorViewModel(it, postCount = pageResult.totalItems) }
+        val pageResult = engine.getByAuthor(slug, page)
+        val isPartial = engine.isHtmxRequest(htmxRequest)
+        val author = engine.getAuthor(slug)
         model.addAttribute(
             "viewModel",
             AuthorPageViewModel(
                 authorSlug = slug,
-                authorName = author?.name,
-                author = authorViewModel,
+                authorName = author?.author?.name,
+                author = author,
                 fragments = pageResult.items.map { FragmentViewModel(it, isPartial) },
                 currentPage = pageResult.currentPage,
                 totalPages = pageResult.totalPages,
@@ -188,39 +171,16 @@ class FragmentsSpringController(
     }
 
     @GetMapping(value = ["/rss.xml", "/feed.xml"], produces = [MediaType.APPLICATION_ATOM_XML_VALUE, MediaType.APPLICATION_XML_VALUE])
-    suspend fun rss(): String {
-        val rssXml =
-            rssGenerator.generateFeed(
-                siteTitle = siteTitle,
-                siteDescription = siteDescription,
-                siteUrl = siteUrl,
-                feedUrl = feedUrl,
-            )
-        return rssXml
-    }
+    suspend fun rss(): String = engine.generateRssFeed()
 
     @GetMapping(value = ["/sitemap.xml"], produces = [MediaType.APPLICATION_XML_VALUE])
-    suspend fun sitemap(): String = sitemapGenerator.generateSitemap()
+    suspend fun sitemap(): String = engine.generateSitemap()
 
     @GetMapping(value = ["/robots.txt"], produces = [MediaType.TEXT_PLAIN_VALUE])
-    fun robotsTxt(): String =
-        buildString {
-            appendLine("User-agent: *")
-            appendLine("Allow: /")
-            appendLine()
-            appendLine("Sitemap: $siteUrl/sitemap.xml")
-        }
+    fun robotsTxt(): String = engine.generateRobotsTxt()
 
     @GetMapping(value = ["/llms.txt"], produces = [MediaType.TEXT_PLAIN_VALUE])
-    suspend fun llmsTxt(): String =
-        LlmsTxtGenerator.generate(
-            siteTitle = siteTitle,
-            siteDescription = siteDescription,
-            siteUrl = siteUrl,
-            repositories = allRepositories,
-        )
-
-    private fun isHtmxRequest(header: String?): Boolean = header?.lowercase() == "true"
+    suspend fun llmsTxt(): String = engine.generateLlmsTxt()
 
     data class HomeViewModel(
         val fragments: List<FragmentViewModel>,

@@ -1,6 +1,7 @@
 package io.github.rygel.fragments.demo.javalin
 
 import io.github.rygel.fragments.FileSystemFragmentRepository
+import io.github.rygel.fragments.adapter.FragmentsEngine
 import io.github.rygel.fragments.blog.BlogEngine
 import io.github.rygel.fragments.javalin.fragmentsRoutes
 import io.github.rygel.fragments.lucene.LuceneSearchEngine
@@ -25,22 +26,23 @@ fun main() {
     val blogEngine = BlogEngine(repository)
     val searchEngine = LuceneSearchEngine(repository, null)
 
+    val engine =
+        FragmentsEngine(
+            staticEngine = staticEngine,
+            blogEngine = blogEngine,
+            searchEngine = searchEngine,
+            siteTitle = "Fragments4k Javalin Demo",
+            siteDescription = "A demo blog powered by Fragments4k with Javalin",
+            siteUrl = "http://localhost:8080",
+        )
+
     val pebble = JavalinPebble()
 
     val app =
         Javalin.create { config ->
             config.staticFiles.enableWebjars()
             config.fileRenderer(pebble)
-            config.routes.fragmentsRoutes(
-                staticEngine = staticEngine,
-                blogEngine = blogEngine,
-                renderer = null,
-                searchEngine = searchEngine,
-                siteTitle = "Fragments4k Javalin Demo",
-                siteDescription = "A demo blog powered by Fragments4k with Javalin",
-                siteUrl = "http://localhost:8080",
-                feedUrl = "http://localhost:8080/rss.xml",
-            )
+            config.routes.fragmentsRoutes(engine, renderer = null)
             config.routes.exception(Exception::class.java) { e, ctx ->
                 logger.error("Error handling request", e)
                 ctx.status(500).result("Internal Server Error: ${e.message}")

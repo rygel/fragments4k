@@ -1,14 +1,8 @@
 package io.github.rygel.fragments.quarkus
 
-import io.github.rygel.fragments.AuthorRepository
 import io.github.rygel.fragments.AuthorViewModel
-import io.github.rygel.fragments.FragmentRepository
 import io.github.rygel.fragments.FragmentViewModel
-import io.github.rygel.fragments.LlmsTxtGenerator
-import io.github.rygel.fragments.blog.BlogEngine
-import io.github.rygel.fragments.rss.RssGenerator
-import io.github.rygel.fragments.sitemap.SitemapGenerator
-import io.github.rygel.fragments.static.StaticPageEngine
+import io.github.rygel.fragments.adapter.FragmentsEngine
 import jakarta.inject.Inject
 import jakarta.ws.rs.GET
 import jakarta.ws.rs.Path
@@ -23,28 +17,13 @@ import jakarta.ws.rs.core.Response
 class FragmentsQuarkusResource
     @Inject
     constructor(
-        val staticEngine: StaticPageEngine,
-        val blogEngine: BlogEngine,
-        private val siteTitle: String = "My Blog",
-        private val siteDescription: String = "My Awesome Blog",
-        private val siteUrl: String = "http://localhost:8080",
-        private val feedUrl: String = "http://localhost:8080/rss.xml",
-        private val authorRepository: AuthorRepository? = null,
-        private val additionalRepositories: List<FragmentRepository> = emptyList(),
+        private val engine: FragmentsEngine,
     ) {
-        private val allRepositories: List<FragmentRepository> by lazy {
-            listOf(staticEngine.getRepository(), blogEngine.getRepository()) + additionalRepositories
-        }
-        private val rssGenerator: RssGenerator by lazy { RssGenerator(allRepositories) }
-        private val sitemapGenerator: SitemapGenerator by lazy {
-            SitemapGenerator(allRepositories, siteUrl, lastModified = null)
-        }
-
         @GET
         suspend fun home(
             @Context headers: HttpHeaders,
         ): Response {
-            val fragments = staticEngine.getAllStaticPages()
+            val fragments = engine.getHome()
             val isPartial = isHtmxRequest(headers)
             val viewModel =
                 HomeViewModel(
@@ -60,7 +39,7 @@ class FragmentsQuarkusResource
             @PathParam("slug") slug: String,
             @Context headers: HttpHeaders,
         ): Response {
-            val fragment = staticEngine.getPage(slug)
+            val fragment = engine.getPage(slug)
             val isPartial = isHtmxRequest(headers)
             return if (fragment != null) {
                 val viewModel = FragmentViewModel(fragment, isPartial)
@@ -76,7 +55,7 @@ class FragmentsQuarkusResource
             @QueryParam("page") page: Int?,
             @Context headers: HttpHeaders,
         ): Response {
-            val pageResult = blogEngine.getOverview(includeDrafts = false, page = page ?: 1)
+            val pageResult = engine.getBlogOverview(page ?: 1)
             val isPartial = isHtmxRequest(headers)
             val viewModel =
                 BlogOverviewViewModel(
@@ -105,7 +84,7 @@ class FragmentsQuarkusResource
             @PathParam("slug") slug: String,
             @Context headers: HttpHeaders,
         ): Response {
-            val fragment = blogEngine.getPost(year, month, slug)
+            val fragment = engine.getBlogPost(year, month, slug)
             val isPartial = isHtmxRequest(headers)
             return if (fragment != null) {
                 val viewModel = FragmentViewModel(fragment, isPartial)
@@ -122,7 +101,7 @@ class FragmentsQuarkusResource
             @QueryParam("page") page: Int?,
             @Context headers: HttpHeaders,
         ): Response {
-            val pageResult = blogEngine.getByTag(tag, page ?: 1)
+            val pageResult = engine.getByTag(tag, page ?: 1)
             val isPartial = isHtmxRequest(headers)
             val viewModel =
                 TagViewModel(
@@ -144,7 +123,7 @@ class FragmentsQuarkusResource
             @QueryParam("page") page: Int?,
             @Context headers: HttpHeaders,
         ): Response {
-            val pageResult = blogEngine.getByCategory(category, page ?: 1)
+            val pageResult = engine.getByCategory(category, page ?: 1)
             val isPartial = isHtmxRequest(headers)
             val viewModel =
                 CategoryViewModel(
@@ -166,15 +145,14 @@ class FragmentsQuarkusResource
             @QueryParam("page") page: Int?,
             @Context headers: HttpHeaders,
         ): Response {
-            val pageResult = blogEngine.getByAuthor(slug, page ?: 1)
+            val pageResult = engine.getByAuthor(slug, page ?: 1)
             val isPartial = isHtmxRequest(headers)
-            val author = authorRepository?.getBySlugOrId(slug)
-            val authorViewModel = author?.let { AuthorViewModel(it, postCount = pageResult.totalItems) }
+            val author = engine.getAuthor(slug)
             val viewModel =
                 AuthorPageViewModel(
                     authorSlug = slug,
-                    authorName = author?.name,
-                    author = authorViewModel,
+                    authorName = author?.author?.name,
+                    author = author,
                     fragments = pageResult.items.map { FragmentViewModel(it, isPartial) },
                     currentPage = pageResult.currentPage,
                     totalPages = pageResult.totalPages,
@@ -186,19 +164,13 @@ class FragmentsQuarkusResource
         }
 
         private fun isHtmxRequest(headers: HttpHeaders): Boolean =
-            headers.getHeaderString(FragmentViewModel.HTMX_REQUEST_HEADER)?.lowercase() == "true"
+            engine.isHtmxRequest(headers.getHeaderString(FragmentViewModel.HTMX_REQUEST_HEADER))
 
         @GET
         @Path("/rss.xml")
         @Produces("application/rss+xml")
         suspend fun rss(): Response {
-            val rssXml =
-                rssGenerator.generateFeed(
-                    siteTitle = siteTitle,
-                    siteDescription = siteDescription,
-                    siteUrl = siteUrl,
-                    feedUrl = feedUrl,
-                )
+            val rssXml = engine.generateRssFeed()
             return Response
                 .ok()
                 .header("Content-Type", "application/rss+xml; charset=utf-8")
@@ -210,7 +182,7 @@ class FragmentsQuarkusResource
         @Path("/sitemap.xml")
         @Produces("application/xml")
         suspend fun sitemap(): Response {
-            val sitemapXml = sitemapGenerator.generateSitemap()
+            val sitemapXml = engine.generateSitemap()
             return Response
                 .ok()
                 .header("Content-Type", "application/xml; charset=utf-8")
@@ -222,13 +194,7 @@ class FragmentsQuarkusResource
         @Path("/robots.txt")
         @Produces("text/plain")
         fun robotsTxt(): Response {
-            val body =
-                buildString {
-                    appendLine("User-agent: *")
-                    appendLine("Allow: /")
-                    appendLine()
-                    appendLine("Sitemap: $siteUrl/sitemap.xml")
-                }
+            val body = engine.generateRobotsTxt()
             return Response
                 .ok()
                 .header("Content-Type", "text/plain; charset=utf-8")
@@ -240,13 +206,7 @@ class FragmentsQuarkusResource
         @Path("/llms.txt")
         @Produces("text/plain")
         suspend fun llmsTxt(): Response {
-            val body =
-                LlmsTxtGenerator.generate(
-                    siteTitle = siteTitle,
-                    siteDescription = siteDescription,
-                    siteUrl = siteUrl,
-                    repositories = allRepositories,
-                )
+            val body = engine.generateLlmsTxt()
             return Response
                 .ok()
                 .header("Content-Type", "text/plain; charset=utf-8")

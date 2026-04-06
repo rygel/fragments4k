@@ -6,6 +6,7 @@ import io.github.rygel.fragments.FragmentRepository
 import io.github.rygel.fragments.FragmentRevision
 import io.github.rygel.fragments.FragmentStatus
 import io.github.rygel.fragments.RelationshipConfig
+import io.github.rygel.fragments.adapter.FragmentsEngine
 import io.github.rygel.fragments.blog.BlogEngine
 import io.github.rygel.fragments.lucene.LuceneSearchEngine
 import io.github.rygel.fragments.static.StaticPageEngine
@@ -38,11 +39,15 @@ class FragmentsJavalinAdapterTest {
         blogEngine: BlogEngine,
     ): Javalin =
         Javalin.create { config ->
+            val engine =
+                FragmentsEngine(
+                    staticEngine = staticEngine,
+                    blogEngine = blogEngine,
+                    searchEngine = searchEngine,
+                )
             config.routes.fragmentsRoutes(
-                staticEngine = staticEngine,
-                blogEngine = blogEngine,
+                engine = engine,
                 renderer = MockTemplateRenderer(),
-                searchEngine = searchEngine,
             )
         }
 

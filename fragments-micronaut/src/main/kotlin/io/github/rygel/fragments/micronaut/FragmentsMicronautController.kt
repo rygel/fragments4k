@@ -1,14 +1,8 @@
 package io.github.rygel.fragments.micronaut
 
-import io.github.rygel.fragments.AuthorRepository
 import io.github.rygel.fragments.AuthorViewModel
-import io.github.rygel.fragments.FragmentRepository
 import io.github.rygel.fragments.FragmentViewModel
-import io.github.rygel.fragments.LlmsTxtGenerator
-import io.github.rygel.fragments.blog.BlogEngine
-import io.github.rygel.fragments.rss.RssGenerator
-import io.github.rygel.fragments.sitemap.SitemapGenerator
-import io.github.rygel.fragments.static.StaticPageEngine
+import io.github.rygel.fragments.adapter.FragmentsEngine
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.annotation.Controller
@@ -21,26 +15,11 @@ import jakarta.inject.Inject
 class FragmentsMicronautController
     @Inject
     constructor(
-        private val staticEngine: StaticPageEngine,
-        private val blogEngine: BlogEngine,
-        private val siteTitle: String = "My Blog",
-        private val siteDescription: String = "My Awesome Blog",
-        private val siteUrl: String = "http://localhost:8080",
-        private val feedUrl: String = "http://localhost:8080/rss.xml",
-        private val authorRepository: AuthorRepository? = null,
-        private val additionalRepositories: List<FragmentRepository> = emptyList(),
+        private val engine: FragmentsEngine,
     ) {
-        private val allRepositories: List<FragmentRepository> by lazy {
-            listOf(staticEngine.getRepository(), blogEngine.getRepository()) + additionalRepositories
-        }
-        private val rssGenerator: RssGenerator by lazy { RssGenerator(allRepositories) }
-        private val sitemapGenerator: SitemapGenerator by lazy {
-            SitemapGenerator(allRepositories, siteUrl, lastModified = null)
-        }
-
         @Get("/")
         suspend fun home(headers: HttpHeaders): HttpResponse<Any> {
-            val fragments = staticEngine.getAllStaticPages()
+            val fragments = engine.getHome()
             val isPartial = isHtmxRequest(headers)
             val viewModel =
                 HomeViewModel(
@@ -55,7 +34,7 @@ class FragmentsMicronautController
             slug: String,
             headers: HttpHeaders,
         ): HttpResponse<Any> {
-            val fragment = staticEngine.getPage(slug)
+            val fragment = engine.getPage(slug)
             val isPartial = isHtmxRequest(headers)
             return if (fragment != null) {
                 val viewModel = FragmentViewModel(fragment, isPartial)
@@ -70,7 +49,7 @@ class FragmentsMicronautController
             @QueryValue(defaultValue = "1") page: Int,
             headers: HttpHeaders,
         ): HttpResponse<Any> {
-            val pageResult = blogEngine.getOverview(includeDrafts = false, page = page)
+            val pageResult = engine.getBlogOverview(page)
             val isPartial = isHtmxRequest(headers)
             val viewModel =
                 BlogOverviewViewModel(
@@ -97,7 +76,7 @@ class FragmentsMicronautController
             slug: String,
             headers: HttpHeaders,
         ): HttpResponse<Any> {
-            val fragment = blogEngine.getPost(year, month, slug)
+            val fragment = engine.getBlogPost(year, month, slug)
             val isPartial = isHtmxRequest(headers)
             return if (fragment != null) {
                 val viewModel = FragmentViewModel(fragment, isPartial)
@@ -113,7 +92,7 @@ class FragmentsMicronautController
             @QueryValue(defaultValue = "1") page: Int,
             headers: HttpHeaders,
         ): HttpResponse<Any> {
-            val pageResult = blogEngine.getByTag(tag, page)
+            val pageResult = engine.getByTag(tag, page)
             val isPartial = isHtmxRequest(headers)
             val viewModel =
                 TagViewModel(
@@ -134,7 +113,7 @@ class FragmentsMicronautController
             @QueryValue(defaultValue = "1") page: Int,
             headers: HttpHeaders,
         ): HttpResponse<Any> {
-            val pageResult = blogEngine.getByCategory(category, page)
+            val pageResult = engine.getByCategory(category, page)
             val isPartial = isHtmxRequest(headers)
             val viewModel =
                 CategoryViewModel(
@@ -155,15 +134,14 @@ class FragmentsMicronautController
             @QueryValue(defaultValue = "1") page: Int,
             headers: HttpHeaders,
         ): HttpResponse<Any> {
-            val pageResult = blogEngine.getByAuthor(slug, page)
+            val pageResult = engine.getByAuthor(slug, page)
             val isPartial = isHtmxRequest(headers)
-            val author = authorRepository?.getBySlugOrId(slug)
-            val authorViewModel = author?.let { AuthorViewModel(it, postCount = pageResult.totalItems) }
+            val author = engine.getAuthor(slug)
             val viewModel =
                 AuthorPageViewModel(
                     authorSlug = slug,
-                    authorName = author?.name,
-                    author = authorViewModel,
+                    authorName = author?.author?.name,
+                    author = author,
                     fragments = pageResult.items.map { FragmentViewModel(it, isPartial) },
                     currentPage = pageResult.currentPage,
                     totalPages = pageResult.totalPages,
@@ -174,19 +152,12 @@ class FragmentsMicronautController
             return HttpResponse.ok(viewModel)
         }
 
-        private fun isHtmxRequest(headers: HttpHeaders): Boolean =
-            headers.get(FragmentViewModel.HTMX_REQUEST_HEADER)?.firstOrNull()?.lowercase() == "true"
+        private fun isHtmxRequest(headers: HttpHeaders): Boolean = engine.isHtmxRequest(headers.get(FragmentViewModel.HTMX_REQUEST_HEADER))
 
         @Get("/rss.xml")
         @Produces(value = ["application/rss+xml;charset=utf-8"])
         suspend fun rss(): HttpResponse<String> {
-            val rssXml =
-                rssGenerator.generateFeed(
-                    siteTitle = siteTitle,
-                    siteDescription = siteDescription,
-                    siteUrl = siteUrl,
-                    feedUrl = feedUrl,
-                )
+            val rssXml = engine.generateRssFeed()
             return HttpResponse
                 .ok(rssXml)
                 .header("Content-Type", "application/rss+xml; charset=utf-8")
@@ -195,7 +166,7 @@ class FragmentsMicronautController
         @Get("/sitemap.xml")
         @Produces("application/xml;charset=utf-8")
         suspend fun sitemap(): HttpResponse<String> {
-            val sitemapXml = sitemapGenerator.generateSitemap()
+            val sitemapXml = engine.generateSitemap()
             return HttpResponse
                 .ok(sitemapXml)
                 .header("Content-Type", "application/xml; charset=utf-8")
@@ -204,13 +175,7 @@ class FragmentsMicronautController
         @Get("/robots.txt")
         @Produces("text/plain;charset=utf-8")
         fun robotsTxt(): HttpResponse<String> {
-            val body =
-                buildString {
-                    appendLine("User-agent: *")
-                    appendLine("Allow: /")
-                    appendLine()
-                    appendLine("Sitemap: $siteUrl/sitemap.xml")
-                }
+            val body = engine.generateRobotsTxt()
             return HttpResponse
                 .ok(body)
                 .header("Content-Type", "text/plain; charset=utf-8")
@@ -219,13 +184,7 @@ class FragmentsMicronautController
         @Get("/llms.txt")
         @Produces("text/plain;charset=utf-8")
         suspend fun llmsTxt(): HttpResponse<String> {
-            val body =
-                LlmsTxtGenerator.generate(
-                    siteTitle = siteTitle,
-                    siteDescription = siteDescription,
-                    siteUrl = siteUrl,
-                    repositories = allRepositories,
-                )
+            val body = engine.generateLlmsTxt()
             return HttpResponse
                 .ok(body)
                 .header("Content-Type", "text/plain; charset=utf-8")

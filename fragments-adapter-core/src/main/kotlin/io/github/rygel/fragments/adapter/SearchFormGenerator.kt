@@ -1,4 +1,4 @@
-package io.github.rygel.fragments.javalin
+package io.github.rygel.fragments.adapter
 
 object SearchFormGenerator {
     fun generate(
