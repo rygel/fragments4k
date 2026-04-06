@@ -37,11 +37,11 @@ fun RoutesConfig.fragmentsRoutes(
 ) {
     val rssGenerator =
         RssGenerator(
-            repository = staticEngine.getRepository(),
+            repositories = listOf(staticEngine.getRepository(), blogEngine.getRepository()),
         )
     val sitemapGenerator =
         SitemapGenerator(
-            repository = staticEngine.getRepository(),
+            repositories = listOf(staticEngine.getRepository(), blogEngine.getRepository()),
             siteUrl = siteUrl,
             lastModified = null,
         )
@@ -417,7 +417,7 @@ fun RoutesConfig.fragmentsRoutes(
                     siteTitle = siteTitle,
                     siteDescription = siteDescription,
                     siteUrl = siteUrl,
-                    repositories = listOf(staticEngine.getRepository()),
+                    repositories = listOf(staticEngine.getRepository(), blogEngine.getRepository()),
                 )
             ctx.contentType("text/plain")
             ctx.result(body)

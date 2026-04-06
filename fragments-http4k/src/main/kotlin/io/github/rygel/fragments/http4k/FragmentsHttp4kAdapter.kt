@@ -34,11 +34,11 @@ class FragmentsHttp4kAdapter(
     private val searchEngine: LuceneSearchEngine,
     private val rssGenerator: RssGenerator =
         RssGenerator(
-            repository = staticEngine.getRepository(),
+            repositories = listOf(staticEngine.getRepository(), blogEngine.getRepository()),
         ),
     private val sitemapGenerator: SitemapGenerator =
         SitemapGenerator(
-            repository = staticEngine.getRepository(),
+            repositories = listOf(staticEngine.getRepository(), blogEngine.getRepository()),
             siteUrl = "http://localhost:8080",
             lastModified = null,
         ),
@@ -293,7 +293,7 @@ class FragmentsHttp4kAdapter(
                     siteTitle = siteTitle,
                     siteDescription = siteDescription,
                     siteUrl = siteUrl,
-                    repositories = listOf(staticEngine.getRepository()),
+                    repositories = listOf(staticEngine.getRepository(), blogEngine.getRepository()),
                 )
             Response(Status.OK)
                 .header("Content-Type", "text/plain; charset=utf-8")

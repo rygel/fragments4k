@@ -11,13 +11,22 @@ import javax.xml.stream.XMLOutputFactory
 import javax.xml.stream.XMLStreamWriter
 
 class SitemapGenerator(
-    private val repository: FragmentRepository,
+    private val repositories: List<FragmentRepository>,
     private val siteUrl: String,
     private val lastModified: LocalDateTime? = null,
 ) {
+    constructor(
+        repository: FragmentRepository,
+        siteUrl: String,
+        lastModified: LocalDateTime? = null,
+    ) : this(listOf(repository), siteUrl, lastModified)
+
     suspend fun generateSitemap(): String =
         withContext(Dispatchers.IO) {
-            val fragments = repository.getAllVisible()
+            val fragments =
+                repositories
+                    .flatMap { it.getAllVisible() }
+                    .distinctBy { it.slug }
             val lastModDate = lastModified ?: fragments.mapNotNull { it.date }.maxOrNull() ?: LocalDateTime.now()
             val lastModDateFormatted = lastModDate.format(formatter)
 

@@ -5,8 +5,10 @@ import io.github.rygel.fragments.FragmentRepository
 import java.time.format.DateTimeFormatter
 
 class RssGenerator(
-    private val repository: FragmentRepository,
+    private val repositories: List<FragmentRepository>,
 ) {
+    constructor(repository: FragmentRepository) : this(listOf(repository))
+
     suspend fun generateFeed(
         siteTitle: String = "My Blog",
         siteDescription: String = "My Awesome Blog",
@@ -14,8 +16,9 @@ class RssGenerator(
         feedUrl: String = "http://localhost:8080/rss.xml",
     ): String {
         val fragments =
-            repository
-                .getAllVisible()
+            repositories
+                .flatMap { it.getAllVisible() }
+                .distinctBy { it.slug }
                 .sortedByDescending { it.date }
                 .take(20)
 

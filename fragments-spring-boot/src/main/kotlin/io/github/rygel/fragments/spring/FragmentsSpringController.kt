@@ -26,8 +26,9 @@ class FragmentsSpringController(
     private val feedUrl: String = "http://localhost:8080/rss.xml",
     private val authorRepository: AuthorRepository? = null,
 ) {
-    private val rssGenerator: RssGenerator by lazy { RssGenerator(repository) }
-    private val sitemapGenerator: SitemapGenerator by lazy { SitemapGenerator(repository, siteUrl, lastModified = null) }
+    private val allRepositories by lazy { listOf(repository, blogEngine.getRepository()) }
+    private val rssGenerator: RssGenerator by lazy { RssGenerator(allRepositories) }
+    private val sitemapGenerator: SitemapGenerator by lazy { SitemapGenerator(allRepositories, siteUrl, lastModified = null) }
 
     @GetMapping("/")
     suspend fun home(
@@ -215,7 +216,7 @@ class FragmentsSpringController(
             siteTitle = siteTitle,
             siteDescription = siteDescription,
             siteUrl = siteUrl,
-            repositories = listOf(repository),
+            repositories = allRepositories,
         )
 
     private fun isHtmxRequest(header: String?): Boolean = header?.lowercase() == "true"
