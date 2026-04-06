@@ -34,7 +34,29 @@ class FragmentsEngine(
     val siteUrl: String = "http://localhost:8080",
     val feedUrl: String = "$siteUrl/rss.xml",
     val authorRepository: AuthorRepository? = null,
+    /**
+     * Extra repositories whose visible fragments are included in sitemap, RSS, and llms.txt.
+     *
+     * Fragments from these repositories are included **without URL resolution** — their
+     * [Fragment.url] falls back to `baseUrl/slug`. For fragments that require date-based
+     * or prefix-based URLs (e.g. `/projects/my-app`), use [additionalFragmentProviders]
+     * instead and supply a suspend function that returns pre-resolved fragments.
+     */
     private val additionalRepositories: List<FragmentRepository> = emptyList(),
+    /**
+     * Extra suspend functions that supply pre-resolved fragments for sitemap, RSS, and llms.txt.
+     *
+     * Use this when an additional content source needs custom URL resolution that goes
+     * beyond `baseUrl/slug`. Each provider is called lazily at feed-generation time.
+     *
+     * Example — a projects repository where URLs follow `/projects/{slug}`:
+     * ```kotlin
+     * additionalFragmentProviders = listOf {
+     *     projectsRepo.getAllVisible().map { it.copy(resolvedUrl = "/projects/${it.slug}") }
+     * }
+     * ```
+     */
+    val additionalFragmentProviders: List<suspend () -> List<Fragment>> = emptyList(),
     val navigationMenu: List<NavigationLink>? = null,
     val footer: FooterConfig? = null,
 ) {
@@ -118,12 +140,23 @@ class FragmentsEngine(
      * Collects all visible fragments with their URLs fully resolved
      * (date-based blog paths, page prefixes, etc.) so that sitemap/RSS/llms
      * generators emit correct absolute URLs rather than raw slug paths.
+     *
+     * Exposed as `public` for static-site generation scenarios where you need to
+     * call multiple feed generators in sequence and want to avoid redundant
+     * repository reads — collect once and pass the result to each generator directly:
+     *
+     * ```kotlin
+     * val fragments = engine.collectResolvedFragments()
+     * val sitemap = sitemapGenerator.generateSitemap(fragments)
+     * val rss = rssGenerator.generateFeed(..., resolvedFragments = fragments)
+     * ```
      */
-    private suspend fun collectResolvedFragments(): List<Fragment> {
+    suspend fun collectResolvedFragments(): List<Fragment> {
         val staticPages = staticEngine.getAllStaticPages()
         val blogPosts = blogEngine.getAllPosts()
         val additional = additionalRepositories.flatMap { it.getAllVisible() }
-        return (staticPages + blogPosts + additional).distinctBy { it.slug }
+        val providerFragments = additionalFragmentProviders.flatMap { it() }
+        return (staticPages + blogPosts + additional + providerFragments).distinctBy { it.slug }
     }
 
     suspend fun generateRssFeed(): String =

@@ -4,6 +4,7 @@ import io.github.rygel.fragments.ContentRelationships
 import io.github.rygel.fragments.Fragment
 import io.github.rygel.fragments.FragmentRepository
 import io.github.rygel.fragments.FragmentStatus
+import io.github.rygel.fragments.FragmentTemplates
 import io.github.rygel.fragments.RelationshipConfig
 
 /**
@@ -185,10 +186,9 @@ class BlogEngine(
         /**
          * Template values that identify a fragment as a blog post.
          *
-         * Set `template: blog` or `template: blog_post` in your Markdown front matter.
-         * Any other value (e.g. `"default"`, `"static"`, or a custom template name)
-         * will cause the fragment to be excluded from all [BlogEngine] results.
+         * Delegates to [FragmentTemplates.BLOG_TEMPLATES] so all modules share the same
+         * canonical set. Set `template: blog` or `template: blog_post` in front matter.
          */
-        val BLOG_TEMPLATES: Set<String> = setOf("blog", "blog_post")
+        val BLOG_TEMPLATES: Set<String> = FragmentTemplates.BLOG_TEMPLATES
     }
 }
