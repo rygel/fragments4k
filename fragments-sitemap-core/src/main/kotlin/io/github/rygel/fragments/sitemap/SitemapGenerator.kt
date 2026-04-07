@@ -153,6 +153,8 @@ class SitemapGenerator(
     companion object {
         private const val SITEMAP_NS = "http://www.sitemaps.org/schemas/sitemap/0.9"
         private const val IMAGE_NS = "http://www.google.com/schemas/sitemap-image/1.1"
-        private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+
+        /** W3C Datetime (ISO 8601 date) — required by the sitemap protocol. */
+        private val formatter = DateTimeFormatter.ISO_LOCAL_DATE
     }
 }
