@@ -248,6 +248,7 @@ class ClasspathFragmentRepository(
         val fragment = Fragment(
             title = title,
             slug = slug,
+            baseUrl = baseUrl,
             status = status,
             date = date,
             publishDate = MarkdownParser.parseDate(frontMatter["publishDate"]),
