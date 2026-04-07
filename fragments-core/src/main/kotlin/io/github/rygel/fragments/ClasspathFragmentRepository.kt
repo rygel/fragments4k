@@ -47,11 +47,11 @@ class ClasspathFragmentRepository(
     private val basePath: String,
     val baseUrl: String = "",
     val urlBuilder: ((Fragment) -> String)? = null,
-    private val classLoader: ClassLoader = Thread.currentThread().contextClassLoader
-        ?: ClasspathFragmentRepository::class.java.classLoader,
+    private val classLoader: ClassLoader =
+        Thread.currentThread().contextClassLoader
+            ?: ClasspathFragmentRepository::class.java.classLoader,
     private val parser: MarkdownParser = MarkdownParser(),
 ) : FragmentRepository {
-
     private val logger = LoggerFactory.getLogger(ClasspathFragmentRepository::class.java)
     private val normalizedBase = basePath.trimEnd('/')
     private var cachedFragments: List<Fragment> = emptyList()
@@ -61,24 +61,24 @@ class ClasspathFragmentRepository(
         const val INDEX_FILE_NAME = "index.list"
     }
 
-    override suspend fun getAll(): List<Fragment> =
-        withContext(Dispatchers.IO) { loadFragments() }
+    override suspend fun getAll(): List<Fragment> = withContext(Dispatchers.IO) { loadFragments() }
 
     override suspend fun getAllVisible(): List<Fragment> =
         withContext(Dispatchers.IO) {
             val now = LocalDateTime.now()
-            loadFragments().filter { fragment ->
-                fragment.visible &&
-                    when (fragment.status) {
-                        FragmentStatus.PUBLISHED ->
-                            fragment.expiryDate == null || !fragment.expiryDate.isBefore(now)
-                        FragmentStatus.SCHEDULED ->
-                            fragment.publishDate != null &&
-                                !fragment.publishDate.isAfter(now) &&
-                                (fragment.expiryDate == null || !fragment.expiryDate.isBefore(now))
-                        else -> false
-                    }
-            }.sortedByDescending { it.date }
+            loadFragments()
+                .filter { fragment ->
+                    fragment.visible &&
+                        when (fragment.status) {
+                            FragmentStatus.PUBLISHED ->
+                                fragment.expiryDate == null || !fragment.expiryDate.isBefore(now)
+                            FragmentStatus.SCHEDULED ->
+                                fragment.publishDate != null &&
+                                    !fragment.publishDate.isAfter(now) &&
+                                    (fragment.expiryDate == null || !fragment.expiryDate.isBefore(now))
+                            else -> false
+                        }
+                }.sortedByDescending { it.date }
         }
 
     override suspend fun getBySlug(slug: String): Fragment? =
@@ -86,7 +86,11 @@ class ClasspathFragmentRepository(
             loadFragments().find { it.slug == slug || it.slug == "/$slug" }
         }
 
-    override suspend fun getByYearMonthAndSlug(year: String, month: String, slug: String): Fragment? =
+    override suspend fun getByYearMonthAndSlug(
+        year: String,
+        month: String,
+        slug: String,
+    ): Fragment? =
         withContext(Dispatchers.IO) {
             loadFragments().find {
                 it.slug == slug &&
@@ -148,7 +152,10 @@ class ClasspathFragmentRepository(
             }
         }
 
-    override suspend fun getRelationships(slug: String, config: RelationshipConfig): ContentRelationships? =
+    override suspend fun getRelationships(
+        slug: String,
+        config: RelationshipConfig,
+    ): ContentRelationships? =
         withContext(Dispatchers.IO) {
             val current = getBySlug(slug) ?: return@withContext null
             val others = getAllVisible().filter { it.slug != current.slug }
@@ -158,38 +165,63 @@ class ClasspathFragmentRepository(
     // ── Write operations — not supported on classpath resources ──────────────
 
     override suspend fun updateFragmentStatus(
-        slug: String, status: FragmentStatus, force: Boolean, changedBy: String?, reason: String?,
+        slug: String,
+        status: FragmentStatus,
+        force: Boolean,
+        changedBy: String?,
+        reason: String?,
     ): Result<Fragment> = Result.failure(UnsupportedOperationException("ClasspathFragmentRepository is read-only"))
 
     override suspend fun updateMultipleFragmentsStatus(
-        slugs: List<String>, status: FragmentStatus, force: Boolean, changedBy: String?, reason: String?,
+        slugs: List<String>,
+        status: FragmentStatus,
+        force: Boolean,
+        changedBy: String?,
+        reason: String?,
     ): List<Result<Fragment>> = slugs.map { updateFragmentStatus(it, status, force, changedBy, reason) }
 
-    override suspend fun publishMultiple(slugs: List<String>, changedBy: String?, reason: String?): List<Result<Fragment>> =
-        updateMultipleFragmentsStatus(slugs, FragmentStatus.PUBLISHED, false, changedBy, reason)
+    override suspend fun publishMultiple(
+        slugs: List<String>,
+        changedBy: String?,
+        reason: String?,
+    ): List<Result<Fragment>> = updateMultipleFragmentsStatus(slugs, FragmentStatus.PUBLISHED, false, changedBy, reason)
 
-    override suspend fun unpublishMultiple(slugs: List<String>, changedBy: String?, reason: String?): List<Result<Fragment>> =
-        updateMultipleFragmentsStatus(slugs, FragmentStatus.DRAFT, false, changedBy, reason)
+    override suspend fun unpublishMultiple(
+        slugs: List<String>,
+        changedBy: String?,
+        reason: String?,
+    ): List<Result<Fragment>> = updateMultipleFragmentsStatus(slugs, FragmentStatus.DRAFT, false, changedBy, reason)
 
-    override suspend fun archiveMultiple(slugs: List<String>, changedBy: String?, reason: String?): List<Result<Fragment>> =
-        updateMultipleFragmentsStatus(slugs, FragmentStatus.ARCHIVED, false, changedBy, reason)
+    override suspend fun archiveMultiple(
+        slugs: List<String>,
+        changedBy: String?,
+        reason: String?,
+    ): List<Result<Fragment>> = updateMultipleFragmentsStatus(slugs, FragmentStatus.ARCHIVED, false, changedBy, reason)
 
     override suspend fun scheduleMultiple(
-        slugs: List<String>, publishDate: LocalDateTime, changedBy: String?, reason: String?,
-    ): List<Result<Fragment>> =
-        slugs.map { Result.failure(UnsupportedOperationException("ClasspathFragmentRepository is read-only")) }
+        slugs: List<String>,
+        publishDate: LocalDateTime,
+        changedBy: String?,
+        reason: String?,
+    ): List<Result<Fragment>> = slugs.map { Result.failure(UnsupportedOperationException("ClasspathFragmentRepository is read-only")) }
 
     override suspend fun publishScheduledFragments(threshold: LocalDateTime): List<Result<Fragment>> = emptyList()
 
     override suspend fun expireFragments(threshold: LocalDateTime): List<Result<Fragment>> = emptyList()
 
-    override suspend fun createRevision(slug: String, changedBy: String?, reason: String?): Result<FragmentRevision> =
-        Result.failure(UnsupportedOperationException("ClasspathFragmentRepository is read-only"))
+    override suspend fun createRevision(
+        slug: String,
+        changedBy: String?,
+        reason: String?,
+    ): Result<FragmentRevision> = Result.failure(UnsupportedOperationException("ClasspathFragmentRepository is read-only"))
 
     override suspend fun getFragmentRevisions(slug: String): List<FragmentRevision> = emptyList()
 
     override suspend fun revertToRevision(
-        slug: String, revisionId: String, changedBy: String?, reason: String?,
+        slug: String,
+        revisionId: String,
+        changedBy: String?,
+        reason: String?,
     ): Result<Fragment> = Result.failure(UnsupportedOperationException("ClasspathFragmentRepository is read-only"))
 
     // ── Internal ─────────────────────────────────────────────────────────────
@@ -210,71 +242,87 @@ class ClasspathFragmentRepository(
             return emptyList()
         }
 
-        val filenames = indexStream.bufferedReader().readLines()
-            .map { it.trim() }
-            .filter { it.isNotEmpty() && !it.startsWith("#") }
+        val filenames =
+            indexStream
+                .bufferedReader()
+                .readLines()
+                .map { it.trim() }
+                .filter { it.isNotEmpty() && !it.startsWith("#") }
 
-        return filenames.mapNotNull { filename ->
-            val resourcePath = "$normalizedBase/$filename"
-            val stream = classLoader.getResourceAsStream(resourcePath)
-            if (stream == null) {
-                logger.warn("Fragment resource not found on classpath: $resourcePath")
-                return@mapNotNull null
-            }
-            try {
-                val content = stream.bufferedReader().readText()
-                val nameWithoutExtension = filename.substringAfterLast('/').removeSuffix(".md")
-                parseFragment(content, nameWithoutExtension)
-            } catch (e: Exception) {
-                logger.error("Error parsing classpath fragment: $resourcePath", e)
-                null
-            }
-        }.sortedBy { it.order }
+        return filenames
+            .mapNotNull { filename ->
+                val resourcePath = "$normalizedBase/$filename"
+                val stream = classLoader.getResourceAsStream(resourcePath)
+                if (stream == null) {
+                    logger.warn("Fragment resource not found on classpath: $resourcePath")
+                    return@mapNotNull null
+                }
+                try {
+                    val content = stream.bufferedReader().readText()
+                    val nameWithoutExtension = filename.substringAfterLast('/').removeSuffix(".md")
+                    parseFragment(content, nameWithoutExtension)
+                } catch (e: IllegalArgumentException) {
+                    logger.error("Error parsing classpath fragment: $resourcePath", e)
+                    null
+                } catch (e: IllegalStateException) {
+                    logger.error("Error parsing classpath fragment: $resourcePath", e)
+                    null
+                } catch (e: java.io.IOException) {
+                    logger.error("Error parsing classpath fragment: $resourcePath", e)
+                    null
+                }
+            }.sortedBy { it.order }
     }
 
-    private fun parseFragment(content: String, nameWithoutExtension: String): Fragment {
+    private fun parseFragment(
+        content: String,
+        nameWithoutExtension: String,
+    ): Fragment {
         val parsed = parser.parse(content)
         val frontMatter = parsed.frontMatter
 
         val title = frontMatter["title"]?.toString() ?: nameWithoutExtension
         val slug = frontMatter["slug"]?.toString() ?: generateSlug(nameWithoutExtension)
         val date = MarkdownParser.parseDate(frontMatter["date"])
-        val status = try {
-            FragmentStatus.valueOf(frontMatter["status"]?.toString() ?: "PUBLISHED")
-        } catch (e: IllegalArgumentException) {
-            FragmentStatus.PUBLISHED
-        }
+        val status =
+            try {
+                FragmentStatus.valueOf(frontMatter["status"]?.toString() ?: "PUBLISHED")
+            } catch (e: IllegalArgumentException) {
+                FragmentStatus.PUBLISHED
+            }
 
-        val fragment = Fragment(
-            title = title,
-            slug = slug,
-            baseUrl = baseUrl,
-            status = status,
-            date = date,
-            publishDate = MarkdownParser.parseDate(frontMatter["publishDate"]),
-            expiryDate = MarkdownParser.parseDate(frontMatter["expiryDate"]),
-            preview = frontMatter["preview"]?.toString() ?: extractPreview(parsed.content),
-            content = parsed.htmlContent,
-            frontMatter = frontMatter,
-            visible = frontMatter["visible"]?.toString()?.toBooleanStrictOrNull() ?: true,
-            template = frontMatter["template"]?.toString() ?: "default",
-            categories = parseStringList(frontMatter["categories"]),
-            tags = parseStringList(frontMatter["tags"]),
-            order = frontMatter["order"]?.toString()?.toIntOrNull() ?: 0,
-            language = frontMatter["language"]?.toString() ?: "en",
-            image = frontMatter["image"] as? String,
-            author = frontMatter["author"]?.toString(),
-            authorIds = parseStringList(frontMatter["authorIds"]),
-            faq = parseFaqEntries(frontMatter),
-            seriesSlug = frontMatter["series"]?.toString(),
-            seriesPart = frontMatter["seriesPart"]?.toString()?.toIntOrNull(),
-            seriesTitle = frontMatter["seriesTitle"]?.toString(),
-        )
+        val fragment =
+            Fragment(
+                title = title,
+                slug = slug,
+                baseUrl = baseUrl,
+                status = status,
+                date = date,
+                publishDate = MarkdownParser.parseDate(frontMatter["publishDate"]),
+                expiryDate = MarkdownParser.parseDate(frontMatter["expiryDate"]),
+                preview = frontMatter["preview"]?.toString() ?: extractPreview(parsed.content),
+                content = parsed.htmlContent,
+                frontMatter = frontMatter,
+                visible = frontMatter["visible"]?.toString()?.toBooleanStrictOrNull() ?: true,
+                template = frontMatter["template"]?.toString() ?: "default",
+                categories = parseStringList(frontMatter["categories"]),
+                tags = parseStringList(frontMatter["tags"]),
+                order = frontMatter["order"]?.toString()?.toIntOrNull() ?: 0,
+                language = frontMatter["language"]?.toString() ?: "en",
+                image = frontMatter["image"] as? String,
+                author = frontMatter["author"]?.toString(),
+                authorIds = parseStringList(frontMatter["authorIds"]),
+                faq = parseFaqEntries(frontMatter),
+                seriesSlug = frontMatter["series"]?.toString(),
+                seriesPart = frontMatter["seriesPart"]?.toString()?.toIntOrNull(),
+                seriesTitle = frontMatter["seriesTitle"]?.toString(),
+            )
         return if (urlBuilder != null) fragment.copy(resolvedUrl = urlBuilder(fragment)) else fragment
     }
 
     private fun generateSlug(name: String): String =
-        name.lowercase()
+        name
+            .lowercase()
             .replace(Regex("[^a-z0-9\\s-]"), "")
             .replace(Regex("\\s+"), "-")
             .replace(Regex("-+"), "-")
@@ -299,13 +347,16 @@ class ClasspathFragmentRepository(
     private fun parseFaqEntries(frontMatter: Map<String, Any>): List<FaqEntry> {
         val faqField = frontMatter["faq"] ?: return emptyList()
         return when (faqField) {
-            is List<*> -> faqField.mapNotNull { item ->
-                if (item is Map<*, *>) {
-                    val q = item["q"]?.toString()
-                    val a = item["a"]?.toString()
-                    if (q != null && a != null) FaqEntry(q, a) else null
-                } else null
-            }
+            is List<*> ->
+                faqField.mapNotNull { item ->
+                    if (item is Map<*, *>) {
+                        val q = item["q"]?.toString()
+                        val a = item["a"]?.toString()
+                        if (q != null && a != null) FaqEntry(q, a) else null
+                    } else {
+                        null
+                    }
+                }
             else -> emptyList()
         }
     }
