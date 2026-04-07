@@ -45,6 +45,8 @@ class LayeringRulesTest {
             .doNotHaveSimpleName("FileSystemFragmentRevisionRepository")
             .and()
             .doNotHaveSimpleName("InMemoryFragmentRepository")
+            .and()
+            .doNotHaveSimpleName("ClasspathFragmentRepository")
             .should()
             .beInterfaces()
             .because("core repository contracts must be interfaces so adapters can provide their own implementations")
