@@ -4,6 +4,7 @@ import io.github.rygel.fragments.Fragment
 import io.github.rygel.fragments.FragmentRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.slf4j.LoggerFactory
 import java.io.StringWriter
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -30,12 +31,27 @@ class SitemapGenerator(
         excludedTemplates: Set<String> = emptySet(),
     ) : this(listOf(repository), siteUrl, lastModified, excludedTemplates)
 
+    private val logger = LoggerFactory.getLogger(SitemapGenerator::class.java)
+
     suspend fun generateSitemap(resolvedFragments: List<Fragment>? = null): String =
         withContext(Dispatchers.IO) {
-            val fragments =
+            val allCandidates =
                 (resolvedFragments ?: repositories.flatMap { it.getAllVisible() })
                     .distinctBy { it.slug }
                     .filter { it.template !in excludedTemplates }
+
+            // Exclude fragments whose URL was not explicitly resolved by a urlBuilder.
+            // The Fragment.url fallback (baseUrl/slug) may not match the actual HTTP
+            // route, producing 404 URLs in the published sitemap. See #65 / #77.
+            val skipped = allCandidates.filter { it.resolvedUrl == null }
+            if (skipped.isNotEmpty()) {
+                logger.warn(
+                    "Skipping {} fragment(s) without resolvedUrl in sitemap (configure urlBuilder on the repository): {}",
+                    skipped.size,
+                    skipped.joinToString { it.slug },
+                )
+            }
+            val fragments = allCandidates.filter { it.resolvedUrl != null }
             val lastModDate = lastModified ?: fragments.mapNotNull { it.date }.maxOrNull() ?: LocalDateTime.now()
             val lastModDateFormatted = lastModDate.format(formatter)
 
