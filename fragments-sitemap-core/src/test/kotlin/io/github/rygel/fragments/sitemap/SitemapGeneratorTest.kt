@@ -299,6 +299,34 @@ class SitemapGeneratorTest {
         }
 
     // -------------------------------------------------------------------------
+    // resolvedUrl filter
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun `fragments without resolvedUrl are excluded from sitemap`() =
+        runBlocking {
+            coEvery { repository.getAllVisible() } returns
+                listOf(
+                    fragment("resolved-post", "Resolved Post", resolvedUrl = "/blog/2026/03/resolved-post"),
+                    Fragment(
+                        title = "Unresolved Page",
+                        slug = "unresolved-page",
+                        content = "Content",
+                        preview = "Preview",
+                        publishDate = null,
+                        frontMatter = emptyMap(),
+                        date = LocalDateTime.of(2026, 1, 15, 10, 0),
+                        status = FragmentStatus.PUBLISHED,
+                        visible = true,
+                        template = "default",
+                    ),
+                )
+            val xml = SitemapGenerator(repository, "https://example.com").generateSitemap()
+            assertTrue(xml.contains("/blog/2026/03/resolved-post"), "resolved fragment must be present")
+            assertFalse(xml.contains("unresolved-page"), "unresolved fragment must be excluded")
+        }
+
+    // -------------------------------------------------------------------------
     // Pre-resolved fragments override
     // -------------------------------------------------------------------------
 
