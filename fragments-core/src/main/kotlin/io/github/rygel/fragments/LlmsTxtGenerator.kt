@@ -1,5 +1,7 @@
 package io.github.rygel.fragments
 
+import org.slf4j.LoggerFactory
+
 /**
  * Generates an [llms.txt](https://llmstxt.org/) file for AI crawler discoverability.
  *
@@ -10,6 +12,7 @@ package io.github.rygel.fragments
  */
 object LlmsTxtGenerator {
     private val BLOG_TEMPLATES: Set<String> = FragmentTemplates.BLOG_TEMPLATES
+    private val logger = LoggerFactory.getLogger(LlmsTxtGenerator::class.java)
 
     /**
      * Generates the llms.txt content.
@@ -30,9 +33,22 @@ object LlmsTxtGenerator {
         repositories: List<FragmentRepository>,
         resolvedFragments: List<Fragment>? = null,
     ): String {
-        val allFragments =
+        val allCandidates =
             (resolvedFragments ?: repositories.flatMap { it.getAllVisible() })
                 .distinctBy { it.slug }
+
+        // Exclude fragments whose URL was not explicitly resolved by a urlBuilder.
+        // The Fragment.url fallback (baseUrl/slug) may not match the actual HTTP
+        // route, producing incorrect URLs in the published llms.txt. See #65 / #77.
+        val skipped = allCandidates.filter { it.resolvedUrl == null }
+        if (skipped.isNotEmpty()) {
+            logger.warn(
+                "Skipping {} fragment(s) without resolvedUrl in llms.txt (configure urlBuilder on the repository): {}",
+                skipped.size,
+                skipped.joinToString { it.slug },
+            )
+        }
+        val allFragments = allCandidates.filter { it.resolvedUrl != null }
 
         val blogPosts =
             allFragments
