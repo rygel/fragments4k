@@ -34,6 +34,16 @@ import java.time.format.DateTimeParseException
  *   you need date-based or hierarchical paths. Return a **relative path starting with
  *   `/`** — the result is stored in [Fragment.resolvedUrl] and returned by
  *   [Fragment.url]. When non-null, `urlBuilder` takes precedence over `baseUrl`.
+ *
+ *   **Important:** The URL returned by [Fragment.url] is used by
+ *   [io.github.rygel.fragments.sitemap.SitemapGenerator],
+ *   [io.github.rygel.fragments.LlmsTxtGenerator], and
+ *   [io.github.rygel.fragments.rss.RssGenerator] to build the absolute URLs in their
+ *   output. If your HTTP routes differ from the default `baseUrl/slug` pattern (e.g.
+ *   `/blog/{year}/{month}/{slug}` for blog posts, or `/about` instead of `/page/about`
+ *   for static pages), you **must** provide a `urlBuilder` — otherwise generated
+ *   sitemaps, RSS feeds, and llms.txt will contain URLs that don't match your routes.
+ *
  *   Example — date-based blog URLs:
  *   ```kotlin
  *   FileSystemFragmentRepository(
@@ -42,6 +52,13 @@ import java.time.format.DateTimeParseException
  *           val date = fragment.date ?: return@FileSystemFragmentRepository "/${fragment.slug}"
  *           "/blog/${date.year}/%02d/${fragment.slug}".format(date.monthValue)
  *       },
+ *   )
+ *   ```
+ *   Example — static pages at custom routes:
+ *   ```kotlin
+ *   FileSystemFragmentRepository(
+ *       basePath = "/content/pages",
+ *       urlBuilder = { fragment -> "/${fragment.slug}" },
  *   )
  *   ```
  * @param extension File extension to scan for; defaults to `.md`.

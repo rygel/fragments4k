@@ -39,6 +39,11 @@ import java.time.LocalDateTime
  * @param baseUrl URL prefix for all fragments (e.g. `/blog`).
  * @param urlBuilder Optional factory that computes the canonical URL for each fragment,
  *   stored in [Fragment.resolvedUrl]. Takes precedence over [baseUrl].
+ *   The resolved URL is used by [io.github.rygel.fragments.sitemap.SitemapGenerator],
+ *   [io.github.rygel.fragments.LlmsTxtGenerator], and
+ *   [io.github.rygel.fragments.rss.RssGenerator] when building absolute URLs. If your
+ *   HTTP routes differ from the default `baseUrl/slug` pattern, provide a `urlBuilder`
+ *   so that generated sitemaps, RSS feeds, and llms.txt contain correct URLs.
  * @param classLoader ClassLoader used to load resources; defaults to the thread context
  *   class loader.
  * @param parser [MarkdownParser] instance used to parse `.md` files.
