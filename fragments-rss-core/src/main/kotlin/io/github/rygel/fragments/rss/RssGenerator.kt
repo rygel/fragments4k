@@ -3,6 +3,7 @@ package io.github.rygel.fragments.rss
 import io.github.rygel.fragments.Fragment
 import io.github.rygel.fragments.FragmentRepository
 import io.github.rygel.fragments.FragmentTemplates
+import org.slf4j.LoggerFactory
 import java.io.StringWriter
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -15,6 +16,8 @@ class RssGenerator(
 ) {
     constructor(repository: FragmentRepository) : this(listOf(repository))
 
+    private val logger = LoggerFactory.getLogger(RssGenerator::class.java)
+
     suspend fun generateFeed(
         siteTitle: String = "My Blog",
         siteDescription: String = "My Awesome Blog",
@@ -22,12 +25,26 @@ class RssGenerator(
         feedUrl: String = "http://localhost:8080/rss.xml",
         resolvedFragments: List<Fragment>? = null,
     ): String {
-        val fragments =
+        val allCandidates =
             (resolvedFragments ?: repositories.flatMap { it.getAllVisible() })
                 .filter { it.template in FragmentTemplates.BLOG_TEMPLATES }
                 .distinctBy { it.slug }
-                .sortedByDescending { it.date }
-                .take(MAX_ITEMS)
+
+        // Exclude fragments whose URL was not explicitly resolved by a urlBuilder.
+        // The Fragment.url fallback (baseUrl/slug) may not match the actual HTTP
+        // route, producing incorrect URLs in the published RSS feed. See #65 / #77.
+        val skipped = allCandidates.filter { it.resolvedUrl == null }
+        if (skipped.isNotEmpty()) {
+            logger.warn(
+                "Skipping {} fragment(s) without resolvedUrl in RSS feed (configure urlBuilder on the repository): {}",
+                skipped.size,
+                skipped.joinToString { it.slug },
+            )
+        }
+        val fragments = allCandidates
+            .filter { it.resolvedUrl != null }
+            .sortedByDescending { it.date }
+            .take(MAX_ITEMS)
 
         val lastBuildDate =
             fragments.firstOrNull()?.date?.let { formatDate(it) }

@@ -288,6 +288,31 @@ class RssGeneratorTest {
             assertTrue(xml.contains("Sun, 15 Mar 2026"), "date should use English locale day/month names")
         }
 
+    @Test
+    fun `fragments without resolvedUrl are excluded from feed`() =
+        runBlocking {
+            coEvery { repository.getAllVisible() } returns
+                listOf(
+                    fragment("resolved-post", "Resolved Post"),
+                    Fragment(
+                        title = "Unresolved Post",
+                        slug = "unresolved-post",
+                        content = "Content",
+                        preview = "Preview",
+                        publishDate = null,
+                        frontMatter = emptyMap(),
+                        date = LocalDateTime.of(2026, 1, 15, 10, 0),
+                        status = FragmentStatus.PUBLISHED,
+                        visible = true,
+                        template = "blog",
+                    ),
+                )
+            val xml = RssGenerator(repository).generateFeed(siteUrl = "https://example.com")
+            assertValidXml(xml)
+            assertTrue(xml.contains("Resolved Post"), "resolved fragment must be present")
+            assertFalse(xml.contains("Unresolved Post"), "unresolved fragment must be excluded")
+        }
+
     private fun assertValidXml(xml: String) {
         val factory =
             DocumentBuilderFactory.newInstance().apply {
