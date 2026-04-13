@@ -41,10 +41,11 @@ class RssGenerator(
                 skipped.joinToString { it.slug },
             )
         }
-        val fragments = allCandidates
-            .filter { it.resolvedUrl != null }
-            .sortedByDescending { it.date }
-            .take(MAX_ITEMS)
+        val fragments =
+            allCandidates
+                .filter { it.resolvedUrl != null }
+                .sortedByDescending { it.date }
+                .take(MAX_ITEMS)
 
         val lastBuildDate =
             fragments.firstOrNull()?.date?.let { formatDate(it) }
