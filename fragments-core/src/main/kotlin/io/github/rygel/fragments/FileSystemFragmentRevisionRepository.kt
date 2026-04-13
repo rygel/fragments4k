@@ -318,16 +318,20 @@ class FileSystemFragmentRevisionRepository(
                     current += char
                     escape = false
                 }
+
                 char == '\\' -> {
                     escape = true
                 }
+
                 char == '"' && !inArray -> {
                     inString = !inString
                 }
+
                 char == ':' && !inString && !inObject -> {
                     currentKey = current.trim().removeSurrounding("\"")
                     current = ""
                 }
+
                 char == ',' && !inString && !inObject && !inArray -> {
                     if (currentKey.isNotEmpty()) {
                         result[currentKey] = parseJsonValue(current.trim())
@@ -335,9 +339,11 @@ class FileSystemFragmentRevisionRepository(
                     current = ""
                     currentKey = ""
                 }
+
                 char == '{' && !inString && !inArray -> {
                     inObject = true
                 }
+
                 char == '}' && !inString && !inArray -> {
                     inObject = false
                     if (currentKey.isNotEmpty()) {
@@ -346,12 +352,15 @@ class FileSystemFragmentRevisionRepository(
                     current = ""
                     currentKey = ""
                 }
+
                 char == '[' && !inString && !inObject -> {
                     inArray = true
                 }
+
                 char == ']' && !inString -> {
                     inArray = false
                 }
+
                 else -> {
                     current += char
                 }
@@ -413,8 +422,14 @@ class FileSystemFragmentRevisionRepository(
                 val modifiedLine = modifiedLines.getOrNull(i)
 
                 when {
-                    originalLine == null && modifiedLine != null -> appendLine("+ $modifiedLine")
-                    originalLine != null && modifiedLine == null -> appendLine("- $originalLine")
+                    originalLine == null && modifiedLine != null -> {
+                        appendLine("+ $modifiedLine")
+                    }
+
+                    originalLine != null && modifiedLine == null -> {
+                        appendLine("- $originalLine")
+                    }
+
                     originalLine != modifiedLine -> {
                         appendLine("- $originalLine")
                         appendLine("+ $modifiedLine")

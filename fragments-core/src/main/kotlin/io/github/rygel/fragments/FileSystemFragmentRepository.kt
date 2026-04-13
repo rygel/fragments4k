@@ -101,17 +101,21 @@ class FileSystemFragmentRepository(
                             FragmentStatus.PUBLISHED -> {
                                 fragment.expiryDate == null || !fragment.expiryDate.isBefore(now)
                             }
+
                             FragmentStatus.SCHEDULED -> {
                                 fragment.publishDate != null &&
                                     !fragment.publishDate.isAfter(now) &&
                                     (fragment.expiryDate == null || !fragment.expiryDate.isBefore(now))
                             }
+
                             FragmentStatus.DRAFT,
                             FragmentStatus.REVIEW,
                             FragmentStatus.APPROVED,
                             FragmentStatus.ARCHIVED,
                             FragmentStatus.EXPIRED,
-                            -> false
+                            -> {
+                                false
+                            }
                         }
                 }.sortedByDescending { it.date }
         }
@@ -395,7 +399,7 @@ class FileSystemFragmentRepository(
     private fun parseFaqEntries(frontMatter: Map<String, Any>): List<FaqEntry> {
         val faqField = frontMatter["faq"] ?: return emptyList()
         return when (faqField) {
-            is List<*> ->
+            is List<*> -> {
                 faqField.mapNotNull { item ->
                     if (item is Map<*, *>) {
                         val question = item["q"]?.toString()
@@ -405,7 +409,11 @@ class FileSystemFragmentRepository(
                         null
                     }
                 }
-            else -> emptyList()
+            }
+
+            else -> {
+                emptyList()
+            }
         }
     }
 
@@ -413,19 +421,23 @@ class FileSystemFragmentRepository(
     private fun parseLanguagesMap(frontMatter: Map<String, Any>): Map<String, String> {
         val languagesField = frontMatter["languages"]
         return when (languagesField) {
-            is Map<*, *> ->
+            is Map<*, *> -> {
                 languagesField
                     .mapNotNull { (k, v) ->
                         k?.toString()?.let { key -> v?.toString()?.let { value -> key to value } }
                     }.toMap()
-            else -> emptyMap()
+            }
+
+            else -> {
+                emptyMap()
+            }
         }
     }
 
     private fun parseStatusChangeHistory(frontMatter: Map<String, Any>): List<StatusChangeHistory> {
         val historyField = frontMatter["statusChangeHistory"] ?: return emptyList()
         return when (historyField) {
-            is List<*> ->
+            is List<*> -> {
                 historyField.mapNotNull { item ->
                     if (item is Map<*, *>) {
                         try {
@@ -447,7 +459,11 @@ class FileSystemFragmentRepository(
                         null
                     }
                 }
-            else -> emptyList()
+            }
+
+            else -> {
+                emptyList()
+            }
         }
     }
 
@@ -627,20 +643,39 @@ class FileSystemFragmentRepository(
         indent: String,
     ) {
         when (value) {
-            null -> output.append("$indent$key: null\n")
-            is String -> output.append("$indent$key: \"${value.yamlEscape()}\"\n")
-            is Boolean -> output.append("$indent$key: $value\n")
-            is Number -> output.append("$indent$key: $value\n")
-            is LocalDateTime -> output.append("$indent$key: \"$value\"\n")
+            null -> {
+                output.append("$indent$key: null\n")
+            }
+
+            is String -> {
+                output.append("$indent$key: \"${value.yamlEscape()}\"\n")
+            }
+
+            is Boolean -> {
+                output.append("$indent$key: $value\n")
+            }
+
+            is Number -> {
+                output.append("$indent$key: $value\n")
+            }
+
+            is LocalDateTime -> {
+                output.append("$indent$key: \"$value\"\n")
+            }
+
             is Map<*, *> -> {
                 output.append("$indent$key:\n")
                 value.forEach { (k, v) -> dumpValue(k.toString(), v, output, "$indent  ") }
             }
+
             is List<*> -> {
                 output.append("$indent$key:\n")
                 value.forEach { item -> dumpListItem(item, output, "$indent  ") }
             }
-            else -> output.append("$indent$key: \"${value.toString().yamlEscape()}\"\n")
+
+            else -> {
+                output.append("$indent$key: \"${value.toString().yamlEscape()}\"\n")
+            }
         }
     }
 
@@ -667,7 +702,10 @@ class FileSystemFragmentRepository(
                     }
                 }
             }
-            else -> output.append("$indent- \"${item?.toString().orEmpty().yamlEscape()}\"\n")
+
+            else -> {
+                output.append("$indent- \"${item?.toString().orEmpty().yamlEscape()}\"\n")
+            }
         }
     }
 

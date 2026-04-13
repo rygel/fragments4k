@@ -90,10 +90,13 @@ class InitCommand : Runnable {
             println("  cd $projectName")
             println("  mvn clean install")
             when (framework) {
-                "http4k", "javalin", "spring-boot", "micronaut" ->
+                "http4k", "javalin", "spring-boot", "micronaut" -> {
                     println("  mvn exec:java -Dexec.mainClass=$packageName.${getMainClassName(framework)}")
-                "quarkus" ->
+                }
+
+                "quarkus" -> {
                     println("  mvn quarkus:dev")
+                }
             }
         } catch (e: IOException) {
             println("Error creating project: ${e.message}")

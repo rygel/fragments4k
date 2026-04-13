@@ -55,17 +55,23 @@ class TestScenario {
             val fragments =
                 FragmentFactory.createMany(postCount).mapIndexed { index, fragment ->
                     when (index % 3) {
-                        0 ->
+                        0 -> {
                             fragment.copy(
                                 status = FragmentStatus.SCHEDULED,
                                 publishDate = LocalDateTime.now().plusDays(1),
                             )
-                        1 ->
+                        }
+
+                        1 -> {
                             fragment.copy(
                                 status = FragmentStatus.SCHEDULED,
                                 publishDate = LocalDateTime.now().plusDays(7),
                             )
-                        else -> fragment
+                        }
+
+                        else -> {
+                            fragment
+                        }
                     }
                 }
 
@@ -82,17 +88,23 @@ class TestScenario {
             val fragments =
                 FragmentFactory.createMany(postCount).mapIndexed { index, fragment ->
                     when (index % 3) {
-                        0 ->
+                        0 -> {
                             fragment.copy(
                                 status = FragmentStatus.PUBLISHED,
                                 expiryDate = LocalDateTime.now().plusDays(1),
                             )
-                        1 ->
+                        }
+
+                        1 -> {
                             fragment.copy(
                                 status = FragmentStatus.PUBLISHED,
                                 expiryDate = LocalDateTime.now().plusDays(7),
                             )
-                        else -> fragment
+                        }
+
+                        else -> {
+                            fragment
+                        }
                     }
                 }
 

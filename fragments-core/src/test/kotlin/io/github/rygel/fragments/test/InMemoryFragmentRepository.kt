@@ -28,17 +28,21 @@ class InMemoryFragmentRepository : FragmentRepository {
                     io.github.rygel.fragments.FragmentStatus.PUBLISHED -> {
                         it.expiryDate == null || !it.expiryDate.isBefore(now)
                     }
+
                     io.github.rygel.fragments.FragmentStatus.SCHEDULED -> {
                         it.publishDate != null &&
                             !it.publishDate.isAfter(now) &&
                             (it.expiryDate == null || !it.expiryDate.isBefore(now))
                     }
+
                     io.github.rygel.fragments.FragmentStatus.DRAFT,
                     io.github.rygel.fragments.FragmentStatus.REVIEW,
                     io.github.rygel.fragments.FragmentStatus.APPROVED,
                     io.github.rygel.fragments.FragmentStatus.ARCHIVED,
                     io.github.rygel.fragments.FragmentStatus.EXPIRED,
-                    -> false
+                    -> {
+                        false
+                    }
                 }
         }
     }

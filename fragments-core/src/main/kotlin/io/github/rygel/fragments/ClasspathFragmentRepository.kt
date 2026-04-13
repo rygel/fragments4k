@@ -75,13 +75,19 @@ class ClasspathFragmentRepository(
                 .filter { fragment ->
                     fragment.visible &&
                         when (fragment.status) {
-                            FragmentStatus.PUBLISHED ->
+                            FragmentStatus.PUBLISHED -> {
                                 fragment.expiryDate == null || !fragment.expiryDate.isBefore(now)
-                            FragmentStatus.SCHEDULED ->
+                            }
+
+                            FragmentStatus.SCHEDULED -> {
                                 fragment.publishDate != null &&
                                     !fragment.publishDate.isAfter(now) &&
                                     (fragment.expiryDate == null || !fragment.expiryDate.isBefore(now))
-                            else -> false
+                            }
+
+                            else -> {
+                                false
+                            }
                         }
                 }.sortedByDescending { it.date }
         }
@@ -352,7 +358,7 @@ class ClasspathFragmentRepository(
     private fun parseFaqEntries(frontMatter: Map<String, Any>): List<FaqEntry> {
         val faqField = frontMatter["faq"] ?: return emptyList()
         return when (faqField) {
-            is List<*> ->
+            is List<*> -> {
                 faqField.mapNotNull { item ->
                     if (item is Map<*, *>) {
                         val q = item["q"]?.toString()
@@ -362,7 +368,11 @@ class ClasspathFragmentRepository(
                         null
                     }
                 }
-            else -> emptyList()
+            }
+
+            else -> {
+                emptyList()
+            }
         }
     }
 }
