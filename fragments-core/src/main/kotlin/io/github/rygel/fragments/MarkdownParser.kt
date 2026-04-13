@@ -178,7 +178,10 @@ class MarkdownParser(
          */
         fun parseDate(dateValue: Any?): LocalDateTime? =
             when (dateValue) {
-                is java.time.LocalDateTime -> dateValue
+                is java.time.LocalDateTime -> {
+                    dateValue
+                }
+
                 is java.time.LocalDate -> {
                     logger.warn(
                         "Date '{}' has no time or timezone — treating as UTC midnight. " +
@@ -187,6 +190,7 @@ class MarkdownParser(
                     )
                     dateValue.atStartOfDay()
                 }
+
                 is java.util.Date -> {
                     logger.warn(
                         "Date '{}' (java.util.Date from SnakeYAML) has no explicit timezone — " +
@@ -196,8 +200,14 @@ class MarkdownParser(
                     )
                     dateValue.toInstant().atZone(ZoneOffset.UTC).toLocalDateTime()
                 }
-                is String -> parseDateString(dateValue)
-                else -> null
+
+                is String -> {
+                    parseDateString(dateValue)
+                }
+
+                else -> {
+                    null
+                }
             }
 
         private fun parseDateString(dateString: String?): LocalDateTime? {

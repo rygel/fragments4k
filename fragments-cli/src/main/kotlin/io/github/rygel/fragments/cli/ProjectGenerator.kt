@@ -102,7 +102,7 @@ object ProjectGenerator {
 
         val (frameworkArtifact, frameworkDependency) =
             when (framework) {
-                "http4k" ->
+                "http4k" -> {
                     "http4k" to """
                 <dependency>
                     <groupId>org.http4k</groupId>
@@ -120,7 +120,9 @@ object ProjectGenerator {
                     <version>6.31.1.0</version>
                 </dependency>
             """
-                "javalin" ->
+                }
+
+                "javalin" -> {
                     "javalin" to """
                 <dependency>
                     <groupId>io.javalin</groupId>
@@ -133,7 +135,9 @@ object ProjectGenerator {
                     <version>7.1.0</version>
                 </dependency>
             """
-                "spring-boot" ->
+                }
+
+                "spring-boot" -> {
                     "spring-boot" to """
                 <dependency>
                     <groupId>org.springframework.boot</groupId>
@@ -146,7 +150,9 @@ object ProjectGenerator {
                     <version>3.3.2</version>
                 </dependency>
             """
-                "quarkus" ->
+                }
+
+                "quarkus" -> {
                     "quarkus" to """
                 <dependency>
                     <groupId>io.quarkus</groupId>
@@ -159,7 +165,9 @@ object ProjectGenerator {
                     <version>3.13.3</version>
                 </dependency>
             """
-                "micronaut" ->
+                }
+
+                "micronaut" -> {
                     "micronaut" to """
                 <dependency>
                     <groupId>io.micronaut</groupId>
@@ -172,7 +180,11 @@ object ProjectGenerator {
                     <version>4.5.1</version>
                 </dependency>
             """
-                else -> throw IllegalArgumentException("Unknown framework: $framework")
+                }
+
+                else -> {
+                    throw IllegalArgumentException("Unknown framework: $framework")
+                }
             }
 
         return """<?xml version="1.0" encoding="UTF-8"?>
@@ -840,7 +852,7 @@ This blog is powered by Fragments4k - a framework-agnostic Markdown-based blog l
 
         val content =
             when (framework) {
-                "spring-boot" ->
+                "spring-boot" -> {
                     """
 server.port=8080
 server.servlet.context-path=/
@@ -848,18 +860,26 @@ spring.thymeleaf.prefix=classpath:/templates/
 spring.thymeleaf.suffix=.html
 logging.level.io.github.rygel.fragments=INFO
 """
-                "quarkus" ->
+                }
+
+                "quarkus" -> {
                     """
 quarkus.http.port=8080
 quarkus.application.name=fragments-blog
 quarkus.log.category."io.github.rygel.fragments".level=INFO
 """
-                "micronaut" ->
+                }
+
+                "micronaut" -> {
                     """
 micronaut.server.port=8080
 micronaut.application.name=fragments-blog
 """
-                else -> ""
+                }
+
+                else -> {
+                    ""
+                }
             }
 
         if (content.isNotEmpty()) {
