@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "papi": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@papi-ai/server"
+      ],
+      "env": {
+        "PAPI_DATA_API_KEY": "papi_e0b34b8ec85beb87c17d7121056549751ad748622330c08d3ae870c125a8cffd",
+        "PAPI_PROJECT_ID": "963614ed-4fa7-408d-9b39-86533966ff91"
+      }
+    }
+  }
+}
