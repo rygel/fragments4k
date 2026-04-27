@@ -37,6 +37,7 @@ class FragmentsHttp4kAdapter(
             "/blog/archive/{year}" bind GET to { request -> handleArchiveYear(request) },
             "/blog/archive/{year}/{month}" bind GET to { request -> handleArchiveYearMonth(request) },
             "/search" bind GET to { request -> handleSearch(request) },
+            "/api/autocomplete" bind GET to { request -> handleAutocomplete(request) },
             "/rss.xml" bind GET to { _ -> handleRss() },
             "/sitemap.xml" bind GET to { _ -> handleSitemap() },
             "/robots.txt" bind GET to { _ -> handleRobotsTxt() },
@@ -266,6 +267,30 @@ class FragmentsHttp4kAdapter(
                 )
             renderResponse(viewModel)
         }
+    }
+
+    private fun handleAutocomplete(request: Request): Response {
+        val query = request.query("q") ?: return Response(Status.BAD_REQUEST).body("Query parameter 'q' is required")
+        val limit = request.query("limit")?.toIntOrNull() ?: 10
+        return runBlocking {
+            val suggestions = engine.autocomplete(query, limit)
+            val json = buildString {
+                append("[")
+                suggestions.forEachIndexed { index, suggestion ->
+                    if (index > 0) append(",")
+                    append("""{"text":${escapeJson(suggestion.text)},"frequency":${suggestion.frequency},"type":"${suggestion.type.name}"}""")
+                }
+                append("]")
+            }
+            Response(Status.OK)
+                .header("Content-Type", "application/json; charset=utf-8")
+                .body(json)
+        }
+    }
+
+    private fun escapeJson(value: String): String {
+        val escaped = value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t")
+        return "\"$escaped\""
     }
 
     private fun handleArchiveYear(request: Request): Response {

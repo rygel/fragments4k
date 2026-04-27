@@ -232,6 +232,69 @@ class FragmentsHttp4kAdapterTest {
     }
 
     @Test
+    fun autocompleteReturns400WithoutQuery() {
+        val response =
+            Request(Method.GET, "http://localhost:${server.port()}/api/autocomplete")
+                .execute(server)
+        assertEquals(Status.BAD_REQUEST, response.status)
+    }
+
+    @Test
+    fun autocompleteReturns200WithJsonContentType() {
+        repo.addFragment(createFragment("kotlin-post", "Kotlin Programming Guide", isBlog = true, tags = listOf("kotlin")))
+        runBlocking { searchEngine.index() }
+
+        val response =
+            Request(Method.GET, "http://localhost:${server.port()}/api/autocomplete?q=kot")
+                .execute(server)
+        assertEquals(Status.OK, response.status)
+        assertEquals("application/json; charset=utf-8", response.header("Content-Type"))
+    }
+
+    @Test
+    fun autocompleteReturnsJsonArray() {
+        repo.addFragment(createFragment("kotlin-post", "Kotlin Programming Guide", isBlog = true, tags = listOf("kotlin")))
+        runBlocking { searchEngine.index() }
+
+        val response =
+            Request(Method.GET, "http://localhost:${server.port()}/api/autocomplete?q=kot")
+                .execute(server)
+        assertEquals(Status.OK, response.status)
+        val body = response.bodyString()
+        assertTrue(body.startsWith("["), "Response should be a JSON array")
+        assertTrue(body.endsWith("]"), "Response should be a JSON array")
+        assertTrue(body.contains("\"text\":"), "Each suggestion should have a text field")
+        assertTrue(body.contains("\"type\":"), "Each suggestion should have a type field")
+    }
+
+    @Test
+    fun autocompleteReturnsEmptyArrayForNoMatches() {
+        val response =
+            Request(Method.GET, "http://localhost:${server.port()}/api/autocomplete?q=zzzzz")
+                .execute(server)
+        assertEquals(Status.OK, response.status)
+        assertEquals("[]", response.bodyString())
+    }
+
+    @Test
+    fun autocompleteRespectsLimitParameter() {
+        repo.addFragment(createFragment("kotlin-1", "Kotlin Basics", isBlog = true))
+        repo.addFragment(createFragment("kotlin-2", "Kotlin Advanced", isBlog = true))
+        repo.addFragment(createFragment("kotlin-3", "Kotlin Coroutines", isBlog = true))
+        runBlocking { searchEngine.index() }
+
+        val response =
+            Request(Method.GET, "http://localhost:${server.port()}/api/autocomplete?q=kotlin&limit=1")
+                .execute(server)
+        assertEquals(Status.OK, response.status)
+        val body = response.bodyString()
+        assertTrue(body.startsWith("["))
+        assertTrue(body.endsWith("]"))
+        val count = body.split("\"text\":").size - 1
+        assertTrue(count <= 1, "Should return at most 1 suggestion but got $count")
+    }
+
+    @Test
     fun htmxRequestReturnsPartialRender() {
         repo.addFragment(createFragment("test-page", "Test Page", isBlog = false))
 
