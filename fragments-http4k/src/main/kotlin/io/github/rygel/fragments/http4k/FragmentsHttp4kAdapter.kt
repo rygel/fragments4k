@@ -4,6 +4,7 @@ import io.github.rygel.fragments.ArchiveNavigationLink
 import io.github.rygel.fragments.AuthorViewModel
 import io.github.rygel.fragments.FragmentViewModel
 import io.github.rygel.fragments.NavigationLink
+import io.github.rygel.fragments.SeoMetadata
 import io.github.rygel.fragments.adapter.FooterConfig
 import io.github.rygel.fragments.adapter.FragmentsEngine
 import io.github.rygel.fragments.adapter.PaginationInfo
@@ -72,13 +73,14 @@ class FragmentsHttp4kAdapter(
         return runBlocking {
             val fragment = engine.getPage(slug)
             if (fragment != null) {
-                val fragmentViewModel = FragmentViewModel(fragment, isHtmxRequest(request))
+                val fragmentViewModel = FragmentViewModel(fragment, isHtmxRequest(request), siteUrl = engine.siteUrl)
                 val viewModel =
                     ContentViewModel(
                         viewModel = fragmentViewModel,
                         templateName = fragment.template,
                         navigationMenu = engine.nav(),
                         footer = engine.footer(),
+                        seoMetadata = engine.generateSeoMetadata(fragment, pagePath = "page/${fragment.slug}"),
                     )
                 renderResponse(viewModel)
             } else {
@@ -121,13 +123,14 @@ class FragmentsHttp4kAdapter(
         return runBlocking {
             val fragment = engine.getBlogPost(year, month, slug)
             if (fragment != null) {
-                val fragmentViewModel = FragmentViewModel(fragment, isHtmxRequest(request))
+                val fragmentViewModel = FragmentViewModel(fragment, isHtmxRequest(request), siteUrl = engine.siteUrl)
                 val viewModel =
                     ContentViewModel(
                         viewModel = fragmentViewModel,
                         templateName = fragment.template,
                         navigationMenu = engine.nav(),
                         footer = engine.footer(),
+                        seoMetadata = engine.generateSeoMetadata(fragment, pagePath = "blog/$year/$month/$slug"),
                     )
                 renderResponse(viewModel)
             } else {
@@ -323,6 +326,7 @@ class FragmentsHttp4kAdapter(
         private val templateName: String,
         val navigationMenu: List<NavigationLink>,
         val footer: FooterConfig,
+        val seoMetadata: SeoMetadata? = null,
     ) : ViewModel {
         override fun template(): String = templateName
     }

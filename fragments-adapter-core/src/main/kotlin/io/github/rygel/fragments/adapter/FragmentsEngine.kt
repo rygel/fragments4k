@@ -10,6 +10,7 @@ import io.github.rygel.fragments.FragmentRepository
 import io.github.rygel.fragments.LlmsTxtGenerator
 import io.github.rygel.fragments.NavigationLink
 import io.github.rygel.fragments.NavigationMenuGenerator
+import io.github.rygel.fragments.SeoMetadata
 import io.github.rygel.fragments.blog.BlogEngine
 import io.github.rygel.fragments.blog.Page
 import io.github.rygel.fragments.lucene.LuceneSearchEngine
@@ -131,6 +132,37 @@ class FragmentsEngine(
             appendLine()
             appendLine("Sitemap: $siteUrl/sitemap.xml")
         }
+
+    suspend fun generateSeoMetadata(
+        fragment: Fragment,
+        pagePath: String? = null,
+    ): SeoMetadata {
+        val authorModel = fragment.authorIds.firstOrNull()?.let { authorRepository?.getBySlugOrId(it) }
+        return SeoMetadata.fromFragment(
+            fragment = fragment,
+            siteUrl = siteUrl,
+            siteName = siteTitle,
+            pagePath = pagePath ?: fragment.resolvedUrl?.removePrefix("/"),
+            author = authorModel?.name ?: fragment.author,
+            imageUrl = fragment.image?.let { "$siteUrl$it" },
+            ogType = if (fragment.template == "blog") "article" else "website",
+            authorUrl = authorModel?.slug?.let { "$siteUrl/blog/author/$it" },
+            authorSocialLinks = authorModel?.allSocialLinks?.map { it.second } ?: emptyList(),
+        )
+    }
+
+    fun generateSeoMetadataForPage(
+        title: String,
+        description: String,
+        pagePath: String,
+    ): SeoMetadata =
+        SeoMetadata.forPage(
+            title = title,
+            description = description,
+            siteUrl = siteUrl,
+            pagePath = pagePath,
+            siteName = siteTitle,
+        )
 
     suspend fun generateLlmsTxt(): String =
         LlmsTxtGenerator.generate(
