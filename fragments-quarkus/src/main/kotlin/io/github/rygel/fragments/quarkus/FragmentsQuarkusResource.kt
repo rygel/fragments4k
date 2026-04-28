@@ -179,6 +179,65 @@ class FragmentsQuarkusResource
         }
 
         @GET
+        @Path("/blog/archive/{year}")
+        suspend fun archiveYear(
+            @PathParam("year") year: String,
+            @Context headers: HttpHeaders,
+        ): Response {
+            val yearInt = year.toIntOrNull() ?: return Response.status(Response.Status.BAD_REQUEST).entity("Invalid year").build()
+            val fragments = engine.getByYear(yearInt)
+            val isPartial = isHtmxRequest(headers)
+            val viewModel =
+                ArchiveViewModel(
+                    type = "year",
+                    year = year,
+                    fragments = fragments.map { FragmentViewModel(it, isPartial) },
+                    siteTitle = engine.siteTitle,
+                )
+            return Response.ok(viewModel).build()
+        }
+
+        @GET
+        @Path("/blog/archive/{year}/{month}")
+        suspend fun archiveYearMonth(
+            @PathParam("year") year: String,
+            @PathParam("month") month: String,
+            @Context headers: HttpHeaders,
+        ): Response {
+            val yearInt = year.toIntOrNull() ?: return Response.status(Response.Status.BAD_REQUEST).entity("Invalid year").build()
+            val monthInt = month.toIntOrNull() ?: return Response.status(Response.Status.BAD_REQUEST).entity("Invalid month").build()
+            val fragments = engine.getByYearMonth(yearInt, monthInt)
+            val isPartial = isHtmxRequest(headers)
+            val viewModel =
+                ArchiveViewModel(
+                    type = "year-month",
+                    year = year,
+                    month = month,
+                    fragments = fragments.map { FragmentViewModel(it, isPartial) },
+                    siteTitle = engine.siteTitle,
+                )
+            return Response.ok(viewModel).build()
+        }
+
+        @GET
+        @Path("/search")
+        suspend fun search(
+            @QueryParam("q") query: String?,
+            @Context headers: HttpHeaders,
+        ): Response {
+            if (query.isNullOrBlank()) return Response.status(Response.Status.BAD_REQUEST).entity("Query parameter 'q' is required").build()
+            val results = engine.search(query)
+            val isPartial = isHtmxRequest(headers)
+            val viewModel =
+                SearchViewModel(
+                    query = query,
+                    results = results.map { FragmentViewModel(it.fragment, isPartial) },
+                    siteTitle = engine.siteTitle,
+                )
+            return Response.ok(viewModel).build()
+        }
+
+        @GET
         @Path("/sitemap.xml")
         @Produces("application/xml")
         suspend fun sitemap(): Response {
@@ -258,5 +317,19 @@ class FragmentsQuarkusResource
             val hasNext: Boolean = false,
             val hasPrevious: Boolean = false,
             val isPartialRender: Boolean = false,
+        )
+
+        data class ArchiveViewModel(
+            val type: String,
+            val year: String,
+            val month: String? = null,
+            val fragments: List<FragmentViewModel>,
+            val siteTitle: String,
+        )
+
+        data class SearchViewModel(
+            val query: String,
+            val results: List<FragmentViewModel>,
+            val siteTitle: String,
         )
     }

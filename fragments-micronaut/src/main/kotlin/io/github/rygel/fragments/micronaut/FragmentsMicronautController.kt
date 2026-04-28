@@ -163,6 +163,61 @@ class FragmentsMicronautController
                 .header("Content-Type", "application/rss+xml; charset=utf-8")
         }
 
+        @Get("/blog/archive/{year}")
+        suspend fun archiveYear(
+            year: String,
+            headers: HttpHeaders,
+        ): HttpResponse<Any> {
+            val yearInt = year.toIntOrNull() ?: return HttpResponse.badRequest("Invalid year")
+            val fragments = engine.getByYear(yearInt)
+            val isPartial = isHtmxRequest(headers)
+            val viewModel =
+                ArchiveViewModel(
+                    type = "year",
+                    year = year,
+                    fragments = fragments.map { FragmentViewModel(it, isPartial) },
+                    siteTitle = engine.siteTitle,
+                )
+            return HttpResponse.ok(viewModel)
+        }
+
+        @Get("/blog/archive/{year}/{month}")
+        suspend fun archiveYearMonth(
+            year: String,
+            month: String,
+            headers: HttpHeaders,
+        ): HttpResponse<Any> {
+            val yearInt = year.toIntOrNull() ?: return HttpResponse.badRequest("Invalid year")
+            val monthInt = month.toIntOrNull() ?: return HttpResponse.badRequest("Invalid month")
+            val fragments = engine.getByYearMonth(yearInt, monthInt)
+            val isPartial = isHtmxRequest(headers)
+            val viewModel =
+                ArchiveViewModel(
+                    type = "year-month",
+                    year = year,
+                    month = month,
+                    fragments = fragments.map { FragmentViewModel(it, isPartial) },
+                    siteTitle = engine.siteTitle,
+                )
+            return HttpResponse.ok(viewModel)
+        }
+
+        @Get("/search")
+        suspend fun search(
+            @QueryValue("q") query: String,
+            headers: HttpHeaders,
+        ): HttpResponse<Any> {
+            val results = engine.search(query)
+            val isPartial = isHtmxRequest(headers)
+            val viewModel =
+                SearchViewModel(
+                    query = query,
+                    results = results.map { FragmentViewModel(it.fragment, isPartial) },
+                    siteTitle = engine.siteTitle,
+                )
+            return HttpResponse.ok(viewModel)
+        }
+
         @Get("/sitemap.xml")
         @Produces("application/xml;charset=utf-8")
         suspend fun sitemap(): HttpResponse<String> {
@@ -234,5 +289,19 @@ class FragmentsMicronautController
             val hasNext: Boolean = false,
             val hasPrevious: Boolean = false,
             val isPartialRender: Boolean = false,
+        )
+
+        data class ArchiveViewModel(
+            val type: String,
+            val year: String,
+            val month: String? = null,
+            val fragments: List<FragmentViewModel>,
+            val siteTitle: String,
+        )
+
+        data class SearchViewModel(
+            val query: String,
+            val results: List<FragmentViewModel>,
+            val siteTitle: String,
         )
     }
