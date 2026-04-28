@@ -49,13 +49,40 @@ Fragments4k turns a directory of Markdown files with YAML front matter into a fu
 
 ### 1. Add dependency
 
+Import the BOM to manage all fragment module versions in one place:
+
+```xml
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>io.github.rygel</groupId>
+            <artifactId>fragments-bom</artifactId>
+            <version>0.6.5</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+```
+
+Then add your adapter:
+
 ```xml
 <dependency>
     <groupId>io.github.rygel</groupId>
-    <artifactId>fragments-http4k</artifactId> <!-- or fragments-javalin, fragments-spring-boot, etc. -->
-    <version>0.6.2</version>
+    <artifactId>fragments-http4k</artifactId>
+    <!-- version managed by BOM -->
 </dependency>
 ```
+
+**Gradle (Kotlin DSL):**
+
+```kotlin
+implementation(platform("io.github.rygel:fragments-bom:0.6.5"))
+implementation("io.github.rygel:fragments-http4k")
+```
+
+Available adapter artifacts: `fragments-http4k`, `fragments-javalin`, `fragments-spring-boot`, `fragments-quarkus`, `fragments-micronaut`.
 
 ### 2. Create content
 
@@ -93,19 +120,25 @@ Content after the fold (preview stops at the <!--more--> tag).
 val repository = FileSystemFragmentRepository("./content")
 val staticEngine = StaticPageEngine(repository)
 val blogEngine = BlogEngine(repository)
+val searchEngine = LuceneSearchEngine(repository)
 
-// HTTP4k example
-val adapter = FragmentsHttp4kAdapter(
+runBlocking { searchEngine.index() }
+
+val engine = FragmentsEngine(
     staticEngine = staticEngine,
     blogEngine = blogEngine,
-    renderer = myTemplateRenderer,
-    searchEngine = LuceneSearchEngine(repository),
-    siteUrl = "https://example.com"
+    searchEngine = searchEngine,
+    siteTitle = "My Blog",
+    siteDescription = "A blog powered by Fragments4k",
+    siteUrl = "https://example.com",
 )
+
+// HTTP4k example
+val adapter = FragmentsHttp4kAdapter(engine, renderer)
 adapter.createRoutes().asServer(Netty(8080)).start()
 ```
 
-See the [framework adapter READMEs](#modules) for framework-specific setup.
+See [Adapter Setup](#adapter-setup) below for framework-specific details.
 
 ## Front Matter Reference
 
@@ -133,6 +166,7 @@ All available front matter fields:
 | `series` | String | — | Series slug |
 | `seriesPart` | Int | — | Position in series (1-based) |
 | `seriesTitle` | String | — | Display title for this part |
+| `faq` | List | `[]` | FAQ entries (`[{q: "Question", a: "Answer"}]`) for JSON-LD FAQPage schema |
 
 Any additional fields are preserved in `Fragment.frontMatter` and accessible via [typed accessors](#typed-front-matter-accessors).
 
@@ -157,9 +191,138 @@ repository.scheduleMultiple(listOf("post-1"), publishDate = myDateTime)
 repository.archiveMultiple(listOf("old-post"))
 ```
 
-## URL Builder
+## Typed Front Matter Accessors
 
-By default, fragment URLs are `/<slug>`. Use `urlBuilder` for custom URL schemes:
+Access custom front matter fields safely without unchecked casts:
+
+```kotlin
+fragment.getString("githubRepo")        // String?
+fragment.getBoolean("featured")         // Boolean?
+fragment.getInt("priority")             // Int?
+fragment.getLong("viewCount")           // Long?
+fragment.getDouble("rating")            // Double?
+fragment.getStringList("customTags")    // List<String>
+```
+
+These handle SnakeYAML type coercion automatically (e.g. `Number.toInt()` for any numeric type).
+
+## Adapter Setup
+
+All adapters use the same `FragmentsEngine` core. The engine wires up static pages, blog, search, feeds, sitemap, and SEO.
+
+### FragmentsEngine Configuration
+
+```kotlin
+val engine = FragmentsEngine(
+    staticEngine = staticEngine,                              // StaticPageEngine
+    blogEngine = blogEngine,                                  // BlogEngine
+    searchEngine = searchEngine,                              // LuceneSearchEngine
+    siteTitle = "My Blog",                                    // Used in RSS, SEO, and templates
+    siteDescription = "A blog powered by Fragments4k",        // RSS and meta description
+    siteUrl = "https://example.com",                          // Base URL for canonical/sitemap
+    feedUrl = "https://example.com/rss.xml",                  // RSS feed URL (default: siteUrl/rss.xml)
+    authorRepository = null,                                  // Optional AuthorRepository for multi-author
+    additionalRepositories = emptyList(),                     // Extra FragmentRepository instances
+    navigationMenu = null,                                    // Override nav menu (auto-generated if null)
+    footer = null,                                            // Override footer config (auto-generated if null)
+)
+```
+
+### HTTP4k
+
+```kotlin
+import io.github.rygel.fragments.http4k.FragmentsHttp4kAdapter
+import org.http4k.server.Netty
+import org.http4k.server.asServer
+
+val adapter = FragmentsHttp4kAdapter(engine, renderer)
+adapter.createRoutes().asServer(Netty(8080)).start()
+```
+
+`renderer` is `org.http4k.template.TemplateRenderer` — use any template engine (Pebble, JTE, Handlebars, etc.).
+
+**Routes registered by `createRoutes()`:**
+
+| Route | Description |
+|-------|-------------|
+| `/` | Home page (static pages) |
+| `/page/{slug}` | Static page |
+| `/blog` | Blog overview (paginated) |
+| `/blog/page/{page}` | Blog overview page N |
+| `/blog/{year}/{month}/{slug}` | Blog post |
+| `/blog/tag/{tag}` | Posts by tag |
+| `/blog/category/{category}` | Posts by category |
+| `/blog/author/{slug}` | Posts by author |
+| `/blog/archive/{year}` | Yearly archive |
+| `/blog/archive/{year}/{month}` | Monthly archive |
+| `/search?q=` | Search results |
+| `/rss.xml` | RSS 2.0 feed |
+| `/atom.xml` | Atom 1.0 feed |
+| `/sitemap.xml` | XML sitemap |
+| `/robots.txt` | robots.txt |
+| `/llms.txt` | LLMs.txt |
+
+### Javalin
+
+```kotlin
+import io.github.rygel.fragments.javalin.fragmentsRoutes
+import io.javalin.Javalin
+
+val app = Javalin.create { config ->
+    config.routes.fragmentsRoutes(engine, renderer = null)
+}
+app.start(8080)
+```
+
+Uses an extension function on `RoutesConfig`. Pass a custom `TemplateRenderer` or `null` to use Javalin's default template handler.
+
+### Spring Boot
+
+```kotlin
+import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.runApplication
+
+@SpringBootApplication(scanBasePackages = ["io.github.rygel.fragments.spring", "com.example"])
+class MyApplication
+
+fun main(args: Array<String>) = runApplication<MyApplication>(*args)
+```
+
+Auto-configuration (`FragmentsSpringConfiguration`) creates all beans. Content path resolved from `fragments.path` system property or `FRAGMENTS_PATH` env var (default: `./content`). Uses Thymeleaf templates.
+
+### Quarkus
+
+```properties
+# application.properties
+fragments.path=./content
+```
+
+CDI producers in `FragmentsQuarkusConfiguration` handle all wiring. Inject `FragmentsEngine` into your JAX-RS resources. Uses Qute templates.
+
+### Micronaut
+
+```kotlin
+import io.micronaut.runtime.Micronaut
+
+fun main(args: Array<String>) {
+    Micronaut.build(args).packages("io.github.rygel.fragments.micronaut").mainClass(MicApp::class.java).start()
+}
+```
+
+`@Factory` configuration creates singletons. Content path via `fragments.path` system property or `FRAGMENTS_PATH` env var. Uses Thymeleaf templates.
+
+## Configuration
+
+### Content Directory
+
+All adapters resolve the content path in the same order:
+1. System property: `fragments.path`
+2. Environment variable: `FRAGMENTS_PATH`
+3. Default: `./content`
+
+### URL Patterns
+
+By default, fragment URLs are `/<slug>`. Use `urlBuilder` or `baseUrl` for custom schemes:
 
 ```kotlin
 // Date-based blog URLs: /blog/2026/03/hello-world
@@ -178,21 +341,39 @@ val projectRepo = FileSystemFragmentRepository(
 )
 ```
 
-## Typed Front Matter Accessors
-
-Access custom front matter fields safely without unchecked casts:
+### Blog Pagination
 
 ```kotlin
-// Instead of: fragment.frontMatter["githubRepo"] as? String
-fragment.getString("githubRepo")        // String?
-fragment.getBoolean("featured")         // Boolean?
-fragment.getInt("priority")             // Int?
-fragment.getLong("viewCount")           // Long?
-fragment.getDouble("rating")            // Double?
-fragment.getStringList("customTags")    // List<String>
+val blogEngine = BlogEngine(repository, pageSize = 10)  // 10 posts per page
 ```
 
-These handle SnakeYAML type coercion automatically (e.g. `Number.toInt()` for any numeric type).
+Blog posts are identified by `template: blog` or `template: blog_post` in front matter.
+
+### Search Index
+
+```kotlin
+// In-memory index (fast, lost on restart)
+val searchEngine = LuceneSearchEngine(repository)
+
+// Persistent filesystem index
+val searchEngine = LuceneSearchEngine(repository, Path.of("./lucene-index"))
+```
+
+Call `searchEngine.index()` once at startup. Supports searching across multiple repositories:
+
+```kotlin
+val searchEngine = LuceneSearchEngine(listOf(blogRepo, projectRepo))
+```
+
+### Live Reload (Development)
+
+```kotlin
+val liveReload = LiveReloadManager(repository, Path.of("./content"))
+liveReload.reloadEvents.collect { event ->
+    searchEngine.index()  // re-index on content change
+}
+liveReload.startWatching()
+```
 
 ## SEO
 
@@ -324,7 +505,7 @@ vm.translations       // language → fragment map
 | [fragments-static-core](fragments-static-core/) | Static page engine |
 | [fragments-seo-core](fragments-seo-core/) | SEO metadata, Open Graph, JSON-LD |
 | [fragments-lucene-core](fragments-lucene-core/) | Full-text search and autocomplete |
-| [fragments-rss-core](fragments-rss-core/) | RSS 2.0 feed generation |
+| [fragments-rss-core](fragments-rss-core/) | RSS 2.0 and Atom 1.0 feed generation |
 | [fragments-sitemap-core](fragments-sitemap-core/) | XML sitemap generation |
 | [fragments-cache-core](fragments-cache-core/) | Caching decorator for repositories |
 | [fragments-navigation-core](fragments-navigation-core/) | Menu and archive navigation generators |
@@ -332,6 +513,7 @@ vm.translations       // language → fragment map
 | [fragments-social-core](fragments-social-core/) | Social media share link generation |
 | [fragments-image-optimization-core](fragments-image-optimization-core/) | Image resizing and optimization |
 | [fragments-live-reload](fragments-live-reload/) | File-watching live reload for development |
+| [fragments-adapter-core](fragments-adapter-core/) | Shared engine and utilities for all adapters |
 | [fragments-cli](fragments-cli/) | CLI tool for scaffolding and dev server |
 | [fragments-http4k](fragments-http4k/) | HTTP4k framework adapter |
 | [fragments-javalin](fragments-javalin/) | Javalin framework adapter |
