@@ -14,6 +14,7 @@ import io.github.rygel.fragments.blog.BlogEngine
 import io.github.rygel.fragments.blog.Page
 import io.github.rygel.fragments.lucene.LuceneSearchEngine
 import io.github.rygel.fragments.lucene.SearchResult
+import io.github.rygel.fragments.rss.AtomGenerator
 import io.github.rygel.fragments.rss.RssGenerator
 import io.github.rygel.fragments.sitemap.SitemapGenerator
 import io.github.rygel.fragments.static.StaticPageEngine
@@ -42,6 +43,7 @@ class FragmentsEngine(
         listOf(staticEngine.getRepository(), blogEngine.getRepository()) + additionalRepositories
 
     private val rssGenerator: RssGenerator = RssGenerator(allRepositories)
+    private val atomGenerator: AtomGenerator = AtomGenerator(allRepositories)
     private val sitemapGenerator: SitemapGenerator = SitemapGenerator(allRepositories, siteUrl)
 
     fun nav(): List<NavigationLink> = navigationMenu ?: NavigationMenuGenerator.generateMainMenu()
@@ -120,6 +122,14 @@ class FragmentsEngine(
             siteDescription = siteDescription,
             siteUrl = siteUrl,
             feedUrl = feedUrl,
+        )
+
+    suspend fun generateAtomFeed(): String =
+        atomGenerator.generateFeed(
+            siteTitle = siteTitle,
+            siteDescription = siteDescription,
+            siteUrl = siteUrl,
+            feedUrl = feedUrl.replace("rss.xml", "atom.xml"),
         )
 
     suspend fun generateSitemap(): String = sitemapGenerator.generateSitemap()

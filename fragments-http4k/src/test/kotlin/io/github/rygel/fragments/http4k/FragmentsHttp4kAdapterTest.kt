@@ -188,6 +188,26 @@ class FragmentsHttp4kAdapterTest {
     }
 
     @Test
+    fun atomFeedReturns200WithCorrectContentType() {
+        val response =
+            Request(Method.GET, "http://localhost:${server.port()}/atom.xml")
+                .execute(server)
+        assertEquals(Status.OK, response.status)
+        assertEquals("application/atom+xml; charset=utf-8", response.header("Content-Type"))
+    }
+
+    @Test
+    fun atomFeedReturnsValidXmlWithFeedElement() {
+        val response =
+            Request(Method.GET, "http://localhost:${server.port()}/atom.xml")
+                .execute(server)
+        assertEquals(Status.OK, response.status)
+        val body = response.bodyString()
+        assertTrue(body.contains("<feed"), "Atom feed should contain <feed> element")
+        assertTrue(body.contains("</feed>"), "Atom feed should close <feed> element")
+    }
+
+    @Test
     fun sitemapReturns200() {
         val response =
             Request(Method.GET, "http://localhost:${server.port()}/sitemap.xml")

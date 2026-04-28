@@ -38,6 +38,7 @@ class FragmentsHttp4kAdapter(
             "/blog/archive/{year}/{month}" bind GET to { request -> handleArchiveYearMonth(request) },
             "/search" bind GET to { request -> handleSearch(request) },
             "/rss.xml" bind GET to { _ -> handleRss() },
+            "/atom.xml" bind GET to { _ -> handleAtom() },
             "/sitemap.xml" bind GET to { _ -> handleSitemap() },
             "/robots.txt" bind GET to { _ -> handleRobotsTxt() },
             "/llms.txt" bind GET to { _ -> handleLlmsTxt() },
@@ -226,6 +227,14 @@ class FragmentsHttp4kAdapter(
             Response(Status.OK)
                 .header("Content-Type", "application/rss+xml; charset=utf-8")
                 .body(rssXml)
+        }
+
+    private fun handleAtom(): Response =
+        runBlocking {
+            val atomXml = engine.generateAtomFeed()
+            Response(Status.OK)
+                .header("Content-Type", "application/atom+xml; charset=utf-8")
+                .body(atomXml)
         }
 
     private fun handleSitemap(): Response =
