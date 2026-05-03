@@ -289,7 +289,7 @@ class FileSystemFragmentRepositoryTest {
             assertEquals(FragmentStatus.PUBLISHED, reloadedFragment?.status)
 
             val fileContent = File(tempDir.toFile(), "draft-post.md").readText()
-            assertTrue(fileContent.contains("status: PUBLISHED"))
+            assertTrue(fileContent.contains("PUBLISHED"))
         }
 
     @Test

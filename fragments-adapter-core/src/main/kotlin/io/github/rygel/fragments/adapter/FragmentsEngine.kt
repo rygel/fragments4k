@@ -14,6 +14,7 @@ import io.github.rygel.fragments.blog.BlogEngine
 import io.github.rygel.fragments.blog.Page
 import io.github.rygel.fragments.lucene.LuceneSearchEngine
 import io.github.rygel.fragments.lucene.SearchResult
+import io.github.rygel.fragments.lucene.SearchSuggestion
 import io.github.rygel.fragments.rss.RssGenerator
 import io.github.rygel.fragments.sitemap.SitemapGenerator
 import io.github.rygel.fragments.static.StaticPageEngine
@@ -133,6 +134,11 @@ class FragmentsEngine(
         query: String,
         maxResults: Int = 50,
     ): List<SearchResult> = searchEngine.search(query, maxResults)
+
+    suspend fun autocomplete(
+        query: String,
+        limit: Int = 10,
+    ): List<SearchSuggestion> = searchEngine.autocomplete(query, limit)
 
     // -- Feed generation ------------------------------------------------------
 

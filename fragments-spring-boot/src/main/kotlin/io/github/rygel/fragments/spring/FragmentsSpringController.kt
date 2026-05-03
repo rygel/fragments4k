@@ -173,6 +173,70 @@ class FragmentsSpringController(
     @GetMapping(value = ["/rss.xml", "/feed.xml"], produces = [MediaType.APPLICATION_ATOM_XML_VALUE, MediaType.APPLICATION_XML_VALUE])
     suspend fun rss(): String = engine.generateRssFeed()
 
+    @GetMapping("/blog/archive/{year}")
+    suspend fun archiveYear(
+        @PathVariable year: String,
+        @RequestHeader(value = FragmentViewModel.HTMX_REQUEST_HEADER, required = false) htmxRequest: String?,
+        model: Model,
+    ): String {
+        val yearInt = year.toIntOrNull() ?: return "error/404"
+        val fragments = engine.getByYear(yearInt)
+        val isPartial = engine.isHtmxRequest(htmxRequest)
+        model.addAttribute(
+            "viewModel",
+            ArchiveViewModel(
+                type = "year",
+                year = year,
+                fragments = fragments.map { FragmentViewModel(it, isPartial) },
+                siteTitle = engine.siteTitle,
+            ),
+        )
+        return "archive"
+    }
+
+    @GetMapping("/blog/archive/{year}/{month}")
+    suspend fun archiveYearMonth(
+        @PathVariable year: String,
+        @PathVariable month: String,
+        @RequestHeader(value = FragmentViewModel.HTMX_REQUEST_HEADER, required = false) htmxRequest: String?,
+        model: Model,
+    ): String {
+        val yearInt = year.toIntOrNull() ?: return "error/404"
+        val monthInt = month.toIntOrNull() ?: return "error/404"
+        val fragments = engine.getByYearMonth(yearInt, monthInt)
+        val isPartial = engine.isHtmxRequest(htmxRequest)
+        model.addAttribute(
+            "viewModel",
+            ArchiveViewModel(
+                type = "year-month",
+                year = year,
+                month = month,
+                fragments = fragments.map { FragmentViewModel(it, isPartial) },
+                siteTitle = engine.siteTitle,
+            ),
+        )
+        return "archive"
+    }
+
+    @GetMapping("/search")
+    suspend fun search(
+        @RequestParam("q") query: String,
+        @RequestHeader(value = FragmentViewModel.HTMX_REQUEST_HEADER, required = false) htmxRequest: String?,
+        model: Model,
+    ): String {
+        val results = engine.search(query)
+        val isPartial = engine.isHtmxRequest(htmxRequest)
+        model.addAttribute(
+            "viewModel",
+            SearchViewModel(
+                query = query,
+                results = results.map { FragmentViewModel(it.fragment, isPartial) },
+                siteTitle = engine.siteTitle,
+            ),
+        )
+        return "search"
+    }
+
     @GetMapping(value = ["/sitemap.xml"], produces = [MediaType.APPLICATION_XML_VALUE])
     suspend fun sitemap(): String = engine.generateSitemap()
 
@@ -226,5 +290,19 @@ class FragmentsSpringController(
         val hasNext: Boolean = false,
         val hasPrevious: Boolean = false,
         val isPartialRender: Boolean = false,
+    )
+
+    data class ArchiveViewModel(
+        val type: String,
+        val year: String,
+        val month: String? = null,
+        val fragments: List<FragmentViewModel>,
+        val siteTitle: String,
+    )
+
+    data class SearchViewModel(
+        val query: String,
+        val results: List<FragmentViewModel>,
+        val siteTitle: String,
     )
 }
