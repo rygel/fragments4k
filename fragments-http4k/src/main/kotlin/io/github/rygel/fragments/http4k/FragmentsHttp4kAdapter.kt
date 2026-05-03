@@ -274,14 +274,19 @@ class FragmentsHttp4kAdapter(
         val limit = request.query("limit")?.toIntOrNull() ?: 10
         return runBlocking {
             val suggestions = engine.autocomplete(query, limit)
-            val json = buildString {
-                append("[")
-                suggestions.forEachIndexed { index, suggestion ->
-                    if (index > 0) append(",")
-                    append("""{"text":${escapeJson(suggestion.text)},"frequency":${suggestion.frequency},"type":"${suggestion.type.name}"}""")
+            val json =
+                buildString {
+                    append("[")
+                    suggestions.forEachIndexed { index, suggestion ->
+                        if (index > 0) append(",")
+                        append(
+                            """{"text":${escapeJson(
+                                suggestion.text,
+                            )},"frequency":${suggestion.frequency},"type":"${suggestion.type.name}"}""",
+                        )
+                    }
+                    append("]")
                 }
-                append("]")
-            }
             Response(Status.OK)
                 .header("Content-Type", "application/json; charset=utf-8")
                 .body(json)
@@ -289,7 +294,13 @@ class FragmentsHttp4kAdapter(
     }
 
     private fun escapeJson(value: String): String {
-        val escaped = value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t")
+        val escaped =
+            value
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t")
         return "\"$escaped\""
     }
 
