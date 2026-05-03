@@ -12,6 +12,7 @@ jobs:
     name: Tag and Release
     if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/')
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
       contents: write
 

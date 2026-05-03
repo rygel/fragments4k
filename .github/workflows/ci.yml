@@ -16,6 +16,7 @@ jobs:
   build-and-test:
     name: Build and Test
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
       contents: read
 
@@ -33,6 +34,7 @@ jobs:
           cache: 'maven'
 
       - name: Build and test all modules
+        timeout-minutes: 15
         run: mvn verify -T 4 -Pintegration
 
       - name: Upload coverage report
