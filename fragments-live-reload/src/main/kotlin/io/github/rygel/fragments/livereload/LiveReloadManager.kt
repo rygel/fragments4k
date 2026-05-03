@@ -30,7 +30,7 @@ class LiveReloadManager(
         private val logger = LoggerFactory.getLogger(LiveReloadManager::class.java)
     }
 
-    private val _reloadEvents = MutableSharedFlow<ReloadEvent>()
+    private val _reloadEvents = MutableSharedFlow<ReloadEvent>(replay = 1)
     val reloadEvents: SharedFlow<ReloadEvent> = _reloadEvents.asSharedFlow()
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO)

@@ -2,6 +2,12 @@ package io.github.rygel.fragments.livereload
 
 import io.github.rygel.fragments.Fragment
 import io.github.rygel.fragments.FragmentRepository
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -12,6 +18,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.LocalDateTime
@@ -63,25 +70,17 @@ class LiveReloadManagerTest {
             liveReloadManager.startWatching()
 
             // Wait for watch to start
-            kotlinx.coroutines.delay(500)
+            delay(500)
 
-            // Create a new file
-            val file = contentDir.resolve("new-post.md")
-            Files.writeString(file, createMarkdown("New Post"))
-            testRepository.addFragment(createFragment("new-post", "New Post"))
-
-            // Wait for event processing
-            kotlinx.coroutines.delay(1000)
-
-            // Verify event was emitted
-            val events = mutableListOf<ReloadEvent>()
-            liveReloadManager.reloadEvents.collect { event ->
-                events.add(event)
-                if (events.size >= 1) return@collect
-            }
+            val events =
+                collectEventsDuring(liveReloadManager) {
+                    val file = contentDir.resolve("new-post.md")
+                    Files.writeString(file, createMarkdown("New Post"))
+                    testRepository.addFragment(createFragment("new-post", "New Post"))
+                }
 
             assertTrue(events.isNotEmpty())
-            assertEquals(ReloadType.CONTENT, events[0].type)
+            assertEquals(ReloadType.CONTENT, events.first().type)
         }
 
     @Test
@@ -94,24 +93,16 @@ class LiveReloadManagerTest {
             liveReloadManager.startWatching()
 
             // Wait for watch to start
-            kotlinx.coroutines.delay(500)
+            delay(500)
 
-            // Modify the file
-            Files.writeString(file, createMarkdown("Modified"))
-            testRepository.updateFragment(createFragment("test", "Modified"))
-
-            // Wait for event processing
-            kotlinx.coroutines.delay(1000)
-
-            // Verify event was emitted
-            val events = mutableListOf<ReloadEvent>()
-            liveReloadManager.reloadEvents.collect { event ->
-                events.add(event)
-                if (events.size >= 1) return@collect
-            }
+            val events =
+                collectEventsDuring(liveReloadManager) {
+                    Files.writeString(file, createMarkdown("Modified"))
+                    testRepository.updateFragment(createFragment("test", "Modified"))
+                }
 
             assertTrue(events.isNotEmpty())
-            assertEquals(ReloadType.CONTENT, events[0].type)
+            assertEquals(ReloadType.CONTENT, events.first().type)
         }
 
     @Test
@@ -120,7 +111,7 @@ class LiveReloadManagerTest {
             liveReloadManager.startWatching()
 
             // Wait for watch to start
-            kotlinx.coroutines.delay(500)
+            delay(500)
 
             assertTrue(liveReloadManager.isWatching())
 
@@ -128,7 +119,7 @@ class LiveReloadManagerTest {
             liveReloadManager.stopWatching()
 
             // Verify it's not watching
-            kotlinx.coroutines.delay(100)
+            delay(100)
             assertFalse(liveReloadManager.isWatching())
         }
 
@@ -142,24 +133,16 @@ class LiveReloadManagerTest {
             liveReloadManager.startWatching()
 
             // Wait for watch to start
-            kotlinx.coroutines.delay(500)
+            delay(500)
 
-            // Delete the file
-            Files.delete(file)
-            testRepository.deleteFragment("test")
-
-            // Wait for event processing
-            kotlinx.coroutines.delay(1000)
-
-            // Verify event was emitted
-            val events = mutableListOf<ReloadEvent>()
-            liveReloadManager.reloadEvents.collect { event ->
-                events.add(event)
-                if (events.size >= 1) return@collect
-            }
+            val events =
+                collectEventsDuring(liveReloadManager) {
+                    Files.delete(file)
+                    testRepository.deleteFragment("test")
+                }
 
             assertTrue(events.isNotEmpty())
-            assertEquals(ReloadType.CONTENT, events[0].type)
+            assertEquals(ReloadType.CONTENT, events.first().type)
         }
 
     @Test
@@ -175,25 +158,17 @@ class LiveReloadManagerTest {
             liveReloadManager.startWatching()
 
             // Wait for watch to start
-            kotlinx.coroutines.delay(500)
+            delay(500)
 
-            // Modify nested file
-            Files.writeString(file, createMarkdown("Modified Post"))
-            testRepository.updateFragment(createFragment("test-post", "Modified Post"))
-
-            // Wait for event processing
-            kotlinx.coroutines.delay(1000)
-
-            // Verify event was emitted
-            val events = mutableListOf<ReloadEvent>()
-            liveReloadManager.reloadEvents.collect { event ->
-                events.add(event)
-                if (events.size >= 1) return@collect
-            }
+            val events =
+                collectEventsDuring(liveReloadManager) {
+                    Files.writeString(file, createMarkdown("Modified Post"))
+                    testRepository.updateFragment(createFragment("test-post", "Modified Post"))
+                }
 
             assertTrue(events.isNotEmpty())
-            assertEquals(ReloadType.CONTENT, events[0].type)
-            assertTrue(events[0].changedFiles.isNotEmpty())
+            assertEquals(ReloadType.CONTENT, events.first().type)
+            assertTrue(events.first().changedFiles.isNotEmpty())
         }
 
     @Test
@@ -202,36 +177,28 @@ class LiveReloadManagerTest {
             liveReloadManager.startWatching()
 
             // Wait for watch to start
-            kotlinx.coroutines.delay(500)
+            delay(500)
 
-            // Create multiple files rapidly
-            val file1 = contentDir.resolve("post1.md")
-            val file2 = contentDir.resolve("post2.md")
-            val file3 = contentDir.resolve("post3.md")
+            val events =
+                collectEventsDuring(liveReloadManager, settleTimeMillis = 2500) {
+                    val file1 = contentDir.resolve("post1.md")
+                    val file2 = contentDir.resolve("post2.md")
+                    val file3 = contentDir.resolve("post3.md")
 
-            Files.writeString(file1, createMarkdown("Post 1"))
-            testRepository.addFragment(createFragment("post1", "Post 1"))
-            kotlinx.coroutines.delay(100)
+                    Files.writeString(file1, createMarkdown("Post 1"))
+                    testRepository.addFragment(createFragment("post1", "Post 1"))
+                    delay(100)
 
-            Files.writeString(file2, createMarkdown("Post 2"))
-            testRepository.addFragment(createFragment("post2", "Post 2"))
-            kotlinx.coroutines.delay(100)
+                    Files.writeString(file2, createMarkdown("Post 2"))
+                    testRepository.addFragment(createFragment("post2", "Post 2"))
+                    delay(100)
 
-            Files.writeString(file3, createMarkdown("Post 3"))
-            testRepository.addFragment(createFragment("post3", "Post 3"))
+                    Files.writeString(file3, createMarkdown("Post 3"))
+                    testRepository.addFragment(createFragment("post3", "Post 3"))
+                }
 
-            // Wait for event processing
-            kotlinx.coroutines.delay(2000)
-
-            // Verify multiple events were emitted
-            val events = mutableListOf<ReloadEvent>()
-            liveReloadManager.reloadEvents.collect { event ->
-                events.add(event)
-                if (events.size >= 3) return@collect
-            }
-
-            assertTrue(events.size >= 1)
-            assertEquals(ReloadType.CONTENT, events[0].type)
+            assertTrue(events.isNotEmpty())
+            assertEquals(ReloadType.CONTENT, events.first().type)
         }
 
     @Test
@@ -243,28 +210,21 @@ class LiveReloadManagerTest {
             errorLiveReloadManager.startWatching()
 
             // Wait for watch to start
-            kotlinx.coroutines.delay(500)
+            delay(500)
 
-            // Create a file to trigger reload
-            val file = contentDir.resolve("test.md")
-            Files.writeString(file, createMarkdown("Test"))
+            try {
+                val events =
+                    collectEventsDuring(errorLiveReloadManager) {
+                        val file = contentDir.resolve("test.md")
+                        Files.writeString(file, createMarkdown("Test"))
+                    }
 
-            // Wait for event processing
-            kotlinx.coroutines.delay(1000)
-
-            // Verify error event was emitted
-            val events = mutableListOf<ReloadEvent>()
-            errorLiveReloadManager.reloadEvents.collect { event ->
-                events.add(event)
-                if (events.size >= 1) return@collect
+                assertTrue(events.isNotEmpty())
+                assertEquals(ReloadType.ERROR, events.first().type)
+                assertNotNull(events.first().error)
+            } finally {
+                errorLiveReloadManager.stopWatching()
             }
-
-            assertTrue(events.isNotEmpty())
-            assertEquals(ReloadType.ERROR, events[0].type)
-            assertNotNull(events[0].error)
-
-            // Clean up
-            errorLiveReloadManager.stopWatching()
         }
 
     @Test
@@ -277,7 +237,7 @@ class LiveReloadManagerTest {
             liveReloadManager.startWatching()
 
             // Verify it's not watching
-            kotlinx.coroutines.delay(500)
+            delay(500)
             assertFalse(liveReloadManager.isWatching())
         }
 
@@ -287,33 +247,54 @@ class LiveReloadManagerTest {
             liveReloadManager.startWatching()
 
             // Wait for watch to start
-            kotlinx.coroutines.delay(500)
+            delay(500)
 
-            // Create, modify, then delete a file
-            val file = contentDir.resolve("test.md")
+            val events =
+                collectEventsDuring(liveReloadManager, settleTimeMillis = 1500) {
+                    val file = contentDir.resolve("test.md")
 
-            Files.writeString(file, createMarkdown("Initial"))
-            testRepository.addFragment(createFragment("test", "Initial"))
-            kotlinx.coroutines.delay(200)
+                    Files.writeString(file, createMarkdown("Initial"))
+                    testRepository.addFragment(createFragment("test", "Initial"))
+                    delay(1200)
 
-            Files.writeString(file, createMarkdown("Modified"))
-            testRepository.updateFragment(createFragment("test", "Modified"))
-            kotlinx.coroutines.delay(200)
+                    Files.writeString(file, createMarkdown("Modified"))
+                    testRepository.updateFragment(createFragment("test", "Modified"))
+                    delay(1200)
 
-            Files.delete(file)
-            testRepository.deleteFragment("test")
-            kotlinx.coroutines.delay(200)
+                    Files.delete(file)
+                    testRepository.deleteFragment("test")
+                }
 
-            // Collect all events
-            val events = mutableListOf<ReloadEvent>()
-            liveReloadManager.reloadEvents.collect { event ->
-                events.add(event)
-                if (events.size >= 3) return@collect
-            }
-
-            // Verify we got 3 events
-            assertTrue(events.size >= 2)
+            assertTrue(events.size >= 3)
             events.forEach { assertEquals(ReloadType.CONTENT, it.type) }
+        }
+
+    private suspend fun collectEventsDuring(
+        manager: LiveReloadManager,
+        settleTimeMillis: Long = 1500,
+        action: suspend () -> Unit,
+    ): List<ReloadEvent> =
+        coroutineScope {
+            val events = Channel<ReloadEvent>(capacity = Channel.UNLIMITED)
+            val collectJob =
+                launch(start = CoroutineStart.UNDISPATCHED) {
+                    manager.reloadEvents.collect { event ->
+                        events.send(event)
+                    }
+                }
+
+            try {
+                action()
+                delay(settleTimeMillis)
+                buildList {
+                    while (true) {
+                        val event = events.tryReceive().getOrNull() ?: break
+                        add(event)
+                    }
+                }
+            } finally {
+                collectJob.cancelAndJoin()
+            }
         }
 
     private fun createMarkdown(title: String): String =
@@ -495,30 +476,30 @@ class InMemoryFragmentRepository : FragmentRepository {
 }
 
 class ErrorFragmentRepository : FragmentRepository {
-    override suspend fun getAll(): List<Fragment> = throw RuntimeException("Simulated repository error")
+    override suspend fun getAll(): List<Fragment> = throw IOException("Simulated repository error")
 
-    override suspend fun getAllVisible(): List<Fragment> = throw RuntimeException("Simulated repository error")
+    override suspend fun getAllVisible(): List<Fragment> = throw IOException("Simulated repository error")
 
-    override suspend fun getBySlug(slug: String): Fragment? = throw RuntimeException("Simulated repository error")
+    override suspend fun getBySlug(slug: String): Fragment? = throw IOException("Simulated repository error")
 
     override suspend fun getByYearMonthAndSlug(
         year: String,
         month: String,
         slug: String,
-    ): Fragment? = throw RuntimeException("Simulated repository error")
+    ): Fragment? = throw IOException("Simulated repository error")
 
-    override suspend fun getByTag(tag: String): List<Fragment> = throw RuntimeException("Simulated repository error")
+    override suspend fun getByTag(tag: String): List<Fragment> = throw IOException("Simulated repository error")
 
-    override suspend fun getByCategory(category: String): List<Fragment> = throw RuntimeException("Simulated repository error")
+    override suspend fun getByCategory(category: String): List<Fragment> = throw IOException("Simulated repository error")
 
-    override suspend fun reload(): Unit = throw RuntimeException("Simulated repository error")
+    override suspend fun reload(): Unit = throw IOException("Simulated repository error")
 
     override suspend fun getByStatus(status: io.github.rygel.fragments.FragmentStatus): List<Fragment> =
-        throw RuntimeException("Simulated repository error")
+        throw IOException("Simulated repository error")
 
-    override suspend fun getByAuthor(authorId: String): List<Fragment> = throw RuntimeException("Simulated repository error")
+    override suspend fun getByAuthor(authorId: String): List<Fragment> = throw IOException("Simulated repository error")
 
-    override suspend fun getByAuthors(authorIds: List<String>): List<Fragment> = throw RuntimeException("Simulated repository error")
+    override suspend fun getByAuthors(authorIds: List<String>): List<Fragment> = throw IOException("Simulated repository error")
 
     override suspend fun updateFragmentStatus(
         slug: String,
@@ -526,7 +507,7 @@ class ErrorFragmentRepository : FragmentRepository {
         force: Boolean,
         changedBy: String?,
         reason: String?,
-    ): Result<Fragment> = throw RuntimeException("Simulated repository error")
+    ): Result<Fragment> = throw IOException("Simulated repository error")
 
     override suspend fun updateMultipleFragmentsStatus(
         slugs: List<String>,
@@ -534,63 +515,62 @@ class ErrorFragmentRepository : FragmentRepository {
         force: Boolean,
         changedBy: String?,
         reason: String?,
-    ): List<Result<Fragment>> = throw RuntimeException("Simulated repository error")
+    ): List<Result<Fragment>> = throw IOException("Simulated repository error")
 
     override suspend fun publishMultiple(
         slugs: List<String>,
         changedBy: String?,
         reason: String?,
-    ): List<Result<Fragment>> = throw RuntimeException("Simulated repository error")
+    ): List<Result<Fragment>> = throw IOException("Simulated repository error")
 
     override suspend fun unpublishMultiple(
         slugs: List<String>,
         changedBy: String?,
         reason: String?,
-    ): List<Result<Fragment>> = throw RuntimeException("Simulated repository error")
+    ): List<Result<Fragment>> = throw IOException("Simulated repository error")
 
     override suspend fun archiveMultiple(
         slugs: List<String>,
         changedBy: String?,
         reason: String?,
-    ): List<Result<Fragment>> = throw RuntimeException("Simulated repository error")
+    ): List<Result<Fragment>> = throw IOException("Simulated repository error")
 
     override suspend fun getScheduledFragmentsDueForPublication(threshold: LocalDateTime): List<Fragment> =
-        throw RuntimeException("Simulated repository error")
+        throw IOException("Simulated repository error")
 
     override suspend fun publishScheduledFragments(threshold: LocalDateTime): List<Result<Fragment>> =
-        throw RuntimeException("Simulated repository error")
+        throw IOException("Simulated repository error")
 
     override suspend fun scheduleMultiple(
         slugs: List<String>,
         publishDate: LocalDateTime,
         changedBy: String?,
         reason: String?,
-    ): List<Result<Fragment>> = throw RuntimeException("Simulated repository error")
+    ): List<Result<Fragment>> = throw IOException("Simulated repository error")
 
-    override suspend fun expireFragments(threshold: LocalDateTime): List<Result<Fragment>> =
-        throw RuntimeException("Simulated repository error")
+    override suspend fun expireFragments(threshold: LocalDateTime): List<Result<Fragment>> = throw IOException("Simulated repository error")
 
     override suspend fun getFragmentsExpiringSoon(threshold: LocalDateTime): List<Fragment> =
-        throw RuntimeException("Simulated repository error")
+        throw IOException("Simulated repository error")
 
     override suspend fun getRelationships(
         slug: String,
         config: io.github.rygel.fragments.RelationshipConfig,
-    ): io.github.rygel.fragments.ContentRelationships? = throw RuntimeException("Simulated repository error")
+    ): io.github.rygel.fragments.ContentRelationships? = throw IOException("Simulated repository error")
 
     override suspend fun createRevision(
         slug: String,
         changedBy: String?,
         reason: String?,
-    ): Result<io.github.rygel.fragments.FragmentRevision> = throw RuntimeException("Simulated repository error")
+    ): Result<io.github.rygel.fragments.FragmentRevision> = throw IOException("Simulated repository error")
 
     override suspend fun getFragmentRevisions(slug: String): List<io.github.rygel.fragments.FragmentRevision> =
-        throw RuntimeException("Simulated repository error")
+        throw IOException("Simulated repository error")
 
     override suspend fun revertToRevision(
         slug: String,
         revisionId: String,
         changedBy: String?,
         reason: String?,
-    ): Result<Fragment> = throw RuntimeException("Simulated repository error")
+    ): Result<Fragment> = throw IOException("Simulated repository error")
 }
