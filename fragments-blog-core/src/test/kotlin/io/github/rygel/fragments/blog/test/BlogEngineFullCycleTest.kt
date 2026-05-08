@@ -19,7 +19,7 @@ class BlogEngineFullCycleTest {
                 Fragment(
                     slug = "test-post",
                     title = "Test Post",
-                    content = "This is test content",
+                    htmlContent = "This is test content",
                     preview = "Test preview",
                     date = LocalDateTime.of(2024, 3, 10, 10, 0),
                     publishDate = null,
@@ -33,7 +33,7 @@ class BlogEngineFullCycleTest {
                 Fragment(
                     slug = "related-post",
                     title = "Related Post",
-                    content = "This is related content",
+                    htmlContent = "This is related content",
                     preview = "Related preview",
                     date = LocalDateTime.of(2024, 3, 15, 10, 0),
                     publishDate = null,
@@ -59,7 +59,7 @@ class BlogEngineFullCycleTest {
             val post = blogEngine.getPost("2024", "3", "test-post")
             assertNotNull(post)
             assertEquals("test-post", post?.slug)
-            assertEquals("This is test content", post?.content)
+            assertEquals("This is test content", post?.htmlContent)
             assertEquals("Test preview", post?.preview)
         }
 
@@ -72,7 +72,7 @@ class BlogEngineFullCycleTest {
                 Fragment(
                     slug = "kotlin-tag-post",
                     title = "Kotlin Tag Post",
-                    content = "Content about Kotlin",
+                    htmlContent = "Content about Kotlin",
                     preview = "Kotlin preview",
                     date = LocalDateTime.of(2024, 3, 7, 10, 0),
                     publishDate = null,
@@ -86,7 +86,7 @@ class BlogEngineFullCycleTest {
                 Fragment(
                     slug = "java-tag-post",
                     title = "Java Tag Post",
-                    content = "Content about Java",
+                    htmlContent = "Content about Java",
                     preview = "Java preview",
                     date = LocalDateTime.of(2024, 3, 8, 10, 0),
                     publishDate = null,
@@ -100,7 +100,7 @@ class BlogEngineFullCycleTest {
                 Fragment(
                     slug = "another-kotlin-post",
                     title = "Another Kotlin Post",
-                    content = "More content about Kotlin",
+                    htmlContent = "More content about Kotlin",
                     preview = "Another Kotlin preview",
                     date = LocalDateTime.of(2024, 3, 9, 10, 0),
                     publishDate = null,
@@ -135,7 +135,7 @@ class BlogEngineFullCycleTest {
                 Fragment(
                     slug = "blog-category-post",
                     title = "Blog Category Post",
-                    content = "Content for blog",
+                    htmlContent = "Content for blog",
                     preview = "Blog preview",
                     date = LocalDateTime.of(2024, 3, 9, 10, 0),
                     publishDate = null,
@@ -149,7 +149,7 @@ class BlogEngineFullCycleTest {
                 Fragment(
                     slug = "another-blog-post",
                     title = "Another Blog Post",
-                    content = "More content for blog",
+                    htmlContent = "More content for blog",
                     preview = "Another blog preview",
                     date = LocalDateTime.of(2024, 3, 10, 10, 0),
                     publishDate = null,
@@ -163,7 +163,7 @@ class BlogEngineFullCycleTest {
                 Fragment(
                     slug = "tutorial-post",
                     title = "Tutorial Post",
-                    content = "Tutorial content",
+                    htmlContent = "Tutorial content",
                     preview = "Tutorial preview",
                     date = LocalDateTime.of(2024, 3, 11, 10, 0),
                     publishDate = null,

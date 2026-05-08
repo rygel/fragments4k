@@ -83,7 +83,7 @@ class FaqSchemaGeneratorTest {
                 date = LocalDateTime.of(2024, 1, 15, 10, 0),
                 publishDate = null,
                 preview = "FAQ content",
-                content = "<p>FAQ content</p>",
+                htmlContent = "<p>FAQ content</p>",
                 frontMatter = emptyMap(),
                 faq =
                     listOf(
@@ -111,7 +111,7 @@ class FaqSchemaGeneratorTest {
                 date = LocalDateTime.of(2024, 1, 15, 10, 0),
                 publishDate = null,
                 preview = "No FAQ content",
-                content = "<p>No FAQ</p>",
+                htmlContent = "<p>No FAQ</p>",
                 frontMatter = emptyMap(),
             )
 

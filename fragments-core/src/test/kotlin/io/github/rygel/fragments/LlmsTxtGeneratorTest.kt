@@ -298,7 +298,7 @@ class LlmsTxtGeneratorTest {
         Fragment(
             slug = slug,
             title = title,
-            content = "<p>Content for $title</p>",
+            htmlContent = "<p>Content for $title</p>",
             date = date,
             publishDate = date,
             preview = preview,

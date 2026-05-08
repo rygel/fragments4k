@@ -344,7 +344,7 @@ class FileSystemFragmentRepository(
                 publishDate = publishDate,
                 expiryDate = expiryDate,
                 preview = preview,
-                content = parsed.htmlContent,
+                htmlContent = parsed.htmlContent,
                 frontMatter = frontMatter,
                 visible = visible,
                 template = template,

@@ -312,7 +312,7 @@ class ClasspathFragmentRepository(
                 publishDate = MarkdownParser.parseDate(frontMatter["publishDate"]),
                 expiryDate = MarkdownParser.parseDate(frontMatter["expiryDate"]),
                 preview = frontMatter["preview"]?.toString() ?: extractPreview(parsed.content),
-                content = parsed.htmlContent,
+                htmlContent = parsed.htmlContent,
                 frontMatter = frontMatter,
                 visible = frontMatter["visible"]?.toString()?.toBooleanStrictOrNull() ?: true,
                 template = frontMatter["template"]?.toString() ?: "default",

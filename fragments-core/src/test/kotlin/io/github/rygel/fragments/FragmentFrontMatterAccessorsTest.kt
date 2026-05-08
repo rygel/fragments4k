@@ -15,7 +15,7 @@ class FragmentFrontMatterAccessorsTest {
             date = now,
             publishDate = null,
             preview = "",
-            content = "",
+            htmlContent = "",
             frontMatter = frontMatter,
         )
 

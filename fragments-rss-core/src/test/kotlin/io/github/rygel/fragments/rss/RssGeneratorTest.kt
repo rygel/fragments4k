@@ -210,7 +210,7 @@ class RssGeneratorTest {
                 Fragment(
                     title = "No Date",
                     slug = "no-date",
-                    content = "Content",
+                    htmlContent = "Content",
                     preview = "Preview",
                     publishDate = null,
                     frontMatter = emptyMap(),
@@ -236,7 +236,7 @@ class RssGeneratorTest {
                 Fragment(
                     title = "Special",
                     slug = "special",
-                    content = "<p>Code: if (a < b && c > d) use \"quotes\" and 'apostrophes'</p>",
+                    htmlContent = "<p>Code: if (a < b && c > d) use \"quotes\" and 'apostrophes'</p>",
                     preview = "Code: if (a < b && c > d) use \"quotes\" and 'apostrophes'",
                     publishDate = null,
                     frontMatter = emptyMap(),
@@ -334,7 +334,7 @@ class RssGeneratorTest {
         Fragment(
             title = title,
             slug = slug,
-            content = "Test content",
+            htmlContent = "Test content",
             preview = "Test preview",
             publishDate = null,
             frontMatter = mapOf("title" to title, "slug" to slug),

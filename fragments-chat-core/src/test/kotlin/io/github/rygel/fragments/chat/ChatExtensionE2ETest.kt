@@ -72,7 +72,7 @@ class ChatExtensionE2ETest {
 
             val fragment = repository.getBySlug("getting-started")
             assertNotNull(fragment, "Fragment should be found")
-            val html = fragment!!.content
+            val html = fragment!!.htmlContent
 
             assertTrue(html.contains("class=\"chat-container\""), "Should contain chat container")
             assertTrue(html.contains("chat-message--user"), "Should contain user bubble")
@@ -107,7 +107,7 @@ class ChatExtensionE2ETest {
                 """.trimIndent(),
             )
 
-            val html = repository.getBySlug("mixed-content")!!.content
+            val html = repository.getBySlug("mixed-content")!!.htmlContent
 
             assertTrue(html.contains("<h1>Main Heading</h1>"), "H1 heading should render normally")
             assertTrue(html.contains("<h2>Second Heading</h2>"), "H2 heading should render normally")
@@ -151,7 +151,7 @@ class ChatExtensionE2ETest {
             assertEquals("annotated-article", fragment.slug)
             assertEquals(listOf("kotlin", "tutorial"), fragment.tags)
             assertEquals(listOf("guides"), fragment.categories)
-            assertTrue(fragment.content.contains("chat-container"))
+            assertTrue(fragment.htmlContent.contains("chat-container"))
         }
 
     // -------------------------------------------------------------------------
@@ -185,7 +185,7 @@ class ChatExtensionE2ETest {
                 """.trimIndent(),
             )
 
-            val html = repository.getBySlug("multi-chat")!!.content
+            val html = repository.getBySlug("multi-chat")!!.htmlContent
 
             assertEquals(
                 2,
@@ -216,7 +216,7 @@ class ChatExtensionE2ETest {
                 """.trimIndent(),
             )
 
-            val html = repository.getBySlug("long-chat")!!.content
+            val html = repository.getBySlug("long-chat")!!.htmlContent
             assertEquals(4, Regex("chat-message--").findAll(html).count(), "Expected 4 chat bubbles")
         }
 
@@ -241,7 +241,7 @@ class ChatExtensionE2ETest {
                 """.trimIndent(),
             )
 
-            val html = repository.getBySlug("code-article")!!.content
+            val html = repository.getBySlug("code-article")!!.htmlContent
 
             assertFalse(html.contains("chat-container"), "Kotlin block must not become a chat block")
             assertTrue(html.contains("<code"), "Kotlin block must render as <code>")
@@ -262,7 +262,7 @@ class ChatExtensionE2ETest {
                 """.trimIndent(),
             )
 
-            val html = repository.getBySlug("plain-article")!!.content
+            val html = repository.getBySlug("plain-article")!!.htmlContent
 
             assertFalse(html.contains("chat-container"))
             assertTrue(html.contains("<strong>bold</strong>"))
@@ -294,7 +294,7 @@ class ChatExtensionE2ETest {
 
             val all = repository.getAll()
             assertEquals(1, all.size)
-            assertTrue(all.first().content.contains("chat-container"))
+            assertTrue(all.first().htmlContent.contains("chat-container"))
         }
 
     @Test
@@ -341,7 +341,7 @@ class ChatExtensionE2ETest {
 
             val results = repository.getByTag("demo")
             assertEquals(1, results.size)
-            assertTrue(results.first().content.contains("chat-container"))
+            assertTrue(results.first().htmlContent.contains("chat-container"))
         }
 
     // -------------------------------------------------------------------------
@@ -375,7 +375,7 @@ class ChatExtensionE2ETest {
                 """.trimIndent(),
             )
 
-            val html = customRepo.getBySlug("custom-speakers")!!.content
+            val html = customRepo.getBySlug("custom-speakers")!!.htmlContent
 
             assertTrue(html.contains("chat-message--user"), "Alice should get user class")
             assertTrue(html.contains("chat-message--assistant"), "Bob should get assistant class")

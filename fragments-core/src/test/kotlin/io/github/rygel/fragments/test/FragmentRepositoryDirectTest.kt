@@ -17,7 +17,7 @@ class FragmentRepositoryDirectTest {
                 Fragment(
                     slug = "test-post",
                     title = "Test Post",
-                    content = "Test content",
+                    htmlContent = "Test content",
                     preview = "Test preview",
                     date = LocalDateTime.of(2024, 3, 10, 10, 0),
                     publishDate = null,
@@ -46,7 +46,7 @@ class FragmentRepositoryDirectTest {
                 Fragment(
                     slug = "test-post",
                     title = "Test Post",
-                    content = "Test content",
+                    htmlContent = "Test content",
                     preview = "Test preview",
                     date = LocalDateTime.of(2024, 3, 10, 10, 0),
                     publishDate = null,
@@ -74,7 +74,7 @@ class FragmentRepositoryDirectTest {
                 Fragment(
                     slug = "test-post",
                     title = "Test Post",
-                    content = "Test content",
+                    htmlContent = "Test content",
                     preview = "Test preview",
                     date = LocalDateTime.of(2024, 3, 7, 10, 0),
                     publishDate = null,
@@ -103,7 +103,7 @@ class FragmentRepositoryDirectTest {
                 Fragment(
                     slug = "test-post",
                     title = "Test Post",
-                    content = "Test content",
+                    htmlContent = "Test content",
                     preview = "Test preview",
                     date = LocalDateTime.of(2024, 3, 9, 10, 0),
                     publishDate = null,
@@ -131,7 +131,7 @@ class FragmentRepositoryDirectTest {
                 Fragment(
                     slug = "test-post",
                     title = "Test Post",
-                    content = "Test content",
+                    htmlContent = "Test content",
                     preview = "No backticks",
                     date = LocalDateTime.of(2024, 3, 12, 10, 0),
                     publishDate = null,
