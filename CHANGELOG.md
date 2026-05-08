@@ -1,6 +1,13 @@
 # Changelog
 
-## [0.6.5] - 2026-05-03
+## [Unreleased]
+
+### Fixed
+
+- **`Fragment.content` renamed to `Fragment.htmlContent`** — the field held HTML-rendered Markdown content, not raw content. The old name was misleading. A deprecated extension property preserves binary compatibility.
+- **`SeoMetadata.fromFragment` canonical URL fixed** — was using hardcoded `/page/{slug}` path, now uses the actual `fragment.url` configured via `urlBuilder`.
+- **`urlBuilder` wired into all adapter configurations** — `FileSystemFragmentRepository` now correctly propagates `baseUrl` to `Fragment` so sitemap, RSS, and llms.txt generators produce correct absolute URLs. Previously `baseUrl` was silently ignored.
+- **`FileSystemFragmentRepository` passes `baseUrl` to `Fragment` constructor** — `baseUrl` parameter was accepted but never forwarded, causing all generated URLs to be relative.
 
 ### Added
 
