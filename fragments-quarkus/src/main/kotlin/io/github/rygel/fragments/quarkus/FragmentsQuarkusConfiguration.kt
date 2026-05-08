@@ -17,18 +17,19 @@ class FragmentsQuarkusConfiguration(
 ) {
     @Produces
     @ApplicationScoped
-    fun fragmentRepository(): FragmentRepository = FileSystemFragmentRepository(
-        basePath = fragmentsPath,
-        urlBuilder = { fragment ->
-            when (fragment.template) {
-                "blog", "blog_post" -> {
-                    val date = fragment.date ?: return@FileSystemFragmentRepository "/${fragment.slug}"
-                    "/blog/${date.year}/${"%02d".format(date.monthValue)}/${fragment.slug}"
+    fun fragmentRepository(): FragmentRepository =
+        FileSystemFragmentRepository(
+            basePath = fragmentsPath,
+            urlBuilder = { fragment ->
+                when (fragment.template) {
+                    "blog", "blog_post" -> {
+                        val date = fragment.date ?: return@FileSystemFragmentRepository "/${fragment.slug}"
+                        "/blog/${date.year}/${"%02d".format(date.monthValue)}/${fragment.slug}"
+                    }
+                    else -> "/page/${fragment.slug}"
                 }
-                else -> "/page/${fragment.slug}"
-            }
-        },
-    )
+            },
+        )
 
     @Produces
     @ApplicationScoped
