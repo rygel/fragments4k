@@ -38,7 +38,7 @@
     <properties>
         <java.version>21</java.version>
         <kotlin.version>2.2.0</kotlin.version>
-        <kotlinx-coroutines.version>1.10.2</kotlinx-coroutines.version>
+        <kotlinx-coroutines.version>1.11.0</kotlinx-coroutines.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -440,7 +440,7 @@
                     <artifactId>versions-maven-plugin</artifactId>
                     <version>${versions-maven-plugin.version}</version>
                     <configuration>
-                        <rulesUri>file://${project.basedir}/.mvn/versions-rules.xml</rulesUri>
+                        <rulesUri>file://${maven.multiModuleProjectDirectory}/.mvn/versions-rules.xml</rulesUri>
                     </configuration>
                 </plugin>
                 <plugin>
