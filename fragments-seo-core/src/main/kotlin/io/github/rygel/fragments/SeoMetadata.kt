@@ -190,7 +190,7 @@ data class SeoMetadata(
                 if (pagePath != null) {
                     "$siteUrl/$pagePath"
                 } else {
-                    "$siteUrl/page/${fragment.slug}"
+                    "$siteUrl${fragment.url}"
                 }
 
             val description =
