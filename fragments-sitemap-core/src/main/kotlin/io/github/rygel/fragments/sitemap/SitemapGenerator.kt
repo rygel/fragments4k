@@ -11,6 +11,23 @@ import java.time.format.DateTimeFormatter
 import javax.xml.stream.XMLOutputFactory
 import javax.xml.stream.XMLStreamWriter
 
+/**
+ * Generates an XML sitemap from all visible fragments across repositories.
+ *
+ * URLs are derived from each fragment's [Fragment.url] property, which
+ * resolves to [Fragment.resolvedUrl] when set by the repository's `urlBuilder`,
+ * or falls back to `baseUrl/slug`. For correct sitemap URLs, ensure your
+ * repository configures a `urlBuilder` that matches your adapter routes:
+ * - Blog posts: `/blog/{year}/{month}/{slug}`
+ * - Static pages: `/page/{slug}`
+ *
+ * The generated sitemap includes:
+ * - All visible published fragments from all repositories
+ * - Root site URL with priority 1.0
+ * - Image metadata from fragment front matter
+ * - Priority based on content type (higher for blog posts)
+ * - Change frequency based on fragment status
+ */
 class SitemapGenerator(
     private val repositories: List<FragmentRepository>,
     private val siteUrl: String,

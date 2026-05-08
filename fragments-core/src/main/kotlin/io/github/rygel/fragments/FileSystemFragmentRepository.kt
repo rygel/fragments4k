@@ -48,10 +48,15 @@ import java.time.format.DateTimeParseException
  *   ```kotlin
  *   FileSystemFragmentRepository(
  *       basePath = "/content/posts",
- *       urlBuilder = { fragment ->
- *           val date = fragment.date ?: return@FileSystemFragmentRepository "/${fragment.slug}"
- *           "/blog/${date.year}/%02d/${fragment.slug}".format(date.monthValue)
- *       },
+*   urlBuilder = { fragment ->
+ *       when (fragment.template) {
+ *           "blog", "blog_post" -> {
+ *               val date = fragment.date ?: return@FileSystemFragmentRepository "/${fragment.slug}"
+ *               "/blog/${date.year}/%02d/${fragment.slug}".format(date.monthValue)
+ *           }
+ *           else -> "/page/${fragment.slug}"
+ *       }
+ *   },
  *   )
  *   ```
  *   Example — static pages at custom routes:

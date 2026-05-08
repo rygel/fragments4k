@@ -25,7 +25,15 @@ import java.time.LocalDateTime
  * val blogRepository = ClasspathFragmentRepository(
  *     basePath = "content/blog",
  *     baseUrl = "/blog",
- *     urlBuilder = { "/blog/${it.date?.year}/%02d/${it.slug}".format(it.date?.monthValue) },
+ *     urlBuilder = { fragment ->
+ *         when (fragment.template) {
+ *             "blog", "blog_post" -> {
+ *                 val date = fragment.date ?: return@ClasspathFragmentRepository "/${fragment.slug}"
+ *                 "/blog/${date.year}/%02d/${fragment.slug}".format(date.monthValue)
+ *             }
+ *             else -> "/page/${fragment.slug}"
+ *         }
+ *     },
  * )
  * ```
  *
