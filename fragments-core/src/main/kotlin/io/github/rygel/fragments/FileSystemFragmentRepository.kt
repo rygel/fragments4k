@@ -339,6 +339,7 @@ class FileSystemFragmentRepository(
             Fragment(
                 title = title,
                 slug = slug,
+                baseUrl = baseUrl,
                 status = status,
                 date = date,
                 publishDate = publishDate,
