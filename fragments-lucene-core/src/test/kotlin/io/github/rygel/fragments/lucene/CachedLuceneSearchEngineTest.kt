@@ -262,7 +262,7 @@ class CachedLuceneSearchEngineTest {
             publishDate = null,
             expiryDate = null,
             preview = "Preview text",
-            content = "<p>Content</p>",
+            htmlContent = "<p>Content</p>",
             frontMatter = emptyMap(),
             visible = true,
             template = "default",

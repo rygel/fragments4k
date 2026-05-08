@@ -224,7 +224,7 @@ class SitemapGeneratorTest {
         return Fragment(
             title = title,
             slug = slug,
-            content = "Test content",
+            htmlContent = "Test content",
             preview = "Test preview",
             publishDate = null,
             frontMatter = frontMatter,

@@ -219,8 +219,8 @@ class ClasspathFragmentRepositoryTest {
     fun `fragment HTML content is rendered from markdown`() =
         runBlocking {
             val fragment = repository.getBySlug("published-post")!!
-            assertTrue(fragment.content.contains("<h1>"), "content should be rendered HTML")
-            assertTrue(fragment.content.contains("Published Post"))
+            assertTrue(fragment.htmlContent.contains("<h1>"), "content should be rendered HTML")
+            assertTrue(fragment.htmlContent.contains("Published Post"))
         }
 
     @Test

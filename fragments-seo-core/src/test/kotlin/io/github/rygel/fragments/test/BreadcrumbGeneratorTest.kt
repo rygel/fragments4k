@@ -44,7 +44,7 @@ class BreadcrumbGeneratorTest {
                 date = LocalDateTime.of(2026, 3, 15, 10, 0),
                 publishDate = null,
                 preview = "A blog post",
-                content = "<p>Content</p>",
+                htmlContent = "<p>Content</p>",
                 frontMatter = emptyMap(),
                 resolvedUrl = "/blog/2026/03/hello-world",
             )
@@ -75,7 +75,7 @@ class BreadcrumbGeneratorTest {
                 date = LocalDateTime.of(2026, 1, 1, 0, 0),
                 publishDate = null,
                 preview = "About page",
-                content = "<p>About</p>",
+                htmlContent = "<p>About</p>",
                 frontMatter = emptyMap(),
             )
 
@@ -100,7 +100,7 @@ class BreadcrumbGeneratorTest {
                 date = LocalDateTime.of(2026, 1, 1, 0, 0),
                 publishDate = null,
                 preview = "Project description",
-                content = "<p>Project</p>",
+                htmlContent = "<p>Project</p>",
                 frontMatter = emptyMap(),
                 resolvedUrl = "/projects/my-project",
             )
@@ -163,7 +163,7 @@ class BreadcrumbGeneratorTest {
                 date = LocalDateTime.of(2026, 1, 1, 0, 0),
                 publishDate = null,
                 preview = "About",
-                content = "<p>About</p>",
+                htmlContent = "<p>About</p>",
                 frontMatter = emptyMap(),
             )
 

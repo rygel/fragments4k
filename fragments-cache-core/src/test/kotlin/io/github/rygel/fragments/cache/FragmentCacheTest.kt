@@ -384,7 +384,7 @@ class FragmentCacheTest {
             publishDate = null,
             expiryDate = null,
             preview = "Preview text",
-            content = "<p>Content</p>",
+            htmlContent = "<p>Content</p>",
             frontMatter = emptyMap<String, Any>(),
             visible = true,
             template = "default",

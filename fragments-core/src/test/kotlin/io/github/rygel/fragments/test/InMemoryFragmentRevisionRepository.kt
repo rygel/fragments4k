@@ -33,7 +33,7 @@ class InMemoryFragmentRevisionRepository : FragmentRevisionRepository {
                     fragmentSlug = fragment.slug,
                     version = newVersion,
                     title = fragment.title,
-                    content = fragment.content,
+                    content = fragment.htmlContent,
                     preview = fragment.preview,
                     frontMatter = fragment.frontMatter,
                     changedBy = changedBy,
@@ -107,7 +107,7 @@ class InMemoryFragmentRevisionRepository : FragmentRevisionRepository {
                     date = LocalDateTime.now(),
                     publishDate = null,
                     preview = revision.preview,
-                    content = revision.content,
+                    htmlContent = revision.content,
                     frontMatter = revision.frontMatter,
                     statusChangeHistory = emptyList(),
                 )
@@ -162,8 +162,8 @@ class InMemoryFragmentRevisionRepository : FragmentRevisionRepository {
             if (from.title != to.title) {
                 appendLine("Title changed from \"${from.title}\" to \"${to.title}\"")
             }
-            if (from.content != to.content) {
-                val contentDiff = simpleDiff(from.content, to.content)
+            if (from.content != to.htmlContent) {
+                val contentDiff = simpleDiff(from.content, to.htmlContent)
                 appendLine("Content changed:")
                 append(contentDiff)
             }
