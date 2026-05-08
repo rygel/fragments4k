@@ -32,7 +32,7 @@ class ContentExpiryTest {
                     publishDate = now,
                     expiryDate = now.plusDays(30),
                     preview = "Preview",
-                    content = "Content",
+                    htmlContent = "Content",
                     frontMatter = emptyMap(),
                 )
 
@@ -55,7 +55,7 @@ class ContentExpiryTest {
                     publishDate = now.minusDays(10),
                     expiryDate = LocalDateTime.now().minusDays(1),
                     preview = "Preview",
-                    content = "Content",
+                    htmlContent = "Content",
                     frontMatter = emptyMap(),
                 )
 
@@ -68,7 +68,7 @@ class ContentExpiryTest {
                     publishDate = now,
                     expiryDate = LocalDateTime.now().plusDays(30),
                     preview = "Preview",
-                    content = "Content",
+                    htmlContent = "Content",
                     frontMatter = emptyMap(),
                 )
 
@@ -80,7 +80,7 @@ class ContentExpiryTest {
                     date = now,
                     publishDate = now,
                     preview = "Preview",
-                    content = "Content",
+                    htmlContent = "Content",
                     frontMatter = emptyMap(),
                 )
 
@@ -107,7 +107,7 @@ class ContentExpiryTest {
                     publishDate = now,
                     expiryDate = now.plusDays(1),
                     preview = "Preview",
-                    content = "Content",
+                    htmlContent = "Content",
                     frontMatter = emptyMap(),
                 )
 
@@ -120,7 +120,7 @@ class ContentExpiryTest {
                     publishDate = now,
                     expiryDate = now.plusDays(6),
                     preview = "Preview",
-                    content = "Content",
+                    htmlContent = "Content",
                     frontMatter = emptyMap(),
                 )
 
@@ -133,7 +133,7 @@ class ContentExpiryTest {
                     publishDate = now,
                     expiryDate = now.plusDays(30),
                     preview = "Preview",
-                    content = "Content",
+                    htmlContent = "Content",
                     frontMatter = emptyMap(),
                 )
 
@@ -160,7 +160,7 @@ class ContentExpiryTest {
                     publishDate = now.minusDays(10),
                     expiryDate = null,
                     preview = "Preview",
-                    content = "Content",
+                    htmlContent = "Content",
                     frontMatter = emptyMap(),
                 )
 
@@ -187,7 +187,7 @@ class ContentExpiryTest {
                     publishDate = now,
                     expiryDate = null,
                     preview = "Preview",
-                    content = "Content",
+                    htmlContent = "Content",
                     frontMatter = emptyMap(),
                 )
 
@@ -211,7 +211,7 @@ class ContentExpiryTest {
                     date = now,
                     publishDate = now,
                     preview = "Preview",
-                    content = "Content",
+                    htmlContent = "Content",
                     frontMatter = emptyMap(),
                 )
 
@@ -223,7 +223,7 @@ class ContentExpiryTest {
                     date = now,
                     publishDate = now,
                     preview = "Preview",
-                    content = "Content",
+                    htmlContent = "Content",
                     frontMatter = emptyMap(),
                 )
 
@@ -259,7 +259,7 @@ class ContentExpiryTest {
                     date = now,
                     publishDate = now,
                     preview = "Preview",
-                    content = "Content",
+                    htmlContent = "Content",
                     frontMatter = emptyMap(),
                 )
 
@@ -300,7 +300,7 @@ class ContentExpiryTest {
                     publishDate = now.minusDays(10),
                     expiryDate = now.minusDays(1),
                     preview = "Preview",
-                    content = "Content",
+                    htmlContent = "Content",
                     frontMatter = emptyMap(),
                 )
 
@@ -322,7 +322,7 @@ class ContentExpiryTest {
                     publishDate = null,
                     expiryDate = null,
                     preview = "Preview",
-                    content = "Content",
+                    htmlContent = "Content",
                     frontMatter = emptyMap(),
                 )
 
@@ -344,7 +344,7 @@ class ContentExpiryTest {
                     publishDate = now.minusDays(30),
                     expiryDate = null,
                     preview = "Preview",
-                    content = "Content",
+                    htmlContent = "Content",
                     frontMatter = emptyMap(),
                 )
 
@@ -370,7 +370,7 @@ class ContentExpiryTest {
                     publishDate = now,
                     expiryDate = now.plusDays(5),
                     preview = "Preview",
-                    content = "Content",
+                    htmlContent = "Content",
                     frontMatter = emptyMap(),
                 )
 
@@ -392,7 +392,7 @@ class ContentExpiryTest {
                     publishDate = null,
                     expiryDate = now.plusDays(3),
                     preview = "Preview",
-                    content = "Content",
+                    htmlContent = "Content",
                     frontMatter = emptyMap(),
                 )
 
@@ -405,7 +405,7 @@ class ContentExpiryTest {
                     publishDate = now,
                     expiryDate = now.plusDays(3),
                     preview = "Preview",
-                    content = "Content",
+                    htmlContent = "Content",
                     frontMatter = emptyMap(),
                 )
 

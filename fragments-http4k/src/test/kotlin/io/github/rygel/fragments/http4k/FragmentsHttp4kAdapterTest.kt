@@ -453,7 +453,7 @@ private fun createFragment(
     Fragment(
         slug = slug,
         title = title,
-        content = "# Test Content\n\nThis is test content.",
+        htmlContent = "# Test Content\n\nThis is test content.",
         date = date ?: if (isBlog) LocalDateTime.now() else null,
         publishDate = date ?: if (isBlog) LocalDateTime.now() else null,
         preview = "This is test content.",

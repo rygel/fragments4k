@@ -98,7 +98,7 @@ data class FragmentViewModel(
         get() = relationships?.hasRelationships ?: false
 
     val content: String
-        get() = fragment.content
+        get() = fragment.htmlContent
 
     val preview: String
         get() = fragment.preview

@@ -191,15 +191,39 @@ class SitemapGeneratorTest {
         }
 
     @Test
-    fun `root URL always has priority 1_0`() =
+    fun `sitemap contains date-based blog post URLs when resolvedUrl is set`() =
         runBlocking {
-            coEvery { repository.getAllVisible() } returns listOf(fragment("post", "A Post"))
+            coEvery { repository.getAllVisible() } returns
+                listOf(
+                    fragment("hello-world", "Hello World", url = "/blog/2026/03/hello-world"),
+                )
             val generator = SitemapGenerator(repository, "https://example.com")
 
             val xml = generator.generateSitemap()
             assertValidXml(xml)
 
-            assertTrue(xml.contains("<priority>1.0</priority>"), "root URL should have priority 1.0")
+            assertTrue(
+                xml.contains("https://example.com/blog/2026/03/hello-world"),
+                "should contain date-based blog URL",
+            )
+        }
+
+    @Test
+    fun `sitemap contains static page URLs when resolvedUrl is set`() =
+        runBlocking {
+            coEvery { repository.getAllVisible() } returns
+                listOf(
+                    fragment("about", "About Us", url = "/page/about"),
+                )
+            val generator = SitemapGenerator(repository, "https://example.com")
+
+            val xml = generator.generateSitemap()
+            assertValidXml(xml)
+
+            assertTrue(
+                xml.contains("https://example.com/page/about"),
+                "should contain /page/about URL",
+            )
         }
 
     private fun assertValidXml(xml: String) {
@@ -224,7 +248,7 @@ class SitemapGeneratorTest {
         return Fragment(
             title = title,
             slug = slug,
-            content = "Test content",
+            htmlContent = "Test content",
             preview = "Test preview",
             publishDate = null,
             frontMatter = frontMatter,

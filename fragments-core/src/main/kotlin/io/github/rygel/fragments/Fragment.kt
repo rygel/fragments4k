@@ -116,7 +116,7 @@ enum class FragmentStatus {
  * Core domain model representing a single piece of content.
  *
  * A fragment is loaded from a Markdown file with a YAML front matter block.
- * The [content] property holds the rendered HTML; [frontMatter] retains the raw
+ * The [htmlContent] property holds the rendered HTML; [frontMatter] retains the raw
  * key/value map for any custom metadata your templates may need.
  *
  * Example front matter:
@@ -138,7 +138,7 @@ enum class FragmentStatus {
  * @property expiryDate Optional date after which the fragment is no longer shown.
  * @property preview Rendered HTML excerpt shown in listing pages. Auto-extracted
  *   from content up to the `<!--more-->` tag when not specified in front matter.
- * @property content Full rendered HTML body.
+ * @property htmlContent Full rendered HTML body.
  * @property frontMatter Raw YAML front matter map; available to templates for
  *   custom metadata.
  * @property visible When `false` the fragment is excluded from [FragmentRepository.getAllVisible]
@@ -173,7 +173,7 @@ data class Fragment(
     val publishDate: LocalDateTime?,
     val expiryDate: LocalDateTime? = null,
     val preview: String,
-    val content: String,
+    val htmlContent: String,
     val frontMatter: Map<String, Any>,
     val visible: Boolean = true,
     val template: String = "default",
@@ -205,8 +205,8 @@ data class Fragment(
     /** `true` if the content contains a `<!--more-->` read-more split marker. */
     val hasMoreTag: Boolean
         get() =
-            content.contains("<!--more-->", ignoreCase = true) ||
-                content.contains("<!-- more -->", ignoreCase = true)
+            htmlContent.contains("<!--more-->", ignoreCase = true) ||
+                htmlContent.contains("<!-- more -->", ignoreCase = true)
 
     /** Plain-text version of [preview] with all HTML tags stripped. */
     val previewTextOnly: String
@@ -219,13 +219,13 @@ data class Fragment(
     val contentTextOnly: String
         get() =
             if (hasMoreTag) {
-                content
+                htmlContent
                     .substringBefore("<!--more-->")
                     .substringBefore("<!-- more -->")
                     .replace(HTML_TAG_REGEX, "")
                     .trim()
             } else {
-                content.replace(HTML_TAG_REGEX, "").trim()
+                htmlContent.replace(HTML_TAG_REGEX, "").trim()
             }
 
     /**
@@ -269,6 +269,14 @@ data class Fragment(
         private val HTML_TAG_REGEX = Regex("<[^>]*>")
     }
 }
+
+@Deprecated(
+    "Use htmlContent instead. content was ambiguously named — " +
+        "it holds rendered HTML, not raw markdown.",
+    ReplaceWith("htmlContent"),
+)
+val Fragment.content: String
+    get() = htmlContent
 
 /**
  * Returns the front matter value for [key] as a [String], or `null` if absent or not a string.

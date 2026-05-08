@@ -38,7 +38,7 @@ class FileSystemFragmentRevisionRepository(
                     fragmentSlug = slug,
                     version = version,
                     title = fragment.title,
-                    content = fragment.content,
+                    content = fragment.htmlContent,
                     preview = fragment.preview,
                     frontMatter = fragment.frontMatter,
                     changedBy = changedBy,
@@ -139,7 +139,7 @@ class FileSystemFragmentRevisionRepository(
                     date = LocalDateTime.now(),
                     publishDate = null,
                     preview = revision.preview,
-                    content = revision.content,
+                    htmlContent = revision.content,
                     frontMatter = revision.frontMatter,
                     statusChangeHistory = emptyList(),
                 )

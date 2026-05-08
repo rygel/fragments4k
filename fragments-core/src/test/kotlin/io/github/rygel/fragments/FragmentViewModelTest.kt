@@ -45,7 +45,7 @@ class FragmentViewModelTest {
             date = LocalDateTime.of(2026, 3, 15, 10, 0),
             publishDate = null,
             preview = "Preview",
-            content = "Content",
+            htmlContent = "Content",
             frontMatter = emptyMap(),
             resolvedUrl = resolvedUrl,
         )

@@ -340,7 +340,7 @@ class RandomDataGeneratorTest {
 
         assertNotNull(fragment)
         assertNotNull(fragment.title)
-        assertNotNull(fragment.content)
+        assertNotNull(fragment.htmlContent)
         assertNotNull(fragment.slug)
     }
 

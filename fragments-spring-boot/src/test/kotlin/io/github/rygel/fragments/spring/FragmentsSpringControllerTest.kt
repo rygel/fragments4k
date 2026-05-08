@@ -12,7 +12,7 @@ class FragmentsSpringControllerTest {
             Fragment(
                 slug = "test",
                 title = "Test",
-                content = "# Test Content",
+                htmlContent = "# Test Content",
                 preview = "Test Content",
                 date = LocalDateTime.now(),
                 publishDate = LocalDateTime.now(),
