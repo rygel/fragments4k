@@ -124,7 +124,7 @@ class BlogEngineIntegrationTest {
                 Fragment(
                     slug = "post-with-date",
                     title = "Post With Date",
-                    content = "Content",
+                    htmlContent = "Content",
                     preview = "Preview",
                     date = LocalDateTime.of(2024, 3, 10, 10, 0),
                     publishDate = null,
@@ -137,7 +137,7 @@ class BlogEngineIntegrationTest {
                 Fragment(
                     slug = "static-page",
                     title = "Static Page",
-                    content = "Content",
+                    htmlContent = "Content",
                     preview = "Preview",
                     date = LocalDateTime.of(2024, 3, 11, 10, 0),
                     publishDate = null,
@@ -163,7 +163,7 @@ class BlogEngineIntegrationTest {
                 Fragment(
                     slug = "published-post",
                     title = "Published",
-                    content = "",
+                    htmlContent = "",
                     preview = "",
                     date = LocalDateTime.of(2024, 1, 1, 0, 0),
                     publishDate = null,
@@ -177,7 +177,7 @@ class BlogEngineIntegrationTest {
                 Fragment(
                     slug = "draft-post",
                     title = "Draft",
-                    content = "",
+                    htmlContent = "",
                     preview = "",
                     date = LocalDateTime.of(2024, 1, 2, 0, 0),
                     publishDate = null,

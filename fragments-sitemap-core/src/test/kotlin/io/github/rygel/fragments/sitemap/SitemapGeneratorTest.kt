@@ -264,7 +264,6 @@ class SitemapGeneratorTest {
         }
 
     @Test
-<<<<<<< HEAD
     fun `duplicate slugs across repositories appear only once`() =
         runBlocking {
             val repo1 = mockk<FragmentRepository>()
@@ -281,7 +280,7 @@ class SitemapGeneratorTest {
         runBlocking {
             coEvery { repository.getAllVisible() } returns
                 listOf(
-                    fragment("hello-world", "Hello World", url = "/blog/2026/03/hello-world"),
+                    fragment("hello-world", "Hello World", resolvedUrl = "/blog/2026/03/hello-world"),
                 )
             val generator = SitemapGenerator(repository, "https://example.com")
 
@@ -299,7 +298,7 @@ class SitemapGeneratorTest {
         runBlocking {
             coEvery { repository.getAllVisible() } returns
                 listOf(
-                    fragment("about", "About Us", url = "/page/about"),
+                    fragment("about", "About Us", resolvedUrl = "/page/about"),
                 )
             val generator = SitemapGenerator(repository, "https://example.com")
 
@@ -348,7 +347,7 @@ class SitemapGeneratorTest {
                     Fragment(
                         title = "Unresolved Page",
                         slug = "unresolved-page",
-                        content = "Content",
+                        htmlContent = "Content",
                         preview = "Preview",
                         publishDate = null,
                         frontMatter = emptyMap(),

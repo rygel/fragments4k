@@ -297,7 +297,7 @@ class RssGeneratorTest {
                     Fragment(
                         title = "Unresolved Post",
                         slug = "unresolved-post",
-                        content = "Content",
+                        htmlContent = "Content",
                         preview = "Preview",
                         publishDate = null,
                         frontMatter = emptyMap(),
