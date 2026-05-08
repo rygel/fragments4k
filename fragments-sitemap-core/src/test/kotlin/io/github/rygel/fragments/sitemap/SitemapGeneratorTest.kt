@@ -264,6 +264,7 @@ class SitemapGeneratorTest {
         }
 
     @Test
+<<<<<<< HEAD
     fun `duplicate slugs across repositories appear only once`() =
         runBlocking {
             val repo1 = mockk<FragmentRepository>()
@@ -273,6 +274,42 @@ class SitemapGeneratorTest {
             val doc = parseXml(SitemapGenerator(listOf(repo1, repo2), "https://example.com").generateSitemap())
             val aboutLocs = xpath(doc, "//sm:url[contains(sm:loc,'/about')]")
             assertEquals(1, aboutLocs.length, "duplicate slug must appear only once")
+        }
+
+    @Test
+    fun `sitemap contains date-based blog post URLs when resolvedUrl is set`() =
+        runBlocking {
+            coEvery { repository.getAllVisible() } returns
+                listOf(
+                    fragment("hello-world", "Hello World", url = "/blog/2026/03/hello-world"),
+                )
+            val generator = SitemapGenerator(repository, "https://example.com")
+
+            val xml = generator.generateSitemap()
+            assertValidXml(xml)
+
+            assertTrue(
+                xml.contains("https://example.com/blog/2026/03/hello-world"),
+                "should contain date-based blog URL",
+            )
+        }
+
+    @Test
+    fun `sitemap contains static page URLs when resolvedUrl is set`() =
+        runBlocking {
+            coEvery { repository.getAllVisible() } returns
+                listOf(
+                    fragment("about", "About Us", url = "/page/about"),
+                )
+            val generator = SitemapGenerator(repository, "https://example.com")
+
+            val xml = generator.generateSitemap()
+            assertValidXml(xml)
+
+            assertTrue(
+                xml.contains("https://example.com/page/about"),
+                "should contain /page/about URL",
+            )
         }
 
     // -------------------------------------------------------------------------

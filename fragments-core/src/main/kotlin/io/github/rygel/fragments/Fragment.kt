@@ -279,7 +279,11 @@ data class Fragment(
     }
 }
 
-@Deprecated("Use htmlContent instead. content was ambiguously named — it holds rendered HTML, not raw markdown.", ReplaceWith("htmlContent"))
+@Deprecated(
+    "Use htmlContent instead. content was ambiguously named — " +
+        "it holds rendered HTML, not raw markdown.",
+    ReplaceWith("htmlContent"),
+)
 val Fragment.content: String
     get() = htmlContent
 
