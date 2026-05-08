@@ -27,7 +27,7 @@ class ScheduledPublicationJobTest {
                     date = now,
                     publishDate = now.minusHours(1),
                     preview = "Preview",
-                    content = "Content",
+                    htmlContent = "Content",
                     frontMatter = emptyMap(),
                 ),
             )
@@ -39,7 +39,7 @@ class ScheduledPublicationJobTest {
                     date = now,
                     publishDate = now.minusHours(2),
                     preview = "Preview",
-                    content = "Content",
+                    htmlContent = "Content",
                     frontMatter = emptyMap(),
                 ),
             )
@@ -51,7 +51,7 @@ class ScheduledPublicationJobTest {
                     date = now,
                     publishDate = now.plusHours(1),
                     preview = "Preview",
-                    content = "Content",
+                    htmlContent = "Content",
                     frontMatter = emptyMap(),
                 ),
             )
@@ -63,7 +63,7 @@ class ScheduledPublicationJobTest {
                     date = now,
                     publishDate = now,
                     preview = "Preview",
-                    content = "Content",
+                    htmlContent = "Content",
                     frontMatter = emptyMap(),
                 ),
             )
@@ -223,7 +223,7 @@ class ContentSchedulingTest {
                     date = now,
                     publishDate = null,
                     preview = "Preview",
-                    content = "Content",
+                    htmlContent = "Content",
                     frontMatter = emptyMap(),
                 ),
             )
@@ -235,7 +235,7 @@ class ContentSchedulingTest {
                     date = now,
                     publishDate = null,
                     preview = "Preview",
-                    content = "Content",
+                    htmlContent = "Content",
                     frontMatter = emptyMap(),
                 ),
             )
@@ -247,7 +247,7 @@ class ContentSchedulingTest {
                     date = now,
                     publishDate = null,
                     preview = "Preview",
-                    content = "Content",
+                    htmlContent = "Content",
                     frontMatter = emptyMap(),
                 ),
             )
@@ -330,7 +330,7 @@ class ContentSchedulingTest {
                     date = now,
                     publishDate = now,
                     preview = "Preview",
-                    content = "Content",
+                    htmlContent = "Content",
                     frontMatter = emptyMap(),
                 )
             assertTrue(scheduledFragment.isScheduled)
@@ -400,7 +400,7 @@ class PublicationNotificationServiceTest {
             date = now,
             publishDate = now.plusDays(1),
             preview = "Preview",
-            content = "Content",
+            htmlContent = "Content",
             frontMatter = emptyMap(),
             author = "John Doe",
         )

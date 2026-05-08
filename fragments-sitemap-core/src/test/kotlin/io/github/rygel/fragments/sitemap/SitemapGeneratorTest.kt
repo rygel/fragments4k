@@ -275,6 +275,42 @@ class SitemapGeneratorTest {
             assertEquals(1, aboutLocs.length, "duplicate slug must appear only once")
         }
 
+    @Test
+    fun `sitemap contains date-based blog post URLs when resolvedUrl is set`() =
+        runBlocking {
+            coEvery { repository.getAllVisible() } returns
+                listOf(
+                    fragment("hello-world", "Hello World", resolvedUrl = "/blog/2026/03/hello-world"),
+                )
+            val generator = SitemapGenerator(repository, "https://example.com")
+
+            val xml = generator.generateSitemap()
+            assertValidXml(xml)
+
+            assertTrue(
+                xml.contains("https://example.com/blog/2026/03/hello-world"),
+                "should contain date-based blog URL",
+            )
+        }
+
+    @Test
+    fun `sitemap contains static page URLs when resolvedUrl is set`() =
+        runBlocking {
+            coEvery { repository.getAllVisible() } returns
+                listOf(
+                    fragment("about", "About Us", resolvedUrl = "/page/about"),
+                )
+            val generator = SitemapGenerator(repository, "https://example.com")
+
+            val xml = generator.generateSitemap()
+            assertValidXml(xml)
+
+            assertTrue(
+                xml.contains("https://example.com/page/about"),
+                "should contain /page/about URL",
+            )
+        }
+
     // -------------------------------------------------------------------------
     // Template exclusion
     // -------------------------------------------------------------------------
@@ -311,7 +347,7 @@ class SitemapGeneratorTest {
                     Fragment(
                         title = "Unresolved Page",
                         slug = "unresolved-page",
-                        content = "Content",
+                        htmlContent = "Content",
                         preview = "Preview",
                         publishDate = null,
                         frontMatter = emptyMap(),
@@ -402,7 +438,7 @@ class SitemapGeneratorTest {
         return Fragment(
             title = title,
             slug = slug,
-            content = "Test content",
+            htmlContent = "Test content",
             preview = "Test preview",
             publishDate = null,
             frontMatter = frontMatter,

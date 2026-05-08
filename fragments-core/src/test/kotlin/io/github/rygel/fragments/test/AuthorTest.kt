@@ -263,7 +263,7 @@ class FragmentAuthorFilteringTest {
                 Fragment(
                     slug = "test-post-1",
                     title = "Test Post 1",
-                    content = "Test content",
+                    htmlContent = "Test content",
                     preview = "Test preview",
                     date = LocalDateTime.of(2024, 3, 10, 10, 0),
                     publishDate = null,
@@ -277,7 +277,7 @@ class FragmentAuthorFilteringTest {
                 Fragment(
                     slug = "test-post-2",
                     title = "Test Post 2",
-                    content = "Test content",
+                    htmlContent = "Test content",
                     preview = "Test preview",
                     date = LocalDateTime.of(2024, 3, 11, 10, 0),
                     publishDate = null,
@@ -305,7 +305,7 @@ class FragmentAuthorFilteringTest {
                 Fragment(
                     slug = "test-post-1",
                     title = "Test Post 1",
-                    content = "Test content",
+                    htmlContent = "Test content",
                     preview = "Test preview",
                     date = LocalDateTime.of(2024, 3, 10, 10, 0),
                     publishDate = null,
@@ -333,7 +333,7 @@ class FragmentAuthorFilteringTest {
                 Fragment(
                     slug = "test-post-1",
                     title = "Test Post 1",
-                    content = "Test content",
+                    htmlContent = "Test content",
                     preview = "Test preview",
                     date = LocalDateTime.of(2024, 3, 10, 10, 0),
                     publishDate = null,
@@ -347,7 +347,7 @@ class FragmentAuthorFilteringTest {
                 Fragment(
                     slug = "test-post-2",
                     title = "Test Post 2",
-                    content = "Test content",
+                    htmlContent = "Test content",
                     preview = "Test preview",
                     date = LocalDateTime.of(2024, 3, 11, 10, 0),
                     publishDate = null,
@@ -361,7 +361,7 @@ class FragmentAuthorFilteringTest {
                 Fragment(
                     slug = "test-post-3",
                     title = "Test Post 3",
-                    content = "Test content",
+                    htmlContent = "Test content",
                     preview = "Test preview",
                     date = LocalDateTime.of(2024, 3, 12, 10, 0),
                     publishDate = null,
@@ -387,7 +387,7 @@ class FragmentAuthorFilteringTest {
                 Fragment(
                     slug = "test-post",
                     title = "Test Post",
-                    content = "Test content",
+                    htmlContent = "Test content",
                     preview = "Test preview",
                     date = LocalDateTime.of(2024, 3, 10, 10, 0),
                     publishDate = null,
@@ -407,7 +407,7 @@ class FragmentAuthorFilteringTest {
                 Fragment(
                     slug = "test-post",
                     title = "Test Post",
-                    content = "Test content",
+                    htmlContent = "Test content",
                     preview = "Test preview",
                     date = LocalDateTime.of(2024, 3, 10, 10, 0),
                     publishDate = null,
@@ -428,7 +428,7 @@ class FragmentAuthorFilteringTest {
                 Fragment(
                     slug = "test-post",
                     title = "Test Post",
-                    content = "Test content",
+                    htmlContent = "Test content",
                     preview = "Test preview",
                     date = LocalDateTime.of(2024, 3, 10, 10, 0),
                     publishDate = null,

@@ -31,7 +31,7 @@ class FragmentRevisionTest {
                     date = LocalDateTime.now(),
                     publishDate = null,
                     preview = "Test preview",
-                    content = "Test content",
+                    htmlContent = "Test content",
                     frontMatter = emptyMap(),
                     status = FragmentStatus.PUBLISHED,
                 )
@@ -59,7 +59,7 @@ class FragmentRevisionTest {
                     date = LocalDateTime.now(),
                     publishDate = null,
                     preview = "Test preview",
-                    content = "Test content",
+                    htmlContent = "Test content",
                     frontMatter = emptyMap(),
                     status = FragmentStatus.PUBLISHED,
                 )
@@ -85,7 +85,7 @@ class FragmentRevisionTest {
                     date = LocalDateTime.now(),
                     publishDate = null,
                     preview = "Test preview",
-                    content = "Test content",
+                    htmlContent = "Test content",
                     frontMatter = emptyMap(),
                     status = FragmentStatus.PUBLISHED,
                 )
@@ -111,7 +111,7 @@ class FragmentRevisionTest {
                     date = LocalDateTime.now(),
                     publishDate = null,
                     preview = "Test preview",
-                    content = "Test content",
+                    htmlContent = "Test content",
                     frontMatter = emptyMap(),
                     status = FragmentStatus.PUBLISHED,
                 )
@@ -135,7 +135,7 @@ class FragmentRevisionTest {
                     date = LocalDateTime.now(),
                     publishDate = null,
                     preview = "Test preview",
-                    content = "Test content",
+                    htmlContent = "Test content",
                     frontMatter = emptyMap(),
                     status = FragmentStatus.PUBLISHED,
                 )
@@ -160,7 +160,7 @@ class FragmentRevisionTest {
                     date = LocalDateTime.now(),
                     publishDate = null,
                     preview = "Test preview",
-                    content = "Test content",
+                    htmlContent = "Test content",
                     frontMatter = emptyMap(),
                     status = FragmentStatus.PUBLISHED,
                 )
@@ -185,7 +185,7 @@ class FragmentRevisionTest {
                     date = LocalDateTime.now(),
                     publishDate = null,
                     preview = "Original preview",
-                    content = "Original content",
+                    htmlContent = "Original content",
                     frontMatter = emptyMap(),
                     status = FragmentStatus.PUBLISHED,
                 )
@@ -220,7 +220,7 @@ class FragmentRevisionTest {
                     date = LocalDateTime.now(),
                     publishDate = null,
                     preview = "Test preview",
-                    content = "Test content",
+                    htmlContent = "Test content",
                     frontMatter = emptyMap(),
                     status = FragmentStatus.PUBLISHED,
                 )
@@ -246,7 +246,7 @@ class FragmentRevisionTest {
                     date = LocalDateTime.now(),
                     publishDate = null,
                     preview = "Test preview",
-                    content = "Test content",
+                    htmlContent = "Test content",
                     frontMatter = emptyMap(),
                     status = FragmentStatus.PUBLISHED,
                 )
@@ -271,7 +271,7 @@ class FragmentRevisionTest {
                     date = LocalDateTime.now(),
                     publishDate = null,
                     preview = "Test preview",
-                    content = "Test content",
+                    htmlContent = "Test content",
                     frontMatter = emptyMap(),
                     status = FragmentStatus.PUBLISHED,
                 )
@@ -283,7 +283,7 @@ class FragmentRevisionTest {
                     date = LocalDateTime.now(),
                     publishDate = null,
                     preview = "Test preview",
-                    content = "Test content",
+                    htmlContent = "Test content",
                     frontMatter = emptyMap(),
                     status = FragmentStatus.PUBLISHED,
                 )
@@ -309,7 +309,7 @@ class FragmentRevisionTest {
                     date = LocalDateTime.now(),
                     publishDate = null,
                     preview = "Test preview",
-                    content = "Test content",
+                    htmlContent = "Test content",
                     frontMatter = emptyMap(),
                     status = FragmentStatus.PUBLISHED,
                 )
@@ -339,7 +339,7 @@ class FragmentRevisionTest {
                     date = LocalDateTime.now(),
                     publishDate = null,
                     preview = "Test preview",
-                    content = "Test content",
+                    htmlContent = "Test content",
                     frontMatter = emptyMap(),
                     status = FragmentStatus.PUBLISHED,
                 )
@@ -365,7 +365,7 @@ class FragmentRevisionTest {
                     date = LocalDateTime.now(),
                     publishDate = null,
                     preview = "Test preview",
-                    content = "Test content",
+                    htmlContent = "Test content",
                     frontMatter = emptyMap(),
                     status = FragmentStatus.PUBLISHED,
                 )
@@ -388,7 +388,7 @@ class FragmentRevisionTest {
                     date = LocalDateTime.now(),
                     publishDate = null,
                     preview = "Original preview",
-                    content = "Original content",
+                    htmlContent = "Original content",
                     frontMatter = emptyMap(),
                     status = FragmentStatus.PUBLISHED,
                 )
@@ -423,7 +423,7 @@ class FragmentRevisionTest {
                     date = LocalDateTime.now(),
                     publishDate = null,
                     preview = "Test preview",
-                    content = "Test content",
+                    htmlContent = "Test content",
                     frontMatter = emptyMap(),
                     status = FragmentStatus.PUBLISHED,
                 )

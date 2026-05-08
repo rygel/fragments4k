@@ -28,7 +28,22 @@ fun main() {
 
     logger.info("Loading fragments from: $fragmentsPath")
 
-    val repository = FileSystemFragmentRepository(fragmentsPath)
+    val repository =
+        FileSystemFragmentRepository(
+            basePath = fragmentsPath,
+            urlBuilder = { fragment ->
+                when (fragment.template) {
+                    "blog", "blog_post" -> {
+                        val date = fragment.date ?: return@FileSystemFragmentRepository "/${fragment.slug}"
+                        "/blog/${date.year}/${"%02d".format(date.monthValue)}/${fragment.slug}"
+                    }
+
+                    else -> {
+                        "/page/${fragment.slug}"
+                    }
+                }
+            },
+        )
     val staticEngine = StaticPageEngine(repository)
     val blogEngine = BlogEngine(repository)
 

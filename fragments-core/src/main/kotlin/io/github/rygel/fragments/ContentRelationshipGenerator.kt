@@ -209,7 +209,7 @@ object ContentRelationshipGenerator {
     private fun extractContentReferences(fragment: Fragment): Set<String> {
         val references = mutableSetOf<String>()
         REFERENCE_PATTERNS.forEach { pattern ->
-            pattern.findAll(fragment.content).forEach { match ->
+            pattern.findAll(fragment.htmlContent).forEach { match ->
                 references.add(match.groupValues[1].trim())
             }
         }

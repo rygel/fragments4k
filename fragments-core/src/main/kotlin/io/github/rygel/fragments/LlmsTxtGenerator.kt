@@ -9,6 +9,10 @@ import org.slf4j.LoggerFactory
  * a blockquote description, then sections grouping content by type
  * (blog posts vs pages). Each entry is a markdown link with a short
  * plain-text preview (max 160 characters).
+ *
+ * URLs are derived from each fragment's [Fragment.url] property.
+ * For correct URLs, ensure your repository configures a `urlBuilder`
+ * that matches your adapter routes.
  */
 object LlmsTxtGenerator {
     private val BLOG_TEMPLATES: Set<String> = FragmentTemplates.BLOG_TEMPLATES

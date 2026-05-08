@@ -21,7 +21,7 @@ class SeoMetadataTest {
                 date = LocalDateTime.of(2024, 1, 15, 10, 0),
                 publishDate = null,
                 preview = "This is a test post preview",
-                content = "# Test Content\n\nThis is the content of the test post.",
+                htmlContent = "# Test Content\n\nThis is the content of the test post.",
                 frontMatter = emptyMap(),
                 visible = true,
                 template = "blog",
@@ -220,7 +220,7 @@ class SeoMetadataTest {
                 date = LocalDateTime.of(2024, 1, 15, 10, 0),
                 publishDate = null,
                 preview = "Welcome to our site",
-                content = "Home page content",
+                htmlContent = "Home page content",
                 frontMatter = emptyMap(),
                 visible = true,
             )
@@ -248,7 +248,7 @@ class SeoMetadataTest {
                 date = LocalDateTime.of(2024, 1, 15, 10, 0),
                 publishDate = null,
                 preview = "Testing author defaults",
-                content = "Content",
+                htmlContent = "Content",
                 frontMatter = emptyMap(),
                 visible = true,
                 author = "Fragment Author",
@@ -273,7 +273,7 @@ class SeoMetadataTest {
                 date = LocalDateTime.of(2024, 1, 15, 10, 0),
                 publishDate = null,
                 preview = "Testing author override",
-                content = "Content",
+                htmlContent = "Content",
                 frontMatter = emptyMap(),
                 visible = true,
                 author = "Fragment Author",
@@ -300,7 +300,7 @@ class SeoMetadataTest {
                 date = LocalDateTime.now(),
                 publishDate = null,
                 preview = longDescription,
-                content = "Content",
+                htmlContent = "Content",
                 frontMatter = emptyMap(),
                 visible = true,
             )
@@ -324,7 +324,7 @@ class SeoMetadataTest {
                 date = LocalDateTime.of(2024, 6, 1, 12, 0),
                 publishDate = null,
                 preview = "A post with a cover image",
-                content = "<p>Content</p>",
+                htmlContent = "<p>Content</p>",
                 frontMatter = emptyMap(),
                 image = "/static/images/cover.jpg",
             )
@@ -349,7 +349,7 @@ class SeoMetadataTest {
                 date = LocalDateTime.of(2024, 6, 1, 12, 0),
                 publishDate = null,
                 preview = "A post with a cover image",
-                content = "<p>Content</p>",
+                htmlContent = "<p>Content</p>",
                 frontMatter = emptyMap(),
                 image = "/static/images/cover.jpg",
             )
@@ -375,7 +375,7 @@ class SeoMetadataTest {
                 date = LocalDateTime.of(2024, 6, 1, 12, 0),
                 publishDate = null,
                 preview = "A post without image",
-                content = "<p>Content</p>",
+                htmlContent = "<p>Content</p>",
                 frontMatter = emptyMap(),
             )
 
@@ -399,7 +399,7 @@ class SeoMetadataTest {
                 date = LocalDateTime.of(2024, 3, 15, 10, 0),
                 publishDate = null,
                 preview = "A post with rich author metadata",
-                content = "<p>Content</p>",
+                htmlContent = "<p>Content</p>",
                 frontMatter = emptyMap(),
                 author = "Alexander Brandt",
             )

@@ -316,7 +316,7 @@ This is test content.
         Fragment(
             slug = slug,
             title = title,
-            content = "Content for $title",
+            htmlContent = "Content for $title",
             preview = "Preview for $title",
             date = LocalDateTime.now(),
             publishDate = LocalDateTime.now(),

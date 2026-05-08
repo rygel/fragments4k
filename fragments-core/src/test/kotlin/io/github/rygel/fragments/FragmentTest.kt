@@ -16,7 +16,7 @@ class FragmentTest {
                 date = LocalDateTime.of(2024, 6, 1, 12, 0),
                 publishDate = null,
                 preview = "A post that has a cover image",
-                content = "<p>Content with image</p>",
+                htmlContent = "<p>Content with image</p>",
                 frontMatter = mapOf("image" to "/static/images/cover.jpg"),
                 image = "/static/images/cover.jpg",
             )
@@ -33,7 +33,7 @@ class FragmentTest {
                 date = LocalDateTime.of(2024, 6, 1, 12, 0),
                 publishDate = null,
                 preview = "A post without a cover image",
-                content = "<p>Content without image</p>",
+                htmlContent = "<p>Content without image</p>",
                 frontMatter = emptyMap(),
             )
 
@@ -54,7 +54,7 @@ class FragmentTest {
                 date = LocalDateTime.of(2024, 6, 1, 12, 0),
                 publishDate = null,
                 preview = "A post with FAQ entries",
-                content = "<p>Content</p>",
+                htmlContent = "<p>Content</p>",
                 frontMatter = emptyMap(),
                 faq = faqEntries,
             )
@@ -75,7 +75,7 @@ class FragmentTest {
                 date = LocalDateTime.of(2024, 6, 1, 12, 0),
                 publishDate = null,
                 preview = "A post without FAQ",
-                content = "<p>Content</p>",
+                htmlContent = "<p>Content</p>",
                 frontMatter = emptyMap(),
             )
 

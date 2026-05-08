@@ -19,7 +19,7 @@ class BlogEngineIntegrationTest {
                 Fragment(
                     slug = "first-post",
                     title = "First Post",
-                    content = "This is my first post with markdown content",
+                    htmlContent = "This is my first post with markdown content",
                     preview = "First post preview",
                     date = LocalDateTime.of(2024, 3, 10, 10, 0),
                     publishDate = null,
@@ -33,7 +33,7 @@ class BlogEngineIntegrationTest {
                 Fragment(
                     slug = "second-post",
                     title = "Second Post",
-                    content = "This is my second post with more markdown content",
+                    htmlContent = "This is my second post with more markdown content",
                     preview = "Second post preview",
                     date = LocalDateTime.of(2024, 3, 15, 10, 0),
                     publishDate = null,
@@ -47,7 +47,7 @@ class BlogEngineIntegrationTest {
                 Fragment(
                     slug = "third-post",
                     title = "Third Post",
-                    content = "This is my third post",
+                    htmlContent = "This is my third post",
                     preview = "Third post preview",
                     date = LocalDateTime.of(2024, 3, 20, 10, 0),
                     publishDate = null,
@@ -80,7 +80,7 @@ class BlogEngineIntegrationTest {
                 Fragment(
                     slug = "kotlin-post",
                     title = "Kotlin Post",
-                    content = "Content about Kotlin",
+                    htmlContent = "Content about Kotlin",
                     preview = "Kotlin preview",
                     date = LocalDateTime.of(2024, 3, 7, 10, 0),
                     publishDate = null,
@@ -94,7 +94,7 @@ class BlogEngineIntegrationTest {
                 Fragment(
                     slug = "java-post",
                     title = "Java Post",
-                    content = "Content about Java",
+                    htmlContent = "Content about Java",
                     preview = "Java preview",
                     date = LocalDateTime.of(2024, 3, 8, 10, 0),
                     publishDate = null,
@@ -124,7 +124,7 @@ class BlogEngineIntegrationTest {
                 Fragment(
                     slug = "post-with-date",
                     title = "Post With Date",
-                    content = "Content",
+                    htmlContent = "Content",
                     preview = "Preview",
                     date = LocalDateTime.of(2024, 3, 10, 10, 0),
                     publishDate = null,
@@ -137,7 +137,7 @@ class BlogEngineIntegrationTest {
                 Fragment(
                     slug = "static-page",
                     title = "Static Page",
-                    content = "Content",
+                    htmlContent = "Content",
                     preview = "Preview",
                     date = LocalDateTime.of(2024, 3, 11, 10, 0),
                     publishDate = null,
@@ -163,7 +163,7 @@ class BlogEngineIntegrationTest {
                 Fragment(
                     slug = "published-post",
                     title = "Published",
-                    content = "",
+                    htmlContent = "",
                     preview = "",
                     date = LocalDateTime.of(2024, 1, 1, 0, 0),
                     publishDate = null,
@@ -177,7 +177,7 @@ class BlogEngineIntegrationTest {
                 Fragment(
                     slug = "draft-post",
                     title = "Draft",
-                    content = "",
+                    htmlContent = "",
                     preview = "",
                     date = LocalDateTime.of(2024, 1, 2, 0, 0),
                     publishDate = null,
@@ -202,7 +202,7 @@ class BlogEngineIntegrationTest {
                 Fragment(
                     slug = "tutorial-post",
                     title = "Tutorial Post",
-                    content = "Content about tutorials",
+                    htmlContent = "Content about tutorials",
                     preview = "Tutorial preview",
                     date = LocalDateTime.of(2024, 3, 5, 10, 0),
                     publishDate = null,
@@ -216,7 +216,7 @@ class BlogEngineIntegrationTest {
                 Fragment(
                     slug = "blog-post",
                     title = "Blog Post",
-                    content = "Content for blog",
+                    htmlContent = "Content for blog",
                     preview = "Blog preview",
                     date = LocalDateTime.of(2024, 3, 6, 10, 0),
                     publishDate = null,

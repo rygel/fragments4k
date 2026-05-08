@@ -14,7 +14,21 @@ class FragmentsMicronautConfiguration {
     @Singleton
     fun fragmentRepository(): FragmentRepository {
         val fragmentsPath = System.getProperty("fragments.path") ?: System.getenv("FRAGMENTS_PATH") ?: "./content"
-        return FileSystemFragmentRepository(fragmentsPath)
+        return FileSystemFragmentRepository(
+            basePath = fragmentsPath,
+            urlBuilder = { fragment ->
+                when (fragment.template) {
+                    "blog", "blog_post" -> {
+                        val date = fragment.date ?: return@FileSystemFragmentRepository "/${fragment.slug}"
+                        "/blog/${date.year}/${"%02d".format(date.monthValue)}/${fragment.slug}"
+                    }
+
+                    else -> {
+                        "/page/${fragment.slug}"
+                    }
+                }
+            },
+        )
     }
 
     @Singleton

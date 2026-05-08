@@ -47,7 +47,7 @@ class WorkflowEnhancementTest {
                     date = LocalDateTime.now(),
                     publishDate = null,
                     preview = "preview",
-                    content = "content",
+                    htmlContent = "content",
                     frontMatter = emptyMap(),
                     status = FragmentStatus.REVIEW,
                 )
@@ -70,7 +70,7 @@ class WorkflowEnhancementTest {
                     date = LocalDateTime.now(),
                     publishDate = null,
                     preview = "preview",
-                    content = "content",
+                    htmlContent = "content",
                     frontMatter = emptyMap(),
                     status = FragmentStatus.DRAFT,
                 )
@@ -99,7 +99,7 @@ class WorkflowEnhancementTest {
                     date = LocalDateTime.now(),
                     publishDate = null,
                     preview = "preview",
-                    content = "content",
+                    htmlContent = "content",
                     frontMatter = emptyMap(),
                     status = FragmentStatus.DRAFT,
                 )
@@ -131,7 +131,7 @@ class WorkflowEnhancementTest {
                     date = LocalDateTime.now(),
                     publishDate = null,
                     preview = "preview",
-                    content = "content",
+                    htmlContent = "content",
                     frontMatter = emptyMap(),
                     status = FragmentStatus.DRAFT,
                 )
@@ -143,7 +143,7 @@ class WorkflowEnhancementTest {
                     date = LocalDateTime.now(),
                     publishDate = null,
                     preview = "preview",
-                    content = "content",
+                    htmlContent = "content",
                     frontMatter = emptyMap(),
                     status = FragmentStatus.REVIEW,
                 )
@@ -155,7 +155,7 @@ class WorkflowEnhancementTest {
                     date = LocalDateTime.now(),
                     publishDate = null,
                     preview = "preview",
-                    content = "content",
+                    htmlContent = "content",
                     frontMatter = emptyMap(),
                     status = FragmentStatus.APPROVED,
                 )
@@ -167,7 +167,7 @@ class WorkflowEnhancementTest {
                     date = LocalDateTime.now(),
                     publishDate = null,
                     preview = "preview",
-                    content = "content",
+                    htmlContent = "content",
                     frontMatter = emptyMap(),
                     status = FragmentStatus.PUBLISHED,
                 )
@@ -192,7 +192,7 @@ class WorkflowEnhancementTest {
                     date = LocalDateTime.now(),
                     publishDate = null,
                     preview = "preview",
-                    content = "content",
+                    htmlContent = "content",
                     frontMatter = emptyMap(),
                     status = FragmentStatus.APPROVED,
                 )
@@ -204,7 +204,7 @@ class WorkflowEnhancementTest {
                     date = LocalDateTime.now(),
                     publishDate = null,
                     preview = "preview",
-                    content = "content",
+                    htmlContent = "content",
                     frontMatter = emptyMap(),
                     status = FragmentStatus.APPROVED,
                 )
@@ -236,7 +236,7 @@ class WorkflowEnhancementTest {
                     date = LocalDateTime.now(),
                     publishDate = null,
                     preview = "preview",
-                    content = "content",
+                    htmlContent = "content",
                     frontMatter = emptyMap(),
                     status = FragmentStatus.PUBLISHED,
                 )
@@ -248,7 +248,7 @@ class WorkflowEnhancementTest {
                     date = LocalDateTime.now(),
                     publishDate = null,
                     preview = "preview",
-                    content = "content",
+                    htmlContent = "content",
                     frontMatter = emptyMap(),
                     status = FragmentStatus.PUBLISHED,
                 )
@@ -280,7 +280,7 @@ class WorkflowEnhancementTest {
                     publishDate = LocalDateTime.now(),
                     expiryDate = LocalDateTime.now().plusDays(30),
                     preview = "preview",
-                    content = "content",
+                    htmlContent = "content",
                     frontMatter = emptyMap(),
                     status = FragmentStatus.PUBLISHED,
                 )
@@ -305,7 +305,7 @@ class WorkflowEnhancementTest {
                     publishDate = now.minusDays(1),
                     expiryDate = now.plusDays(30),
                     preview = "preview",
-                    content = "content",
+                    htmlContent = "content",
                     frontMatter = emptyMap(),
                     status = FragmentStatus.PUBLISHED,
                 )
@@ -318,7 +318,7 @@ class WorkflowEnhancementTest {
                     publishDate = now.minusDays(10),
                     expiryDate = now.minusDays(1),
                     preview = "preview",
-                    content = "content",
+                    htmlContent = "content",
                     frontMatter = emptyMap(),
                     status = FragmentStatus.PUBLISHED,
                 )
@@ -331,7 +331,7 @@ class WorkflowEnhancementTest {
                     publishDate = now.minusDays(1),
                     expiryDate = null,
                     preview = "preview",
-                    content = "content",
+                    htmlContent = "content",
                     frontMatter = emptyMap(),
                     status = FragmentStatus.PUBLISHED,
                 )
@@ -362,7 +362,7 @@ class WorkflowEnhancementTest {
                     publishDate = now.minusDays(10),
                     expiryDate = now.plusDays(3),
                     preview = "preview",
-                    content = "content",
+                    htmlContent = "content",
                     frontMatter = emptyMap(),
                     status = FragmentStatus.PUBLISHED,
                 )
@@ -375,7 +375,7 @@ class WorkflowEnhancementTest {
                     publishDate = now.minusDays(10),
                     expiryDate = now.plusDays(20),
                     preview = "preview",
-                    content = "content",
+                    htmlContent = "content",
                     frontMatter = emptyMap(),
                     status = FragmentStatus.PUBLISHED,
                 )
@@ -388,7 +388,7 @@ class WorkflowEnhancementTest {
                     publishDate = now.minusDays(10),
                     expiryDate = null,
                     preview = "preview",
-                    content = "content",
+                    htmlContent = "content",
                     frontMatter = emptyMap(),
                     status = FragmentStatus.PUBLISHED,
                 )
@@ -414,7 +414,7 @@ class WorkflowEnhancementTest {
                     date = now,
                     publishDate = now.plusHours(1),
                     preview = "preview",
-                    content = "content",
+                    htmlContent = "content",
                     frontMatter = emptyMap(),
                     status = FragmentStatus.SCHEDULED,
                 )
@@ -444,7 +444,7 @@ class WorkflowEnhancementTest {
                     publishDate = now.minusDays(30),
                     expiryDate = now.minusDays(1),
                     preview = "preview",
-                    content = "content",
+                    htmlContent = "content",
                     frontMatter = emptyMap(),
                     status = FragmentStatus.PUBLISHED,
                 )
