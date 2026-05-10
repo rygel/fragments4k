@@ -69,6 +69,7 @@ class FragmentsSpringController(
                     templateName = fragment.template,
                     navigationMenu = engine.nav(),
                     footer = engine.footer(),
+                    socialShareLinks = engine.socialShareLinks(fragment.title, fragment.url),
                 ),
             )
             fragment.template
@@ -127,6 +128,7 @@ class FragmentsSpringController(
                     templateName = fragment.template,
                     navigationMenu = engine.nav(),
                     footer = engine.footer(),
+                    socialShareLinks = engine.socialShareLinks(fragment.title, fragment.url),
                 ),
             )
             fragment.template

@@ -60,6 +60,7 @@ class FragmentsQuarkusResource
                         templateName = fragment.template,
                         navigationMenu = engine.nav(),
                         footer = engine.footer(),
+                        socialShareLinks = engine.socialShareLinks(fragment.title, fragment.url),
                     )
                 Response.ok(contentViewModel).build()
             } else {
@@ -114,6 +115,7 @@ class FragmentsQuarkusResource
                         templateName = fragment.template,
                         navigationMenu = engine.nav(),
                         footer = engine.footer(),
+                        socialShareLinks = engine.socialShareLinks(fragment.title, fragment.url),
                     )
                 Response.ok(contentViewModel).build()
             } else {

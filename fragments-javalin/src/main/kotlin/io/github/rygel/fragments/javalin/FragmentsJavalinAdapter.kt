@@ -75,6 +75,7 @@ fun RoutesConfig.fragmentsRoutes(
                         templateName = fragment.template,
                         navigationMenu = engine.nav(),
                         footer = engine.footer(),
+                        socialShareLinks = engine.socialShareLinks(fragment.title, fragment.url),
                     )
                 render(ctx, fragment.template, viewModel)
             } else {
@@ -146,6 +147,7 @@ fun RoutesConfig.fragmentsRoutes(
                         templateName = fragment.template,
                         navigationMenu = engine.nav(),
                         footer = engine.footer(),
+                        socialShareLinks = engine.socialShareLinks(fragment.title, fragment.url),
                     )
                 render(ctx, fragment.template, viewModel)
             } else {

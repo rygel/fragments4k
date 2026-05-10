@@ -54,6 +54,7 @@ class FragmentsMicronautController
                         templateName = fragment.template,
                         navigationMenu = engine.nav(),
                         footer = engine.footer(),
+                        socialShareLinks = engine.socialShareLinks(fragment.title, fragment.url),
                     )
                 HttpResponse.ok(contentViewModel)
             } else {
@@ -105,6 +106,7 @@ class FragmentsMicronautController
                         templateName = fragment.template,
                         navigationMenu = engine.nav(),
                         footer = engine.footer(),
+                        socialShareLinks = engine.socialShareLinks(fragment.title, fragment.url),
                     )
                 HttpResponse.ok(contentViewModel)
             } else {

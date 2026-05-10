@@ -4,6 +4,7 @@ import io.github.rygel.fragments.ArchiveNavigationLink
 import io.github.rygel.fragments.AuthorViewModel
 import io.github.rygel.fragments.FragmentViewModel
 import io.github.rygel.fragments.NavigationLink
+import io.github.rygel.fragments.SocialShareLink
 import io.github.rygel.fragments.adapter.FooterConfig
 import io.github.rygel.fragments.adapter.FragmentsEngine
 import io.github.rygel.fragments.adapter.PaginationInfo
@@ -76,6 +77,7 @@ class FragmentsHttp4kAdapter(
                         templateName = fragment.template,
                         navigationMenu = engine.nav(),
                         footer = engine.footer(),
+                        socialShareLinks = engine.socialShareLinks(fragment.title, fragment.url),
                     )
                 renderResponse(viewModel)
             } else {
@@ -125,6 +127,7 @@ class FragmentsHttp4kAdapter(
                         templateName = fragment.template,
                         navigationMenu = engine.nav(),
                         footer = engine.footer(),
+                        socialShareLinks = engine.socialShareLinks(fragment.title, fragment.url),
                     )
                 renderResponse(viewModel)
             } else {
@@ -355,6 +358,7 @@ class FragmentsHttp4kAdapter(
         private val templateName: String,
         val navigationMenu: List<NavigationLink>,
         val footer: FooterConfig,
+        val socialShareLinks: List<SocialShareLink> = emptyList(),
     ) : ViewModel {
         override fun template(): String = templateName
     }
