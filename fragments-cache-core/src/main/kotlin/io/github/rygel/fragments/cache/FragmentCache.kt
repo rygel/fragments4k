@@ -34,6 +34,11 @@ class FragmentCache(
         )
 
     // Fragment list caches
+    private val allFragmentsCache =
+        InMemoryCache<String, List<Fragment>>(
+            CacheConfiguration(ttl = listTtl, maxSize = 100, recordStats = true),
+        )
+
     private val visibleFragmentsCache =
         InMemoryCache<String, List<Fragment>>(
             CacheConfiguration(ttl = listTtl, maxSize = 100, recordStats = true),
@@ -108,6 +113,18 @@ class FragmentCache(
     }
 
     /**
+     * Get all available fragments from cache
+     */
+    suspend fun getAllFragments(): List<Fragment>? = allFragmentsCache.get("all:fragments")
+
+    /**
+     * Cache all available fragments
+     */
+    suspend fun putAllFragments(fragments: List<Fragment>) {
+        allFragmentsCache.put("all:fragments", fragments)
+    }
+
+    /**
      * Get all visible fragments from cache
      */
     suspend fun getVisibleFragments(): List<Fragment>? = visibleFragmentsCache.get("visible:all")
@@ -124,6 +141,7 @@ class FragmentCache(
      */
     suspend fun invalidateFragmentLists() {
         logger.debug("Invalidating all fragment list caches")
+        allFragmentsCache.clear()
         visibleFragmentsCache.clear()
         fragmentsByTagCache.clear()
         fragmentsByCategoryCache.clear()
@@ -258,6 +276,7 @@ class FragmentCache(
     suspend fun clearAll() {
         logger.debug("Clearing all caches")
         fragmentCache.clear()
+        allFragmentsCache.clear()
         visibleFragmentsCache.clear()
         fragmentsByTagCache.clear()
         fragmentsByCategoryCache.clear()
@@ -277,37 +296,43 @@ class FragmentCache(
             listStats =
                 CacheStatistics(
                     hitCount =
-                        visibleFragmentsCache.getStatistics().hitCount +
+                        allFragmentsCache.getStatistics().hitCount +
+                            visibleFragmentsCache.getStatistics().hitCount +
                             fragmentsByTagCache.getStatistics().hitCount +
                             fragmentsByCategoryCache.getStatistics().hitCount +
                             fragmentsByAuthorCache.getStatistics().hitCount +
                             fragmentsBySeriesCache.getStatistics().hitCount,
                     missCount =
-                        visibleFragmentsCache.getStatistics().missCount +
+                        allFragmentsCache.getStatistics().missCount +
+                            visibleFragmentsCache.getStatistics().missCount +
                             fragmentsByTagCache.getStatistics().missCount +
                             fragmentsByCategoryCache.getStatistics().missCount +
                             fragmentsByAuthorCache.getStatistics().missCount +
                             fragmentsBySeriesCache.getStatistics().missCount,
                     loadCount =
-                        visibleFragmentsCache.getStatistics().loadCount +
+                        allFragmentsCache.getStatistics().loadCount +
+                            visibleFragmentsCache.getStatistics().loadCount +
                             fragmentsByTagCache.getStatistics().loadCount +
                             fragmentsByCategoryCache.getStatistics().loadCount +
                             fragmentsByAuthorCache.getStatistics().loadCount +
                             fragmentsBySeriesCache.getStatistics().loadCount,
                     loadFailureCount =
-                        visibleFragmentsCache.getStatistics().loadFailureCount +
+                        allFragmentsCache.getStatistics().loadFailureCount +
+                            visibleFragmentsCache.getStatistics().loadFailureCount +
                             fragmentsByTagCache.getStatistics().loadFailureCount +
                             fragmentsByCategoryCache.getStatistics().loadFailureCount +
                             fragmentsByAuthorCache.getStatistics().loadFailureCount +
                             fragmentsBySeriesCache.getStatistics().loadFailureCount,
                     totalLoadTime =
-                        visibleFragmentsCache.getStatistics().totalLoadTime +
+                        allFragmentsCache.getStatistics().totalLoadTime +
+                            visibleFragmentsCache.getStatistics().totalLoadTime +
                             fragmentsByTagCache.getStatistics().totalLoadTime +
                             fragmentsByCategoryCache.getStatistics().totalLoadTime +
                             fragmentsByAuthorCache.getStatistics().totalLoadTime +
                             fragmentsBySeriesCache.getStatistics().totalLoadTime,
                     evictionCount =
-                        visibleFragmentsCache.getStatistics().evictionCount +
+                        allFragmentsCache.getStatistics().evictionCount +
+                            visibleFragmentsCache.getStatistics().evictionCount +
                             fragmentsByTagCache.getStatistics().evictionCount +
                             fragmentsByCategoryCache.getStatistics().evictionCount +
                             fragmentsByAuthorCache.getStatistics().evictionCount +
@@ -318,6 +343,7 @@ class FragmentCache(
             searchStats = searchResultCache.getStatistics(),
             totalSize =
                 fragmentCache.size() +
+                    allFragmentsCache.size() +
                     visibleFragmentsCache.size() +
                     fragmentsByTagCache.size() +
                     fragmentsByCategoryCache.size() +
@@ -333,6 +359,7 @@ class FragmentCache(
      */
     fun resetStatistics() {
         fragmentCache.resetStatistics()
+        allFragmentsCache.resetStatistics()
         visibleFragmentsCache.resetStatistics()
         fragmentsByTagCache.resetStatistics()
         fragmentsByCategoryCache.resetStatistics()

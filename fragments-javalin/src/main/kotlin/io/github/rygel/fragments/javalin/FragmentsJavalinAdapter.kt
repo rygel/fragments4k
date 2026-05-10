@@ -357,6 +357,19 @@ fun RoutesConfig.fragmentsRoutes(
             render(ctx, "search", viewModel)
         }
     }
+
+    get("/api/autocomplete") { ctx ->
+        val query = ctx.queryParam("q")
+        if (query == null) {
+            ctx.status(400).result("Query parameter 'q' is required")
+            return@get
+        }
+        val limit = ctx.queryParam("limit")?.toIntOrNull() ?: 10
+        ctx.handleAsync {
+            val suggestions = engine.autocomplete(query, limit)
+            ctx.json(suggestions)
+        }
+    }
 }
 
 data class ContentViewModel(

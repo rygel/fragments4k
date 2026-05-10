@@ -149,6 +149,7 @@ class LiveReloadManager(
         try {
             // Reload fragments from repository
             // This will trigger repository to re-read content from disk
+            repository.reload()
             val count = repository.getAllVisible().size
             logger.info("Reloaded $count fragments")
 

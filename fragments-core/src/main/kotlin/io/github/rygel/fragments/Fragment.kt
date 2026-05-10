@@ -212,30 +212,29 @@ data class Fragment(
         get() = resolvedUrl ?: if (baseUrl.isNotEmpty()) "$baseUrl/$slug" else "/$slug"
 
     /** `true` if the content contains a `<!--more-->` read-more split marker. */
-    val hasMoreTag: Boolean
-        get() =
-            htmlContent.contains("<!--more-->", ignoreCase = true) ||
-                htmlContent.contains("<!-- more -->", ignoreCase = true)
+    val hasMoreTag: Boolean by lazy {
+        htmlContent.contains("<!--more-->", ignoreCase = true) ||
+            htmlContent.contains("<!-- more -->", ignoreCase = true)
+    }
 
     /** Plain-text version of [preview] with all HTML tags stripped. */
-    val previewTextOnly: String
-        get() = preview.replace(HTML_TAG_REGEX, "").trim()
+    val previewTextOnly: String by lazy { preview.replace(HTML_TAG_REGEX, "").trim() }
 
     /**
      * Plain-text content up to the `<!--more-->` marker (or the full body
      * when no marker is present), with all HTML tags stripped.
      */
-    val contentTextOnly: String
-        get() =
-            if (hasMoreTag) {
-                htmlContent
-                    .substringBefore("<!--more-->")
-                    .substringBefore("<!-- more -->")
-                    .replace(HTML_TAG_REGEX, "")
-                    .trim()
-            } else {
-                htmlContent.replace(HTML_TAG_REGEX, "").trim()
-            }
+    val contentTextOnly: String by lazy {
+        if (hasMoreTag) {
+            htmlContent
+                .substringBefore("<!--more-->")
+                .substringBefore("<!-- more -->")
+                .replace(HTML_TAG_REGEX, "")
+                .trim()
+        } else {
+            htmlContent.replace(HTML_TAG_REGEX, "").trim()
+        }
+    }
 
     /**
      * The first entry in [authorIds], or [author] when [authorIds] is empty.

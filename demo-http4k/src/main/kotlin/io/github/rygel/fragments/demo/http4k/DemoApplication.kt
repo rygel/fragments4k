@@ -66,8 +66,8 @@ fun main() {
 
         val errorHandler: Filter =
             CatchAll { e ->
-                logger.error("Error handling request", e)
-                Response(Status.INTERNAL_SERVER_ERROR).body("Internal Server Error: ${e.message}")
+                logger.error("Unhandled exception", e)
+                Response(Status.INTERNAL_SERVER_ERROR).body("Internal Server Error")
             }
 
         val app: HttpHandler = errorHandler.then(adapter.createRoutes())

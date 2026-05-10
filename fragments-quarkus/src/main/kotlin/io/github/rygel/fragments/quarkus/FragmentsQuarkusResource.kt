@@ -4,6 +4,7 @@ import io.github.rygel.fragments.AuthorViewModel
 import io.github.rygel.fragments.FragmentViewModel
 import io.github.rygel.fragments.adapter.FragmentsEngine
 import jakarta.inject.Inject
+import jakarta.ws.rs.DefaultValue
 import jakarta.ws.rs.GET
 import jakarta.ws.rs.Path
 import jakarta.ws.rs.PathParam
@@ -11,6 +12,7 @@ import jakarta.ws.rs.Produces
 import jakarta.ws.rs.QueryParam
 import jakarta.ws.rs.core.Context
 import jakarta.ws.rs.core.HttpHeaders
+import jakarta.ws.rs.core.MediaType
 import jakarta.ws.rs.core.Response
 
 @Path("/")
@@ -236,6 +238,14 @@ class FragmentsQuarkusResource
                 )
             return Response.ok(viewModel).build()
         }
+
+        @GET
+        @Path("/api/autocomplete")
+        @Produces(MediaType.APPLICATION_JSON)
+        suspend fun autocomplete(
+            @QueryParam("q") query: String,
+            @QueryParam("limit") @DefaultValue("10") limit: Int,
+        ): Response = Response.ok(engine.autocomplete(query, limit)).build()
 
         @GET
         @Path("/sitemap.xml")
