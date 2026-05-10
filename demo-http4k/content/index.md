@@ -1,5 +1,5 @@
 ---
-title: Fragments4k Demo
+title: "Fragments4k Demo"
 slug: index
 status: PUBLISHED
 date: 2026-05-10

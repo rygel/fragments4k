@@ -40,6 +40,10 @@ fun RoutesConfig.fragmentsRoutes(
         }
     }
 
+    before("*") { ctx ->
+        ctx.header("Content-Security-Policy", engine.cspHeader())
+    }
+
     val render: (Context, String, Any) -> Unit = { ctx, template, viewModel ->
         val html = renderer?.render(template, viewModel) ?: ""
         ctx.html(html)
@@ -54,8 +58,7 @@ fun RoutesConfig.fragmentsRoutes(
             val fragments = engine.getHome()
             val viewModel =
                 HomeViewModel(
-                    fragments = fragments.map { FragmentViewModel(it) },
-                    isPartialRender = isHtmxRequest(ctx),
+                    fragments = fragments.map { FragmentViewModel(it, isHtmxRequest(ctx)) },
                     navigationMenu = engine.nav(),
                     footer = engine.footer(),
                 )
@@ -173,7 +176,7 @@ fun RoutesConfig.fragmentsRoutes(
                         engine.pagination(
                             currentPage = pageResult.currentPage,
                             totalPages = pageResult.totalPages,
-                            basePath = "/blog",
+                            basePath = "/blog/tag/$tag",
                         ),
                     footer = engine.footer(),
                 )
@@ -200,7 +203,7 @@ fun RoutesConfig.fragmentsRoutes(
                         engine.pagination(
                             currentPage = pageResult.currentPage,
                             totalPages = pageResult.totalPages,
-                            basePath = "/blog",
+                            basePath = "/blog/category/$category",
                         ),
                     footer = engine.footer(),
                 )
@@ -251,7 +254,7 @@ fun RoutesConfig.fragmentsRoutes(
                 ArchiveViewModel(
                     type = "year",
                     year = year,
-                    fragments = fragments.map { FragmentViewModel(it) },
+                    fragments = fragments.map { FragmentViewModel(it, isHtmxRequest(ctx)) },
                     siteTitle = engine.siteTitle,
                     navigationMenu = engine.nav(),
                     footer = engine.footer(),
@@ -290,7 +293,7 @@ fun RoutesConfig.fragmentsRoutes(
                     type = "year-month",
                     year = year,
                     month = month,
-                    fragments = fragments.map { FragmentViewModel(it) },
+                    fragments = fragments.map { FragmentViewModel(it, isHtmxRequest(ctx)) },
                     siteTitle = engine.siteTitle,
                     navigationMenu = engine.nav(),
                     footer = engine.footer(),
@@ -309,7 +312,7 @@ fun RoutesConfig.fragmentsRoutes(
         }
     }
 
-    get("/rss.xml") { ctx ->
+    val rssHandler: (Context) -> Unit = { ctx ->
         ctx.handleAsync {
             val rssXml = engine.generateRssFeed()
             ctx.contentType("application/rss+xml")
@@ -317,13 +320,8 @@ fun RoutesConfig.fragmentsRoutes(
         }
     }
 
-    get("/feed.xml") { ctx ->
-        ctx.handleAsync {
-            val rssXml = engine.generateRssFeed()
-            ctx.contentType("application/rss+xml")
-            ctx.result(rssXml)
-        }
-    }
+    get("/rss.xml", rssHandler)
+    get("/feed.xml", rssHandler)
 
     get("/sitemap.xml") { ctx ->
         ctx.handleAsync {
@@ -358,7 +356,7 @@ fun RoutesConfig.fragmentsRoutes(
             val viewModel =
                 SearchViewModel(
                     query = query,
-                    results = results.map { FragmentViewModel(it.fragment) },
+                    results = results.map { FragmentViewModel(it.fragment, isHtmxRequest(ctx)) },
                     siteTitle = engine.siteTitle,
                     navigationMenu = engine.nav(),
                     footer = engine.footer(),

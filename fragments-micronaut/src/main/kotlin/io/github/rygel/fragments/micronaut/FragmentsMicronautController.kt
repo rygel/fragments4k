@@ -130,7 +130,7 @@ class FragmentsMicronautController
                     hasPrevious = pageResult.hasPrevious,
                     isPartialRender = isPartial,
                     navigationMenu = engine.nav(),
-                    pagination = engine.pagination(pageResult.currentPage, pageResult.totalPages, "/blog"),
+                    pagination = engine.pagination(pageResult.currentPage, pageResult.totalPages, "/blog/tag/$tag"),
                     footer = engine.footer(),
                 )
             return HttpResponse.ok(viewModel)
@@ -154,7 +154,7 @@ class FragmentsMicronautController
                     hasPrevious = pageResult.hasPrevious,
                     isPartialRender = isPartial,
                     navigationMenu = engine.nav(),
-                    pagination = engine.pagination(pageResult.currentPage, pageResult.totalPages, "/blog"),
+                    pagination = engine.pagination(pageResult.currentPage, pageResult.totalPages, "/blog/category/$category"),
                     footer = engine.footer(),
                 )
             return HttpResponse.ok(viewModel)

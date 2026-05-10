@@ -46,9 +46,7 @@ This is my first blog post!
 ## Running the Demo
 
 ```bash
-./mvnw spring-boot:run
-# or for other frameworks
-./mvnw compile exec:java -Dexec.mainClass="your.MainClass"
+./mvnw compile exec:java -Dexec.mainClass="io.github.rygel.fragments.demo.http4k.MainKt"
 ```
 
 ## Next Steps
