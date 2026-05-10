@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory
  * that matches your adapter routes.
  */
 object LlmsTxtGenerator {
+    private const val PREVIEW_LENGTH = 160
     private val BLOG_TEMPLATES: Set<String> = FragmentTemplates.BLOG_TEMPLATES
     private val logger = LoggerFactory.getLogger(LlmsTxtGenerator::class.java)
 
@@ -74,7 +75,7 @@ object LlmsTxtGenerator {
                 appendLine("## Blog Posts")
                 appendLine()
                 for (post in blogPosts) {
-                    val description = post.previewTextOnly.take(160)
+                    val description = post.previewTextOnly.take(PREVIEW_LENGTH)
                     val absoluteUrl = siteUrl.trimEnd('/') + post.url
                     appendLine("- [${post.title}]($absoluteUrl): $description")
                 }
@@ -85,7 +86,7 @@ object LlmsTxtGenerator {
                 appendLine("## Pages")
                 appendLine()
                 for (page in pages) {
-                    val description = page.previewTextOnly.take(160)
+                    val description = page.previewTextOnly.take(PREVIEW_LENGTH)
                     val absoluteUrl = siteUrl.trimEnd('/') + page.url
                     appendLine("- [${page.title}]($absoluteUrl): $description")
                 }

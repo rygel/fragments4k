@@ -1,5 +1,6 @@
 package io.github.rygel.fragments.adapter
 
+/** Generates default [SearchFormConfig] instances. */
 object SearchFormGenerator {
     fun generate(
         actionUrl: String = "/search",

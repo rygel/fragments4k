@@ -5,6 +5,7 @@ import io.github.rygel.fragments.AuthorViewModel
 import io.github.rygel.fragments.FragmentViewModel
 import io.github.rygel.fragments.NavigationLink
 
+/** View model for the home page, displaying a list of static page fragments. */
 data class HomeViewModel(
     val fragments: List<FragmentViewModel>,
     val isPartialRender: Boolean = false,
@@ -12,6 +13,7 @@ data class HomeViewModel(
     val footer: FooterConfig? = null,
 )
 
+/** View model for blog listing pages (overview, tag, category filters). */
 data class BlogOverviewViewModel(
     val fragments: List<FragmentViewModel>,
     val currentPage: Int,
@@ -26,6 +28,7 @@ data class BlogOverviewViewModel(
     val footer: FooterConfig? = null,
 )
 
+/** View model for category-filtered blog post listing. */
 data class CategoryViewModel(
     val category: String,
     val fragments: List<FragmentViewModel>,
@@ -39,6 +42,7 @@ data class CategoryViewModel(
     val footer: FooterConfig? = null,
 )
 
+/** View model for tag-filtered blog post listing. */
 data class TagViewModel(
     val tag: String,
     val fragments: List<FragmentViewModel>,
@@ -52,6 +56,7 @@ data class TagViewModel(
     val footer: FooterConfig? = null,
 )
 
+/** View model for author profile page with their blog posts. */
 data class AuthorPageViewModel(
     val authorSlug: String,
     val authorName: String? = null,
@@ -67,6 +72,7 @@ data class AuthorPageViewModel(
     val footer: FooterConfig? = null,
 )
 
+/** View model for date-based archive browsing (year and year-month views). */
 data class ArchiveViewModel(
     val type: String,
     val year: String,
@@ -80,6 +86,7 @@ data class ArchiveViewModel(
     val archiveBreadcrumbs: List<ArchiveNavigationLink>? = null,
 )
 
+/** View model for search results page. */
 data class SearchViewModel(
     val query: String,
     val results: List<FragmentViewModel>,
