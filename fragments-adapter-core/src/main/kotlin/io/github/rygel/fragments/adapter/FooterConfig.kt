@@ -1,5 +1,6 @@
 package io.github.rygel.fragments.adapter
 
+/** Configuration for the site footer, including copyright notice, social links, and powered-by credit. */
 data class FooterConfig(
     val copyrightText: String,
     val year: Int,

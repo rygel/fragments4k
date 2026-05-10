@@ -1,6 +1,8 @@
 package io.github.rygel.fragments.adapter
 
+/** Generates [PaginationInfo] for paged content navigation. */
 object PaginationGenerator {
+    /** Creates a [PaginationInfo] with simple previous/next controls and optional page number text. */
     fun generateSimpleControls(
         currentPage: Int,
         totalPages: Int,

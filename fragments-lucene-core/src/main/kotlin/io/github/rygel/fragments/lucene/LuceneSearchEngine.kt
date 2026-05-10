@@ -60,6 +60,9 @@ class LuceneSearchEngine(
     constructor(repository: FragmentRepository, indexPath: Path? = null) : this(listOf(repository), indexPath)
 
     companion object {
+        private const val TITLE_BOOST = 2.0f
+        private const val CONTENT_BOOST = 1.0f
+        private const val MAX_TAG_CATEGORY_RESULTS = 100
         private val logger = LoggerFactory.getLogger(LuceneSearchEngine::class.java)
     }
 
@@ -201,7 +204,7 @@ class LuceneSearchEngine(
 
     private fun buildStandardQuery(query: String): Query? {
         val fields = arrayOf("title", "content")
-        val boosts = mapOf("title" to 2.0f, "content" to 1.0f)
+        val boosts = mapOf("title" to TITLE_BOOST, "content" to CONTENT_BOOST)
         val parser = MultiFieldQueryParser(fields, analyzer, boosts)
         parser.defaultOperator = QueryParser.Operator.AND
         return try {
@@ -261,7 +264,7 @@ class LuceneSearchEngine(
                         org.apache.lucene.index
                             .Term("tag", tag.lowercase()),
                     )
-                val topDocs = searcher.search(query, 100)
+                val topDocs = searcher.search(query, MAX_TAG_CATEGORY_RESULTS)
 
                 topDocs.scoreDocs.mapNotNull { scoreDoc ->
                     fragmentsBySlug[searcher.storedFields().document(scoreDoc.doc).get("slug")]
@@ -279,7 +282,7 @@ class LuceneSearchEngine(
                         org.apache.lucene.index
                             .Term("category", category.lowercase()),
                     )
-                val topDocs = searcher.search(query, 100)
+                val topDocs = searcher.search(query, MAX_TAG_CATEGORY_RESULTS)
 
                 topDocs.scoreDocs.mapNotNull { scoreDoc ->
                     fragmentsBySlug[searcher.storedFields().document(scoreDoc.doc).get("slug")]
