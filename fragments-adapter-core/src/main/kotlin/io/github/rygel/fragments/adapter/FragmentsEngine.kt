@@ -31,7 +31,7 @@ import io.github.rygel.fragments.static.StaticPageEngine
 class FragmentsEngine(
     val staticEngine: StaticPageEngine,
     val blogEngine: BlogEngine,
-    val searchEngine: LuceneSearchEngine,
+    val searchEngine: LuceneSearchEngine? = null,
     val siteTitle: String = "My Blog",
     val siteDescription: String = "My Awesome Blog",
     val siteUrl: String = "http://localhost:8080",
@@ -136,12 +136,12 @@ class FragmentsEngine(
     suspend fun search(
         query: String,
         maxResults: Int = 50,
-    ): List<SearchResult> = searchEngine.search(query, maxResults)
+    ): List<SearchResult> = searchEngine?.search(query, maxResults) ?: emptyList()
 
     suspend fun autocomplete(
         query: String,
         limit: Int = 10,
-    ): List<SearchSuggestion> = searchEngine.autocomplete(query, limit)
+    ): List<SearchSuggestion> = searchEngine?.autocomplete(query, limit) ?: emptyList()
 
     // -- Feed generation ------------------------------------------------------
 
