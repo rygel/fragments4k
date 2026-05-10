@@ -15,10 +15,7 @@ object PaginationGenerator {
         val text =
             buildString {
                 if (showPageNumbers && totalPages > 1) {
-                    append("Page $currentPage")
-                    if (totalPages > 1) {
-                        append(" of $totalPages")
-                    }
+                    append("Page $currentPage of $totalPages")
                 }
             }
 

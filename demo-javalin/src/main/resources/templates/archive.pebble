@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% if month %}{{ month }}/{% endif %}{{ year }} Archive - Fragments4k Demo</title>
+    <title>{% if viewModel.month %}{{ viewModel.month }}/{% endif %}{{ viewModel.year }} Archive - {{ viewModel.siteTitle }}</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
@@ -150,42 +150,42 @@
     </nav>
 
     <div class="archive-header">
-        <h1>Archive{% if month %}: {{ month }}/{% endif %} {{ year }}</h1>
+        <h1>Archive{% if viewModel.month %}: {{ viewModel.month }}/{% endif %} {{ viewModel.year }}</h1>
 
-    {% if archiveBreadcrumbs %}
+    {% if viewModel.archiveBreadcrumbs %}
     <div class="archive-breadcrumbs">
-        {% for crumb in archiveBreadcrumbs %}
+        {% for crumb in viewModel.archiveBreadcrumbs %}
         <a href="{{ crumb.url }}"{% if crumb.isActive %} class="active"{% endif %}>{{ crumb.label }}</a>{% if not loop.last %} &rarr; {% endif %}
         {% endfor %}
     </div>
     {% endif %}
 
-    {% if archiveYearLinks %}
+    {% if viewModel.archiveYearLinks %}
     <div class="archive-years">
         <h3>Years</h3>
         <ul class="archive-year-list">
-            {% for yearLink in archiveYearLinks %}
+            {% for yearLink in viewModel.archiveYearLinks %}
             <li><a href="{{ yearLink.url }}"{% if yearLink.isActive %} class="active"{% endif %}>{{ yearLink.label }}</a></li>
             {% endfor %}
         </ul>
     </div>
     {% endif %}
 
-    {% if archiveMonthLinks %}
+    {% if viewModel.archiveMonthLinks %}
     <div class="archive-months">
         <h3>Months</h3>
         <ul class="archive-month-list">
-            {% for monthLink in archiveMonthLinks %}
+            {% for monthLink in viewModel.archiveMonthLinks %}
             <li><a href="{{ monthLink.url }}"{% if monthLink.isActive %} class="active"{% endif %}>{{ monthLink.label }}</a></li>
             {% endfor %}
         </ul>
     </div>
     {% endif %}
-        <p class="archive-count">{% if fragments %}{{ fragments|length }} post{% if fragments|length != 1 %}s{% endif %}{% else %}No posts{% endif %} in this period</p>
+        <p class="archive-count">{% if viewModel.fragments %}{{ viewModel.fragments|length }} post{% if viewModel.fragments|length != 1 %}s{% endif %}{% else %}No posts{% endif %} in this period</p>
     </div>
 
-    {% if fragments %}
-    {% for fragment in fragments %}
+    {% if viewModel.fragments %}
+    {% for fragment in viewModel.fragments %}
     <article class="archive-item">
         <h2 class="archive-title">
             <a href="/blog/{{ fragment.year }}/{{ "%02d"|format(fragment.month) }}/{{ fragment.slug }}">{{ fragment.title }}</a>
@@ -206,7 +206,7 @@
 
     <footer>
         <p><a href="/blog">&larr; Back to blog</a></p>
-        <p>&copy; {{ footer.year }} {{ footer.copyrightText }} {{ footer.poweredByText }}</p>
+        <p>&copy; {{ viewModel.footer.year }} {{ viewModel.footer.copyrightText }} {{ viewModel.footer.poweredByText }}</p>
     </footer>
 </body>
 </html>
