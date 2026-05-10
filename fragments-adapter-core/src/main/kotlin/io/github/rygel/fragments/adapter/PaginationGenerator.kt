@@ -28,6 +28,8 @@ object PaginationGenerator {
             hasPrevious = hasPrevious,
             hasNext = hasNext,
             text = text,
+            previousUrl = if (hasPrevious) "$basePath?page=${currentPage - 1}" else "",
+            nextUrl = if (hasNext) "$basePath?page=${currentPage + 1}" else "",
         )
     }
 }

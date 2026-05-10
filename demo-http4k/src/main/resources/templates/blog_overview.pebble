@@ -167,7 +167,6 @@
 
     <footer>
         <p>&copy; {{ footer.year }} {{ footer.copyrightText }} {{ footer.poweredByText }}</p>
-        <p>&copy; {{ footer.year }} Fragments4k. Powered by <a href="https://github.com/rygel/fragments4k">Fragments4k</a></p>
     </footer>
 </body>
 </html>

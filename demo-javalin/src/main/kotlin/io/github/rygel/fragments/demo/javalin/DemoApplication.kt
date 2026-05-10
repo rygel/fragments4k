@@ -57,7 +57,7 @@ fun main() {
         Javalin.create { config ->
             config.staticFiles.enableWebjars()
             config.fileRenderer(pebble)
-            config.routes.fragmentsRoutes(engine, renderer = null)
+            config.routes.fragmentsRoutes(engine, renderer = PebbleTemplateRenderer())
             config.routes.exception(Exception::class.java) { e, ctx ->
                 logger.error("Unhandled exception", e)
                 ctx.status(500).result("Internal Server Error")
