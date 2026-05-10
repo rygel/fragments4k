@@ -183,7 +183,7 @@ class MarkdownParser(
                 }
 
                 is java.time.LocalDate -> {
-                    logger.warn(
+                    logger.debug(
                         "Date '{}' has no time or timezone — treating as UTC midnight. " +
                             "Use 'yyyy-MM-dd''T''HH:mm' to suppress this warning.",
                         dateValue,
@@ -192,7 +192,7 @@ class MarkdownParser(
                 }
 
                 is java.util.Date -> {
-                    logger.warn(
+                    logger.debug(
                         "Date '{}' (java.util.Date from SnakeYAML) has no explicit timezone — " +
                             "treating as UTC. Use 'yyyy-MM-dd''T''HH:mm' format in your front matter " +
                             "to suppress this warning.",

@@ -228,16 +228,16 @@ class FileSystemFragmentRevisionRepository(
     private fun serializeRevision(revision: FragmentRevision): String =
         """
             |{
-            |  "id": "${revision.id}",
-            |  "fragmentSlug": "${revision.fragmentSlug}",
+            |  "id": "${escapeJson(revision.id)}",
+            |  "fragmentSlug": "${escapeJson(revision.fragmentSlug)}",
             |  "version": ${revision.version},
             |  "title": "${escapeJson(revision.title)}",
             |  "content": "${escapeJson(revision.content)}",
             |  "preview": "${escapeJson(revision.preview)}",
-            |  "changedBy": ${revision.changedBy?.let { "\"$it\"" } ?: "null"},
+            |  "changedBy": ${revision.changedBy?.let { "\"${escapeJson(it)}\"" } ?: "null"},
             |  "changedAt": "${revision.changedAt.format(formatter)}",
-            |  "changeReason": ${revision.changeReason?.let { "\"$it\"" } ?: "null"},
-            |  "previousRevisionId": ${revision.previousRevisionId?.let { "\"$it\"" } ?: "null"}
+            |  "changeReason": ${revision.changeReason?.let { "\"${escapeJson(it)}\"" } ?: "null"},
+            |  "previousRevisionId": ${revision.previousRevisionId?.let { "\"${escapeJson(it)}\"" } ?: "null"}
             |}
         """.trimMargin().trim()
 
@@ -298,7 +298,7 @@ class FileSystemFragmentRevisionRepository(
     private fun saveIndex(index: MutableMap<String, MutableList<String>>) {
         val json =
             index.entries.joinToString(",\n  ") { (key, value) ->
-                "\"$key\": [${value.joinToString(", ") { "\"$it\"" }}]"
+                "\"${escapeJson(key)}\": [${value.joinToString(", ") { "\"${escapeJson(it)}\"" }}]"
             }
         fragmentsIndexFile.writeText("{\n  $json\n}")
     }

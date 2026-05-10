@@ -10,7 +10,7 @@ import java.nio.file.Paths
 @Command(
     name = "fragments",
     mixinStandardHelpOptions = true,
-    version = ["Fragments4k CLI 1.0.0-SNAPSHOT"],
+    version = ["Fragments4k CLI 0.6.6"],
     description = ["Command-line tool for scaffolding Fragments4k projects"],
     subcommands = [InitCommand::class, RunCommand::class],
 )

@@ -10,6 +10,8 @@ import io.github.rygel.fragments.FragmentRepository
 import io.github.rygel.fragments.LlmsTxtGenerator
 import io.github.rygel.fragments.NavigationLink
 import io.github.rygel.fragments.NavigationMenuGenerator
+import io.github.rygel.fragments.SocialShareGenerator
+import io.github.rygel.fragments.SocialShareLink
 import io.github.rygel.fragments.blog.BlogEngine
 import io.github.rygel.fragments.blog.Page
 import io.github.rygel.fragments.lucene.LuceneSearchEngine
@@ -223,6 +225,13 @@ class FragmentsEngine(
             currentYear = currentYear,
             currentMonth = currentMonth,
         )
+
+    // -- Social sharing -------------------------------------------------------
+
+    fun socialShareLinks(
+        title: String,
+        url: String,
+    ): List<SocialShareLink> = SocialShareGenerator.generateShareLinks(title = title, url = url)
 
     // -- Utilities ------------------------------------------------------------
 
