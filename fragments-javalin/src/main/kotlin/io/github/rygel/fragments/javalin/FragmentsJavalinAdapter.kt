@@ -1,13 +1,15 @@
 package io.github.rygel.fragments.javalin
 
-import io.github.rygel.fragments.ArchiveNavigationLink
-import io.github.rygel.fragments.AuthorViewModel
 import io.github.rygel.fragments.FragmentViewModel
 import io.github.rygel.fragments.NavigationLink
+import io.github.rygel.fragments.adapter.ArchiveViewModel
+import io.github.rygel.fragments.adapter.AuthorPageViewModel
+import io.github.rygel.fragments.adapter.BlogOverviewViewModel
+import io.github.rygel.fragments.adapter.CategoryViewModel
 import io.github.rygel.fragments.adapter.FooterConfig
 import io.github.rygel.fragments.adapter.FragmentsEngine
-import io.github.rygel.fragments.adapter.PaginationInfo
-import io.github.rygel.fragments.adapter.SearchFormConfig
+import io.github.rygel.fragments.adapter.HomeViewModel
+import io.github.rygel.fragments.adapter.SearchViewModel
 import io.javalin.config.RoutesConfig
 import io.javalin.http.Context
 import kotlinx.coroutines.CoroutineScope
@@ -376,87 +378,6 @@ data class ContentViewModel(
     val viewModel: FragmentViewModel,
     val templateName: String,
     val navigationMenu: List<NavigationLink>,
-    val footer: FooterConfig,
-)
-
-data class SearchViewModel(
-    val query: String,
-    val results: List<FragmentViewModel>,
-    val siteTitle: String,
-    val navigationMenu: List<NavigationLink>,
-    val footer: FooterConfig,
-    val searchForm: SearchFormConfig,
-)
-
-data class ArchiveViewModel(
-    val type: String,
-    val year: String,
-    val month: String? = null,
-    val fragments: List<FragmentViewModel>,
-    val siteTitle: String,
-    val navigationMenu: List<NavigationLink>,
-    val footer: FooterConfig,
-    val archiveYearLinks: List<ArchiveNavigationLink>? = null,
-    val archiveMonthLinks: List<ArchiveNavigationLink>? = null,
-    val archiveBreadcrumbs: List<ArchiveNavigationLink>? = null,
-)
-
-data class HomeViewModel(
-    val fragments: List<FragmentViewModel>,
-    val isPartialRender: Boolean = false,
-    val navigationMenu: List<NavigationLink>,
-    val footer: FooterConfig,
-)
-
-data class BlogOverviewViewModel(
-    val fragments: List<FragmentViewModel>,
-    val currentPage: Int,
-    val totalPages: Int,
-    val hasNext: Boolean = false,
-    val hasPrevious: Boolean = false,
-    val tag: String? = null,
-    val category: String? = null,
-    val isPartialRender: Boolean = false,
-    val navigationMenu: List<NavigationLink>,
-    val pagination: PaginationInfo,
-    val footer: FooterConfig,
-)
-
-data class TagViewModel(
-    val tag: String,
-    val fragments: List<FragmentViewModel>,
-    val currentPage: Int,
-    val totalPages: Int,
-    val hasNext: Boolean = false,
-    val hasPrevious: Boolean = false,
-    val isPartialRender: Boolean = false,
-)
-
-data class AuthorPageViewModel(
-    val authorSlug: String,
-    val authorName: String? = null,
-    val author: AuthorViewModel? = null,
-    val fragments: List<FragmentViewModel>,
-    val currentPage: Int,
-    val totalPages: Int,
-    val hasNext: Boolean = false,
-    val hasPrevious: Boolean = false,
-    val isPartialRender: Boolean = false,
-    val navigationMenu: List<NavigationLink>,
-    val pagination: PaginationInfo,
-    val footer: FooterConfig,
-)
-
-data class CategoryViewModel(
-    val category: String,
-    val fragments: List<FragmentViewModel>,
-    val currentPage: Int,
-    val totalPages: Int,
-    val hasNext: Boolean = false,
-    val hasPrevious: Boolean = false,
-    val isPartialRender: Boolean = false,
-    val navigationMenu: List<NavigationLink>,
-    val pagination: PaginationInfo,
     val footer: FooterConfig,
 )
 
