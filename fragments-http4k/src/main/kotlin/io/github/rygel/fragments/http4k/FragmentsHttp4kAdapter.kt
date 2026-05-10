@@ -173,11 +173,12 @@ class FragmentsHttp4kAdapter(
 
     private fun handleByCategory(request: Request): Response {
         val category = request.path("category") ?: return Response(Status.NOT_FOUND)
+        val page = request.query("page")?.toIntOrNull() ?: 1
         return runBlocking {
-            val pageResult = engine.getByCategory(category, 1)
+            val pageResult = engine.getByCategory(category, page)
             val viewModel =
                 BlogOverviewViewModel(
-                    fragments = pageResult.items.map { FragmentViewModel(it) },
+                    fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(request)) },
                     currentPage = pageResult.currentPage,
                     totalPages = pageResult.totalPages,
                     hasNext = pageResult.hasNext,
