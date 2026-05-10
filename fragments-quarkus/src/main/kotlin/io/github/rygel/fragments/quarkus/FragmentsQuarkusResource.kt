@@ -2,7 +2,14 @@ package io.github.rygel.fragments.quarkus
 
 import io.github.rygel.fragments.AuthorViewModel
 import io.github.rygel.fragments.FragmentViewModel
+import io.github.rygel.fragments.adapter.ArchiveViewModel
+import io.github.rygel.fragments.adapter.AuthorPageViewModel
+import io.github.rygel.fragments.adapter.BlogOverviewViewModel
+import io.github.rygel.fragments.adapter.CategoryViewModel
 import io.github.rygel.fragments.adapter.FragmentsEngine
+import io.github.rygel.fragments.adapter.HomeViewModel
+import io.github.rygel.fragments.adapter.SearchViewModel
+import io.github.rygel.fragments.adapter.TagViewModel
 import jakarta.inject.Inject
 import jakarta.ws.rs.DefaultValue
 import jakarta.ws.rs.GET
@@ -282,64 +289,4 @@ class FragmentsQuarkusResource
                 .entity(body)
                 .build()
         }
-
-        data class HomeViewModel(
-            val fragments: List<FragmentViewModel>,
-            val isPartialRender: Boolean = false,
-        )
-
-        data class BlogOverviewViewModel(
-            val fragments: List<FragmentViewModel>,
-            val currentPage: Int,
-            val totalPages: Int,
-            val hasNext: Boolean = false,
-            val hasPrevious: Boolean = false,
-            val isPartialRender: Boolean = false,
-        )
-
-        data class TagViewModel(
-            val tag: String,
-            val fragments: List<FragmentViewModel>,
-            val currentPage: Int,
-            val totalPages: Int,
-            val hasNext: Boolean = false,
-            val hasPrevious: Boolean = false,
-            val isPartialRender: Boolean = false,
-        )
-
-        data class AuthorPageViewModel(
-            val authorSlug: String,
-            val authorName: String? = null,
-            val author: AuthorViewModel? = null,
-            val fragments: List<FragmentViewModel>,
-            val currentPage: Int,
-            val totalPages: Int,
-            val hasNext: Boolean = false,
-            val hasPrevious: Boolean = false,
-            val isPartialRender: Boolean = false,
-        )
-
-        data class CategoryViewModel(
-            val category: String,
-            val fragments: List<FragmentViewModel>,
-            val currentPage: Int,
-            val totalPages: Int,
-            val hasNext: Boolean = false,
-            val hasPrevious: Boolean = false,
-            val isPartialRender: Boolean = false,
-        )
-
-        data class ArchiveViewModel(
-            val type: String,
-            val year: String,
-            val month: String? = null,
-            val fragments: List<FragmentViewModel>,
-            val siteTitle: String,
-        )
-
-        data class SearchViewModel(
-            val query: String,
-            val results: List<FragmentViewModel>,
-            val siteTitle: String,
-        )
     }
