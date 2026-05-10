@@ -107,7 +107,7 @@
 </head>
 <body>
     <nav class="nav">
-        {% for item in viewModel.navigationMenu %}
+        {% for item in navigationMenu %}
         <a href="{{ item.url }}"{% if item.cssClass %} class="{{ item.cssClass }}"{% endif %}>{{ item.label }}</a>
         {% endfor %}
     </nav>

@@ -115,7 +115,7 @@
     <h1>Blog</h1>
 
     <ul class="post-list">
-        {% for fragment in fragments %}
+        {% for fragment in viewModel.fragments %}
         <li class="post">
             <h2 class="post-title">
                 <a href="/blog/{{ fragment.year }}/{{ fragment.month }}/{{ fragment.slug }}">
@@ -147,18 +147,18 @@
         {% endfor %}
     </ul>
 
-    {% if totalPages > 1 %}
+    {% if viewModel.totalPages > 1 %}
     <div class="pagination">
-        {% if pagination.hasPrevious %}
-        <a href="{{ pagination.previousUrl }}">&larr; Previous</a>
+        {% if viewModel.pagination.hasPrevious %}
+        <a href="{{ viewModel.pagination.previousUrl }}">&larr; Previous</a>
         {% else %}
         <a class="disabled">&larr; Previous</a>
         {% endif %}
 
-        <span>{{ pagination.text }}</span>
+        <span>{{ viewModel.pagination.text }}</span>
 
-        {% if pagination.hasNext %}
-        <a href="{{ pagination.nextUrl }}">Next &rarr;</a>
+        {% if viewModel.pagination.hasNext %}
+        <a href="{{ viewModel.pagination.nextUrl }}">Next &rarr;</a>
         {% else %}
         <a class="disabled">Next &rarr;</a>
         {% endif %}
@@ -166,7 +166,7 @@
     {% endif %}
 
     <footer>
-        <p>&copy; {{ footer.year }} {{ footer.copyrightText }} {{ footer.poweredByText }}</p>
+        <p>&copy; {{ viewModel.footer.year }} {{ viewModel.footer.copyrightText }} {{ viewModel.footer.poweredByText }}</p>
     </footer>
 </body>
 </html>

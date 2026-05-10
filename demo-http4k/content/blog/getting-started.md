@@ -3,7 +3,7 @@ title: Getting Started with Fragments4k
 date: 2024-03-03
 tags: [kotlin, fragments, tutorial]
 categories: [tutorial]
-status: PUBLISHED
+visible: true
 template: blog_post
 ---
 

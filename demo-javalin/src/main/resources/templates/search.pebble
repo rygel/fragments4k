@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Search: {{ query }} - {{ siteTitle }}</title>
+    <title>Search: {{ viewModel.query }} - {{ viewModel.siteTitle }}</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
@@ -110,19 +110,19 @@
         {% endfor %}
     </nav>
 
-    <h1>Search Results for "{{ query }}"</h1>
+    <h1>Search Results for "{{ viewModel.query }}"</h1>
 
     <div class="search-box">
-        <form action="{{ searchForm.actionUrl }}" method="{{ searchForm.method }}">
-            <input type="text" name="{{ searchForm.paramName }}" placeholder="{{ searchForm.placeholderText }}" value="{{ query }}">
-            <button type="submit">{{ searchForm.buttonText }}</button>
+        <form action="{{ viewModel.searchForm.actionUrl }}" method="{{ viewModel.searchForm.method }}">
+            <input type="text" name="{{ viewModel.searchForm.paramName }}" placeholder="{{ viewModel.searchForm.placeholderText }}" value="{{ viewModel.query }}">
+            <button type="submit">{{ viewModel.searchForm.buttonText }}</button>
         </form>
     </div>
 
-    {% if results is not empty %}
-    <p class="results-count">Found {{ results|length }} result{% if results|length != 1 %}s{% endif %}</p>
+    {% if viewModel.results is not empty %}
+    <p class="results-count">Found {{ viewModel.results|length }} result{% if viewModel.results|length != 1 %}s{% endif %}</p>
 
-    {% for result in results %}
+    {% for result in viewModel.results %}
     <article class="result-item">
         <h2 class="result-title">
             {% if result.template == 'blog_post' %}
@@ -145,7 +145,7 @@
     {% else %}
     <div class="no-results">
         <h2>No results found</h2>
-        <p>We couldn't find any articles matching "{{ query }}".</p>
+        <p>We couldn't find any articles matching "{{ viewModel.query }}".</p>
         <p>Try:</p>
         <ul>
             <li>Checking your spelling</li>
@@ -156,7 +156,7 @@
     {% endif %}
 
     <footer>
-        <p>&copy; {{ footer.year }} {{ footer.copyrightText }} {{ footer.poweredByText }}</p>
+        <p>&copy; {{ viewModel.footer.year }} {{ viewModel.footer.copyrightText }} {{ viewModel.footer.poweredByText }}</p>
     </footer>
 </body>
 </html>

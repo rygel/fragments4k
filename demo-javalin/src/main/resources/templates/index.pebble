@@ -78,7 +78,7 @@
 </head>
 <body>
     <nav class="nav">
-        {% for item in navigationMenu %}
+        {% for item in viewModel.navigationMenu %}
         <a href="{{ item.url }}"{% if item.cssClass %} class="{{ item.cssClass }}"{% endif %}>{{ item.label }}</a>
         {% endfor %}
     </nav>
@@ -90,17 +90,21 @@
         </form>
     </div>
 
-    {% for fragment in fragments %}
+    {% for fragment in viewModel.fragments %}
     <article class="fragment">
         <h2 class="fragment-title">{{ fragment.title }}</h2>
         <p class="fragment-date">{{ fragment.formattedDate }}</p>
         <div class="fragment-content">{{ fragment.contentPreview }}</div>
-        <p><a href="{{ fragment.slug }}">Read more &rarr;</a></p>
+        {% if fragment.template == 'blog' or fragment.template == 'blog_post' %}
+        <p><a href="/blog/{{ fragment.year }}/{{ fragment.month }}/{{ fragment.slug }}">Read more &rarr;</a></p>
+        {% else %}
+        <p><a href="/page/{{ fragment.slug }}">Read more &rarr;</a></p>
+        {% endif %}
     </article>
     {% endfor %}
 
     <footer>
-        <p>&copy; {{ footer.year }} {{ footer.copyrightText }} {{ footer.poweredByText }}</p>
+        <p>&copy; {{ viewModel.footer.year }} {{ viewModel.footer.copyrightText }} {{ viewModel.footer.poweredByText }}</p>
     </footer>
 </body>
 </html>
