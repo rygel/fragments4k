@@ -2,11 +2,14 @@ package io.github.rygel.fragments.static
 
 import io.github.rygel.fragments.Fragment
 import io.github.rygel.fragments.FragmentRepository
+import org.slf4j.LoggerFactory
 
 class StaticPageEngine(
     private val repository: FragmentRepository,
     private val pageUrlPrefix: String = "/page",
 ) {
+    private val logger = LoggerFactory.getLogger(StaticPageEngine::class.java)
+
     fun getRepository(): FragmentRepository = repository
 
     suspend fun getPage(slug: String): Fragment? = repository.getBySlug(slug)?.let { resolveUrl(it) }
@@ -25,6 +28,11 @@ class StaticPageEngine(
 
     private fun resolveUrl(fragment: Fragment): Fragment {
         if (fragment.resolvedUrl != null) return fragment
+        logger.warn(
+            "Fragment '{}' has no resolvedUrl — falling back to slug-based URL. " +
+                "Configure urlBuilder on the repository.",
+            fragment.slug,
+        )
         return fragment.copy(resolvedUrl = "$pageUrlPrefix/${fragment.slug}")
     }
 }

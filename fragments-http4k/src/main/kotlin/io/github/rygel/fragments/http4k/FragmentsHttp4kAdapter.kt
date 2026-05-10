@@ -9,10 +9,12 @@ import io.github.rygel.fragments.adapter.FragmentsEngine
 import io.github.rygel.fragments.adapter.PaginationInfo
 import io.github.rygel.fragments.adapter.SearchFormConfig
 import kotlinx.coroutines.runBlocking
+import org.http4k.core.Filter
 import org.http4k.core.Method.GET
 import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.Status
+import org.http4k.core.then
 import org.http4k.routing.RoutingHttpHandler
 import org.http4k.routing.bind
 import org.http4k.routing.path
@@ -24,25 +26,29 @@ class FragmentsHttp4kAdapter(
     private val engine: FragmentsEngine,
     private val renderer: TemplateRenderer,
 ) {
-    fun createRoutes(): RoutingHttpHandler =
-        routes(
-            "/" bind GET to { request -> handleHome(request) },
-            "/page/{slug}" bind GET to { request -> handlePage(request) },
-            "/blog" bind GET to { request -> handleBlogOverview(request) },
-            "/blog/page/{page}" bind GET to { request -> handleBlogOverview(request) },
-            "/blog/{year}/{month}/{slug}" bind GET to { request -> handleBlogPost(request) },
-            "/blog/tag/{tag}" bind GET to { request -> handleByTag(request) },
-            "/blog/category/{category}" bind GET to { request -> handleByCategory(request) },
-            "/blog/author/{slug}" bind GET to { request -> handleByAuthor(request) },
-            "/blog/archive/{year}" bind GET to { request -> handleArchiveYear(request) },
-            "/blog/archive/{year}/{month}" bind GET to { request -> handleArchiveYearMonth(request) },
-            "/search" bind GET to { request -> handleSearch(request) },
-            "/api/autocomplete" bind GET to { request -> handleAutocomplete(request) },
-            "/rss.xml" bind GET to { _ -> handleRss() },
-            "/sitemap.xml" bind GET to { _ -> handleSitemap() },
-            "/robots.txt" bind GET to { _ -> handleRobotsTxt() },
-            "/llms.txt" bind GET to { _ -> handleLlmsTxt() },
+    fun createRoutes(): RoutingHttpHandler {
+        val cspFilter = Filter { next -> { request -> next(request).header("Content-Security-Policy", engine.cspHeader()) } }
+        return cspFilter.then(
+            routes(
+                "/" bind GET to { request -> handleHome(request) },
+                "/page/{slug}" bind GET to { request -> handlePage(request) },
+                "/blog" bind GET to { request -> handleBlogOverview(request) },
+                "/blog/page/{page}" bind GET to { request -> handleBlogOverview(request) },
+                "/blog/{year}/{month}/{slug}" bind GET to { request -> handleBlogPost(request) },
+                "/blog/tag/{tag}" bind GET to { request -> handleByTag(request) },
+                "/blog/category/{category}" bind GET to { request -> handleByCategory(request) },
+                "/blog/author/{slug}" bind GET to { request -> handleByAuthor(request) },
+                "/blog/archive/{year}" bind GET to { request -> handleArchiveYear(request) },
+                "/blog/archive/{year}/{month}" bind GET to { request -> handleArchiveYearMonth(request) },
+                "/search" bind GET to { request -> handleSearch(request) },
+                "/api/autocomplete" bind GET to { request -> handleAutocomplete(request) },
+                "/rss.xml" bind GET to { _ -> handleRss() },
+                "/sitemap.xml" bind GET to { _ -> handleSitemap() },
+                "/robots.txt" bind GET to { _ -> handleRobotsTxt() },
+                "/llms.txt" bind GET to { _ -> handleLlmsTxt() },
+            ),
         )
+    }
 
     private fun handleHome(request: Request): Response =
         runBlocking {

@@ -91,6 +91,8 @@ class FileSystemFragmentRepository(
     private var cachedFragments: List<Fragment> = emptyList()
     private var lastLoaded: LocalDateTime = LocalDateTime.MIN
 
+    @Volatile private var cachedRelationships: ContentRelationships? = null
+
     override suspend fun getAll(): List<Fragment> =
         withContext(Dispatchers.IO) {
             loadFragments()
@@ -254,6 +256,7 @@ class FileSystemFragmentRepository(
     override suspend fun reload() {
         withContext(Dispatchers.IO) {
             cachedFragments = loadFragmentsFromDisk()
+            cachedRelationships = null
             lastLoaded = LocalDateTime.now(ZoneOffset.UTC)
         }
     }
@@ -308,7 +311,13 @@ class FileSystemFragmentRepository(
         val frontMatter = parsed.frontMatter
 
         val title = frontMatter["title"]?.toString() ?: file.nameWithoutExtension
-        val slug = frontMatter["slug"]?.toString() ?: generateSlug(file.nameWithoutExtension)
+        val slug =
+            (frontMatter["slug"]?.toString() ?: generateSlug(file.nameWithoutExtension))
+                .also { raw ->
+                    if (!SLUG_PATTERN.matches(raw)) {
+                        logger.warn("Invalid slug '{}' in file '{}' — slugs must match pattern [a-z0-9]+(-[a-z0-9]+)*", raw, file.name)
+                    }
+                }
         val date = MarkdownParser.parseDate(frontMatter["date"])
 
         val statusString = frontMatter["status"]?.toString()
@@ -377,6 +386,7 @@ class FileSystemFragmentRepository(
             .replace(SLUG_NON_ALPHANUMERIC, "")
             .replace(SLUG_WHITESPACE, "-")
             .replace(SLUG_CONSECUTIVE_DASHES, "-")
+            .trim('-')
 
     private fun extractPreview(content: String): String {
         val moreTagIndex = MORE_TAG_PATTERN.find(content)
@@ -388,6 +398,7 @@ class FileSystemFragmentRepository(
     }
 
     companion object {
+        private val SLUG_PATTERN = Regex("^[a-z0-9]+(-[a-z0-9]+)*$")
         private val SLUG_NON_ALPHANUMERIC = Regex("[^a-z0-9\\s-]")
         private val SLUG_WHITESPACE = Regex("\\s+")
         private val SLUG_CONSECUTIVE_DASHES = Regex("-+")
@@ -726,16 +737,21 @@ class FileSystemFragmentRepository(
         config: io.github.rygel.fragments.RelationshipConfig,
     ): ContentRelationships? {
         return withContext(Dispatchers.IO) {
-            val currentFragment = getBySlug(slug) ?: return@withContext null
-            val allFragments =
-                getAllVisible()
-                    .filter { it.slug != currentFragment.slug }
+            cachedRelationships ?: run {
+                val currentFragment = getBySlug(slug) ?: return@withContext null
+                val allFragments =
+                    getAllVisible()
+                        .filter { it.slug != currentFragment.slug }
 
-            ContentRelationshipGenerator.generateRelationships(
-                currentFragment = currentFragment,
-                allFragments = allFragments,
-                config = config,
-            )
+                val relationships =
+                    ContentRelationshipGenerator.generateRelationships(
+                        currentFragment = currentFragment,
+                        allFragments = allFragments,
+                        config = config,
+                    )
+                cachedRelationships = relationships
+                relationships
+            }
         }
     }
 
