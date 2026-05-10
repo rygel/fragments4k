@@ -121,12 +121,16 @@ class InitCommand : Runnable {
     description = ["Run a Fragments4k development server"],
 )
 class RunCommand : Runnable {
+    companion object {
+        private const val DEFAULT_PORT = 8080
+    }
+
     @Option(
         names = ["-p", "--port"],
-        description = ["Port to listen on (default: 8080)"],
+        description = ["Port to run the server on"],
         defaultValue = "8080",
     )
-    private var port: Int = 8080
+    private var port: Int = DEFAULT_PORT
 
     @Option(
         names = ["-d", "--content-dir"],

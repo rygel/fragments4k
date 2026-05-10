@@ -3,15 +3,15 @@ build:
 
 complexity:
   LongMethod:
-    threshold: 60
+    threshold: 50
   LongParameterList:
-    functionThreshold: 8
-    constructorThreshold: 12
+    functionThreshold: 6
+    constructorThreshold: 8
   CyclomaticComplexMethod:
     threshold: 15
   TooManyFunctions:
-    thresholdInFiles: 30
-    thresholdInClasses: 30
+    thresholdInFiles: 15
+    thresholdInClasses: 15
   NestedBlockDepth:
     threshold: 5
 
@@ -21,9 +21,9 @@ style:
   ReturnCount:
     max: 5
   MaxLineLength:
-    maxLineLength: 150
+    maxLineLength: 140
   WildcardImport:
-    active: false
+    active: true
   ForbiddenComment:
     active: true
 
