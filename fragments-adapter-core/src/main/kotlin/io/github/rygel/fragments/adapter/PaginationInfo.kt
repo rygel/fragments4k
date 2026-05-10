@@ -7,4 +7,6 @@ data class PaginationInfo(
     val hasPrevious: Boolean,
     val hasNext: Boolean,
     val text: String,
+    val previousUrl: String = "",
+    val nextUrl: String = "",
 )

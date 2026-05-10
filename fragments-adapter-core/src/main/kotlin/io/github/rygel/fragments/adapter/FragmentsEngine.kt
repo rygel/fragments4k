@@ -62,7 +62,9 @@ class FragmentsEngine(
     val additionalFragmentProviders: List<suspend () -> List<Fragment>> = emptyList(),
     val navigationMenu: List<NavigationLink>? = null,
     val footer: FooterConfig? = null,
-    val contentSecurityPolicy: String = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'",
+    val contentSecurityPolicy: String =
+        "default-src 'self'; script-src 'self' cdnjs.cloudflare.com; " +
+            "style-src 'self' 'unsafe-inline' cdnjs.cloudflare.com",
 ) {
     private val allRepositories: List<FragmentRepository> =
         listOf(staticEngine.getRepository(), blogEngine.getRepository()) + additionalRepositories
