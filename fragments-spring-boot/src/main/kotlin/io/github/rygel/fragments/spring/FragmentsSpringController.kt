@@ -4,10 +4,12 @@ import io.github.rygel.fragments.AuthorViewModel
 import io.github.rygel.fragments.FragmentViewModel
 import io.github.rygel.fragments.adapter.FragmentsEngine
 import io.github.rygel.fragments.lucene.SearchSuggestion
+import jakarta.servlet.http.HttpServletResponse
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.ModelAttribute
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestParam
@@ -17,6 +19,11 @@ import org.springframework.web.bind.annotation.ResponseBody
 class FragmentsSpringController(
     private val engine: FragmentsEngine,
 ) {
+    @ModelAttribute
+    fun setCspHeader(response: HttpServletResponse) {
+        response.setHeader("Content-Security-Policy", engine.cspHeader())
+    }
+
     @GetMapping("/")
     suspend fun home(
         @RequestHeader(value = FragmentViewModel.HTMX_REQUEST_HEADER, required = false) htmxRequest: String?,

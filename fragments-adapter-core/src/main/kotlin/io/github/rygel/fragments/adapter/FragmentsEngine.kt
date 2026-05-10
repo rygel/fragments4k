@@ -60,6 +60,7 @@ class FragmentsEngine(
     val additionalFragmentProviders: List<suspend () -> List<Fragment>> = emptyList(),
     val navigationMenu: List<NavigationLink>? = null,
     val footer: FooterConfig? = null,
+    val contentSecurityPolicy: String = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'",
 ) {
     private val allRepositories: List<FragmentRepository> =
         listOf(staticEngine.getRepository(), blogEngine.getRepository()) + additionalRepositories
@@ -239,4 +240,6 @@ class FragmentsEngine(
         )
 
     fun searchForm(): SearchFormConfig = SearchFormGenerator.generate()
+
+    fun cspHeader(): String = contentSecurityPolicy
 }

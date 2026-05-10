@@ -6,6 +6,7 @@ import io.github.rygel.fragments.FragmentRepository
 import io.github.rygel.fragments.FragmentStatus
 import io.github.rygel.fragments.FragmentTemplates
 import io.github.rygel.fragments.RelationshipConfig
+import org.slf4j.LoggerFactory
 
 /**
  * Provides paginated, filtered access to blog-post fragments.
@@ -21,6 +22,8 @@ class BlogEngine(
     private val relationshipConfig: RelationshipConfig = RelationshipConfig(),
     private val blogUrlPrefix: String = "/blog",
 ) {
+    private val logger = LoggerFactory.getLogger(BlogEngine::class.java)
+
     fun getRepository(): FragmentRepository = repository
 
     /**
@@ -37,6 +40,11 @@ class BlogEngine(
      */
     private fun resolveUrl(fragment: Fragment): Fragment {
         if (fragment.resolvedUrl != null) return fragment
+        logger.warn(
+            "Fragment '{}' has no resolvedUrl — falling back to date-based URL. " +
+                "Configure urlBuilder on the repository.",
+            fragment.slug,
+        )
         val date = fragment.date
         val url =
             if (date != null) {
