@@ -43,6 +43,8 @@ class FragmentsSpringController(
             HomeViewModel(
                 fragments = fragments.map { FragmentViewModel(it, isPartial) },
                 isPartialRender = isPartial,
+                navigationMenu = engine.nav(),
+                footer = engine.footer(),
             ),
         )
         return if (isPartial) "index" else "index"
@@ -81,6 +83,9 @@ class FragmentsSpringController(
                 hasNext = pageResult.hasNext,
                 hasPrevious = pageResult.hasPrevious,
                 isPartialRender = isPartial,
+                navigationMenu = engine.nav(),
+                pagination = engine.pagination(pageResult.currentPage, pageResult.totalPages, "/blog"),
+                footer = engine.footer(),
             ),
         )
         return "blog_overview"
@@ -130,6 +135,9 @@ class FragmentsSpringController(
                 hasNext = pageResult.hasNext,
                 hasPrevious = pageResult.hasPrevious,
                 isPartialRender = isPartial,
+                navigationMenu = engine.nav(),
+                pagination = engine.pagination(pageResult.currentPage, pageResult.totalPages, "/blog"),
+                footer = engine.footer(),
             ),
         )
         return "blog_overview"
@@ -154,6 +162,9 @@ class FragmentsSpringController(
                 hasNext = pageResult.hasNext,
                 hasPrevious = pageResult.hasPrevious,
                 isPartialRender = isPartial,
+                navigationMenu = engine.nav(),
+                pagination = engine.pagination(pageResult.currentPage, pageResult.totalPages, "/blog"),
+                footer = engine.footer(),
             ),
         )
         return "blog_overview"
@@ -173,7 +184,7 @@ class FragmentsSpringController(
             "viewModel",
             AuthorPageViewModel(
                 authorSlug = slug,
-                authorName = author?.author?.name,
+                authorName = author?.name,
                 author = author,
                 fragments = pageResult.items.map { FragmentViewModel(it, isPartial) },
                 currentPage = pageResult.currentPage,
@@ -181,6 +192,9 @@ class FragmentsSpringController(
                 hasNext = pageResult.hasNext,
                 hasPrevious = pageResult.hasPrevious,
                 isPartialRender = isPartial,
+                navigationMenu = engine.nav(),
+                pagination = engine.pagination(pageResult.currentPage, pageResult.totalPages, "/blog/author/$slug"),
+                footer = engine.footer(),
             ),
         )
         return "blog_overview"
@@ -205,6 +219,10 @@ class FragmentsSpringController(
                 year = year,
                 fragments = fragments.map { FragmentViewModel(it, isPartial) },
                 siteTitle = engine.siteTitle,
+                navigationMenu = engine.nav(),
+                footer = engine.footer(),
+                archiveYearLinks = engine.generateArchiveYearLinks(currentYear = yearInt),
+                archiveBreadcrumbs = engine.generateArchiveBreadcrumbs(currentYear = yearInt),
             ),
         )
         return "archive"
@@ -229,6 +247,10 @@ class FragmentsSpringController(
                 month = month,
                 fragments = fragments.map { FragmentViewModel(it, isPartial) },
                 siteTitle = engine.siteTitle,
+                navigationMenu = engine.nav(),
+                footer = engine.footer(),
+                archiveMonthLinks = engine.generateArchiveMonthLinks(year = yearInt, currentMonth = monthInt),
+                archiveBreadcrumbs = engine.generateArchiveBreadcrumbs(currentYear = yearInt, currentMonth = monthInt),
             ),
         )
         return "archive"
@@ -248,6 +270,9 @@ class FragmentsSpringController(
                 query = query,
                 results = results.map { FragmentViewModel(it.fragment, isPartial) },
                 siteTitle = engine.siteTitle,
+                navigationMenu = engine.nav(),
+                footer = engine.footer(),
+                searchForm = engine.searchForm(),
             ),
         )
         return "search"

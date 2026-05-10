@@ -38,6 +38,8 @@ class FragmentsQuarkusResource
                 HomeViewModel(
                     fragments = fragments.map { FragmentViewModel(it, isPartial) },
                     isPartialRender = isPartial,
+                    navigationMenu = engine.nav(),
+                    footer = engine.footer(),
                 )
             return Response.ok(viewModel).build()
         }
@@ -74,6 +76,9 @@ class FragmentsQuarkusResource
                     hasNext = pageResult.hasNext,
                     hasPrevious = pageResult.hasPrevious,
                     isPartialRender = isPartial,
+                    navigationMenu = engine.nav(),
+                    pagination = engine.pagination(pageResult.currentPage, pageResult.totalPages, "/blog"),
+                    footer = engine.footer(),
                 )
             return Response.ok(viewModel).build()
         }
@@ -121,6 +126,9 @@ class FragmentsQuarkusResource
                     hasNext = pageResult.hasNext,
                     hasPrevious = pageResult.hasPrevious,
                     isPartialRender = isPartial,
+                    navigationMenu = engine.nav(),
+                    pagination = engine.pagination(pageResult.currentPage, pageResult.totalPages, "/blog"),
+                    footer = engine.footer(),
                 )
             return Response.ok(viewModel).build()
         }
@@ -143,6 +151,9 @@ class FragmentsQuarkusResource
                     hasNext = pageResult.hasNext,
                     hasPrevious = pageResult.hasPrevious,
                     isPartialRender = isPartial,
+                    navigationMenu = engine.nav(),
+                    pagination = engine.pagination(pageResult.currentPage, pageResult.totalPages, "/blog"),
+                    footer = engine.footer(),
                 )
             return Response.ok(viewModel).build()
         }
@@ -160,7 +171,7 @@ class FragmentsQuarkusResource
             val viewModel =
                 AuthorPageViewModel(
                     authorSlug = slug,
-                    authorName = author?.author?.name,
+                    authorName = author?.name,
                     author = author,
                     fragments = pageResult.items.map { FragmentViewModel(it, isPartial) },
                     currentPage = pageResult.currentPage,
@@ -168,6 +179,9 @@ class FragmentsQuarkusResource
                     hasNext = pageResult.hasNext,
                     hasPrevious = pageResult.hasPrevious,
                     isPartialRender = isPartial,
+                    navigationMenu = engine.nav(),
+                    pagination = engine.pagination(pageResult.currentPage, pageResult.totalPages, "/blog/author/$slug"),
+                    footer = engine.footer(),
                 )
             return Response.ok(viewModel).build()
         }
@@ -202,6 +216,10 @@ class FragmentsQuarkusResource
                     year = year,
                     fragments = fragments.map { FragmentViewModel(it, isPartial) },
                     siteTitle = engine.siteTitle,
+                    navigationMenu = engine.nav(),
+                    footer = engine.footer(),
+                    archiveYearLinks = engine.generateArchiveYearLinks(currentYear = yearInt),
+                    archiveBreadcrumbs = engine.generateArchiveBreadcrumbs(currentYear = yearInt),
                 )
             return Response.ok(viewModel).build()
         }
@@ -224,6 +242,10 @@ class FragmentsQuarkusResource
                     month = month,
                     fragments = fragments.map { FragmentViewModel(it, isPartial) },
                     siteTitle = engine.siteTitle,
+                    navigationMenu = engine.nav(),
+                    footer = engine.footer(),
+                    archiveMonthLinks = engine.generateArchiveMonthLinks(year = yearInt, currentMonth = monthInt),
+                    archiveBreadcrumbs = engine.generateArchiveBreadcrumbs(currentYear = yearInt, currentMonth = monthInt),
                 )
             return Response.ok(viewModel).build()
         }
@@ -242,6 +264,9 @@ class FragmentsQuarkusResource
                     query = query,
                     results = results.map { FragmentViewModel(it.fragment, isPartial) },
                     siteTitle = engine.siteTitle,
+                    navigationMenu = engine.nav(),
+                    footer = engine.footer(),
+                    searchForm = engine.searchForm(),
                 )
             return Response.ok(viewModel).build()
         }
