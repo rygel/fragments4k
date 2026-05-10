@@ -10,6 +10,7 @@ import org.apache.lucene.document.Field
 import org.apache.lucene.document.StringField
 import org.apache.lucene.document.TextField
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser
+import org.apache.lucene.queryparser.classic.ParseException
 import org.apache.lucene.queryparser.classic.QueryParser
 import org.apache.lucene.search.BooleanClause
 import org.apache.lucene.search.BooleanQuery
@@ -22,6 +23,7 @@ import org.apache.lucene.search.WildcardQuery
 import org.apache.lucene.store.ByteBuffersDirectory
 import org.apache.lucene.store.Directory
 import org.apache.lucene.store.FSDirectory
+import org.slf4j.LoggerFactory
 import java.nio.file.Path
 
 data class SearchResult(
@@ -56,6 +58,10 @@ class LuceneSearchEngine(
     private val indexPath: Path? = null,
 ) {
     constructor(repository: FragmentRepository, indexPath: Path? = null) : this(listOf(repository), indexPath)
+
+    companion object {
+        private val logger = LoggerFactory.getLogger(LuceneSearchEngine::class.java)
+    }
 
     private val analyzer = StandardAnalyzer()
     private val directory: org.apache.lucene.store.Directory =
@@ -112,6 +118,12 @@ class LuceneSearchEngine(
     private fun requireReader(): org.apache.lucene.index.DirectoryReader =
         reader ?: error("Search index not initialised — call index() first")
 
+    private inline fun <T> withSearcher(block: (IndexSearcher) -> List<T>): List<T> {
+        val currentReader = reader ?: return emptyList()
+        val searcher = IndexSearcher(currentReader)
+        return block(searcher)
+    }
+
     suspend fun search(
         queryString: String,
         maxResults: Int = 10,
@@ -123,10 +135,9 @@ class LuceneSearchEngine(
     suspend fun search(options: SearchOptions): List<SearchResult> =
         withContext(Dispatchers.IO) {
             val fragmentsBySlug = repositories.flatMap { it.getAllVisible() }.associateBy { it.slug }
+            val query = buildQuery(options) ?: return@withContext emptyList()
 
-            org.apache.lucene.index.DirectoryReader.open(directory).use { reader ->
-                val searcher = IndexSearcher(reader)
-                val query = buildQuery(options)
+            withSearcher { searcher ->
                 val maxResults = if (options.autocomplete) options.autocompleteLimit else options.maxResults
                 val topDocs = searcher.search(query, maxResults)
 
@@ -145,8 +156,7 @@ class LuceneSearchEngine(
             if (query.isBlank()) return@withContext emptyList()
 
             val lowerQuery = query.lowercase()
-            org.apache.lucene.index.DirectoryReader.open(directory).use { reader ->
-                val searcher = IndexSearcher(reader)
+            withSearcher { searcher ->
                 val titleQuery =
                     WildcardQuery(
                         org.apache.lucene.index
@@ -182,19 +192,24 @@ class LuceneSearchEngine(
         limit: Int = 10,
     ): List<SearchSuggestion> = autocomplete(query, limit)
 
-    private fun buildQuery(options: SearchOptions): Query =
+    private fun buildQuery(options: SearchOptions): Query? =
         when {
             options.phraseSearch -> buildPhraseQuery(options.query)
             options.fuzzySearch -> buildFuzzyQuery(options.query, options.fuzzyThreshold)
             else -> buildStandardQuery(options.query)
         }
 
-    private fun buildStandardQuery(query: String): Query {
+    private fun buildStandardQuery(query: String): Query? {
         val fields = arrayOf("title", "content")
         val boosts = mapOf("title" to 2.0f, "content" to 1.0f)
         val parser = MultiFieldQueryParser(fields, analyzer, boosts)
         parser.defaultOperator = QueryParser.Operator.AND
-        return parser.parse(query)
+        return try {
+            parser.parse(query)
+        } catch (e: ParseException) {
+            logger.warn("Failed to parse search query '{}': {}", query, e.message)
+            null
+        }
     }
 
     private fun buildPhraseQuery(query: String): Query {
@@ -240,8 +255,7 @@ class LuceneSearchEngine(
         withContext(Dispatchers.IO) {
             val fragmentsBySlug = repositories.flatMap { it.getAllVisible() }.associateBy { it.slug }
 
-            org.apache.lucene.index.DirectoryReader.open(directory).use { reader ->
-                val searcher = IndexSearcher(reader)
+            withSearcher { searcher ->
                 val query =
                     TermQuery(
                         org.apache.lucene.index
@@ -259,8 +273,7 @@ class LuceneSearchEngine(
         withContext(Dispatchers.IO) {
             val fragmentsBySlug = repositories.flatMap { it.getAllVisible() }.associateBy { it.slug }
 
-            org.apache.lucene.index.DirectoryReader.open(directory).use { reader ->
-                val searcher = IndexSearcher(reader)
+            withSearcher { searcher ->
                 val query =
                     TermQuery(
                         org.apache.lucene.index

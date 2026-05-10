@@ -59,8 +59,8 @@ fun main() {
             config.fileRenderer(pebble)
             config.routes.fragmentsRoutes(engine, renderer = null)
             config.routes.exception(Exception::class.java) { e, ctx ->
-                logger.error("Error handling request", e)
-                ctx.status(500).result("Internal Server Error: ${e.message}")
+                logger.error("Unhandled exception", e)
+                ctx.status(500).result("Internal Server Error")
             }
         }
 

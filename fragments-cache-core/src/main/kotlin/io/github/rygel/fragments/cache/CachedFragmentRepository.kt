@@ -20,7 +20,23 @@ class CachedFragmentRepository(
 
     override suspend fun getAll(): List<Fragment> {
         logger.debug("Getting all fragments")
-        return delegate.getAll()
+
+        val cached = fragmentCache.getAllFragments()
+        if (cached != null) {
+            logger.debug("Cache hit for all fragments")
+            return cached
+        }
+
+        logger.debug("Cache miss for all fragments, loading from repository")
+        val fragments = delegate.getAll()
+
+        fragmentCache.putAllFragments(fragments)
+
+        fragments.forEach { fragment ->
+            fragmentCache.putFragment(fragment)
+        }
+
+        return fragments
     }
 
     override suspend fun getAllVisible(): List<Fragment> {

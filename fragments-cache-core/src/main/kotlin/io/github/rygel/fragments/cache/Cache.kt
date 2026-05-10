@@ -317,22 +317,13 @@ class InMemoryCache<K, V>(
         val maxSize = configuration.maxSize ?: return
 
         while (store.size > maxSize) {
-            val oldestEntry =
-                store.values
-                    .minByOrNull { it.createdAt }
-
-            if (oldestEntry != null) {
-                val keyToRemove = store.entries.find { it.value === oldestEntry }?.key
-                if (keyToRemove != null) {
-                    store.remove(keyToRemove)
-                    if (configuration.recordStats) {
-                        statistics = statistics.eviction()
-                    }
-                    logger.debug("Cache eviction for key: $keyToRemove (max size reached)")
+            store.entries.minByOrNull { it.value.createdAt }?.key?.let { keyToRemove ->
+                store.remove(keyToRemove)
+                if (configuration.recordStats) {
+                    statistics = statistics.eviction()
                 }
-            } else {
-                break
-            }
+                logger.debug("Cache eviction for key: $keyToRemove (max size reached)")
+            } ?: break
         }
     }
 }
