@@ -6,6 +6,7 @@ import io.github.rygel.fragments.adapter.ArchiveViewModel
 import io.github.rygel.fragments.adapter.AuthorPageViewModel
 import io.github.rygel.fragments.adapter.BlogOverviewViewModel
 import io.github.rygel.fragments.adapter.CategoryViewModel
+import io.github.rygel.fragments.adapter.ContentViewModel
 import io.github.rygel.fragments.adapter.FragmentsEngine
 import io.github.rygel.fragments.adapter.HomeViewModel
 import io.github.rygel.fragments.adapter.SearchViewModel
@@ -47,13 +48,14 @@ class FragmentsMicronautController
             val fragment = engine.getPage(slug)
             val isPartial = isHtmxRequest(headers)
             return if (fragment != null) {
-                HttpResponse.ok(
-                    mapOf(
-                        "viewModel" to FragmentViewModel(fragment, isPartial),
-                        "navigationMenu" to engine.nav(),
-                        "footer" to engine.footer(),
-                    ),
-                )
+                val contentViewModel =
+                    ContentViewModel(
+                        viewModel = FragmentViewModel(fragment, isPartial),
+                        templateName = fragment.template,
+                        navigationMenu = engine.nav(),
+                        footer = engine.footer(),
+                    )
+                HttpResponse.ok(contentViewModel)
             } else {
                 HttpResponse.notFound("Page not found")
             }
@@ -97,13 +99,14 @@ class FragmentsMicronautController
             val fragment = engine.getBlogPost(year, month, slug)
             val isPartial = isHtmxRequest(headers)
             return if (fragment != null) {
-                HttpResponse.ok(
-                    mapOf(
-                        "viewModel" to FragmentViewModel(fragment, isPartial),
-                        "navigationMenu" to engine.nav(),
-                        "footer" to engine.footer(),
-                    ),
-                )
+                val contentViewModel =
+                    ContentViewModel(
+                        viewModel = FragmentViewModel(fragment, isPartial),
+                        templateName = fragment.template,
+                        navigationMenu = engine.nav(),
+                        footer = engine.footer(),
+                    )
+                HttpResponse.ok(contentViewModel)
             } else {
                 HttpResponse.notFound("Post not found")
             }
