@@ -43,6 +43,7 @@ class FragmentsHttp4kAdapter(
                 "/search" bind GET to { request -> handleSearch(request) },
                 "/api/autocomplete" bind GET to { request -> handleAutocomplete(request) },
                 "/rss.xml" bind GET to { _ -> handleRss() },
+                "/feed.xml" bind GET to { _ -> handleRss() },
                 "/sitemap.xml" bind GET to { _ -> handleSitemap() },
                 "/robots.txt" bind GET to { _ -> handleRobotsTxt() },
                 "/llms.txt" bind GET to { _ -> handleLlmsTxt() },
@@ -54,21 +55,10 @@ class FragmentsHttp4kAdapter(
         runBlocking {
             val fragments = engine.getHome()
             val viewModel =
-                BlogOverviewViewModel(
+                HomeViewModel(
                     fragments = fragments.map { FragmentViewModel(it) },
-                    currentPage = 1,
-                    totalPages = 1,
-                    templateName = "index",
                     isPartialRender = isHtmxRequest(request),
                     navigationMenu = engine.nav(),
-                    pagination =
-                        PaginationInfo(
-                            currentPage = 1,
-                            totalPages = 1,
-                            hasPrevious = false,
-                            hasNext = false,
-                            text = "",
-                        ),
                     footer = engine.footer(),
                 )
             renderResponse(viewModel)
@@ -149,15 +139,14 @@ class FragmentsHttp4kAdapter(
         return runBlocking {
             val pageResult = engine.getByTag(tag, page)
             val viewModel =
-                BlogOverviewViewModel(
+                TagViewModel(
+                    tag = tag,
                     fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(request)) },
                     currentPage = pageResult.currentPage,
                     totalPages = pageResult.totalPages,
                     hasNext = pageResult.hasNext,
                     hasPrevious = pageResult.hasPrevious,
-                    templateName = "blog_overview",
                     isPartialRender = isHtmxRequest(request),
-                    tag = tag,
                     navigationMenu = engine.nav(),
                     pagination =
                         engine.pagination(
@@ -177,13 +166,13 @@ class FragmentsHttp4kAdapter(
         return runBlocking {
             val pageResult = engine.getByCategory(category, page)
             val viewModel =
-                BlogOverviewViewModel(
+                CategoryViewModel(
+                    category = category,
                     fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(request)) },
                     currentPage = pageResult.currentPage,
                     totalPages = pageResult.totalPages,
                     hasNext = pageResult.hasNext,
                     hasPrevious = pageResult.hasPrevious,
-                    templateName = "blog_overview",
                     isPartialRender = isHtmxRequest(request),
                     navigationMenu = engine.nav(),
                     pagination =
@@ -370,6 +359,16 @@ class FragmentsHttp4kAdapter(
         override fun template(): String = templateName
     }
 
+    data class HomeViewModel(
+        val fragments: List<FragmentViewModel>,
+        val isPartialRender: Boolean = false,
+        private val templateName: String = "index",
+        val navigationMenu: List<NavigationLink>,
+        val footer: FooterConfig,
+    ) : ViewModel {
+        override fun template(): String = templateName
+    }
+
     data class BlogOverviewViewModel(
         val fragments: List<FragmentViewModel>,
         val currentPage: Int,
@@ -377,8 +376,22 @@ class FragmentsHttp4kAdapter(
         val hasNext: Boolean = false,
         val hasPrevious: Boolean = false,
         private val templateName: String = "blog_overview",
-        val tag: String? = null,
-        val category: String? = null,
+        val isPartialRender: Boolean = false,
+        val navigationMenu: List<NavigationLink>,
+        val pagination: PaginationInfo,
+        val footer: FooterConfig,
+    ) : ViewModel {
+        override fun template(): String = templateName
+    }
+
+    data class TagViewModel(
+        val tag: String,
+        val fragments: List<FragmentViewModel>,
+        val currentPage: Int,
+        val totalPages: Int,
+        val hasNext: Boolean = false,
+        val hasPrevious: Boolean = false,
+        private val templateName: String = "blog_overview",
         val isPartialRender: Boolean = false,
         val navigationMenu: List<NavigationLink>,
         val pagination: PaginationInfo,

@@ -10,6 +10,7 @@ import io.github.rygel.fragments.adapter.FooterConfig
 import io.github.rygel.fragments.adapter.FragmentsEngine
 import io.github.rygel.fragments.adapter.HomeViewModel
 import io.github.rygel.fragments.adapter.SearchViewModel
+import io.github.rygel.fragments.adapter.TagViewModel
 import io.javalin.config.RoutesConfig
 import io.javalin.http.Context
 import kotlinx.coroutines.CoroutineScope
@@ -160,13 +161,13 @@ fun RoutesConfig.fragmentsRoutes(
         ctx.handleAsync {
             val pageResult = engine.getByTag(tag, page)
             val viewModel =
-                BlogOverviewViewModel(
+                TagViewModel(
+                    tag = tag,
                     fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(ctx)) },
                     currentPage = pageResult.currentPage,
                     totalPages = pageResult.totalPages,
                     hasNext = pageResult.hasNext,
                     hasPrevious = pageResult.hasPrevious,
-                    tag = tag,
                     isPartialRender = isHtmxRequest(ctx),
                     navigationMenu = engine.nav(),
                     pagination =
@@ -189,7 +190,7 @@ fun RoutesConfig.fragmentsRoutes(
             val viewModel =
                 CategoryViewModel(
                     category = category,
-                    fragments = pageResult.items.map { FragmentViewModel(it) },
+                    fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(ctx)) },
                     currentPage = pageResult.currentPage,
                     totalPages = pageResult.totalPages,
                     hasNext = pageResult.hasNext,
@@ -310,6 +311,14 @@ fun RoutesConfig.fragmentsRoutes(
     }
 
     get("/rss.xml") { ctx ->
+        ctx.handleAsync {
+            val rssXml = engine.generateRssFeed()
+            ctx.contentType("application/rss+xml")
+            ctx.result(rssXml)
+        }
+    }
+
+    get("/feed.xml") { ctx ->
         ctx.handleAsync {
             val rssXml = engine.generateRssFeed()
             ctx.contentType("application/rss+xml")

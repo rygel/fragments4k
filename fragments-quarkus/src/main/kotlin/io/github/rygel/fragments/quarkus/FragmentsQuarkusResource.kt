@@ -53,8 +53,14 @@ class FragmentsQuarkusResource
             val fragment = engine.getPage(slug)
             val isPartial = isHtmxRequest(headers)
             return if (fragment != null) {
-                val viewModel = FragmentViewModel(fragment, isPartial)
-                Response.ok(viewModel).build()
+                Response
+                    .ok(
+                        mapOf(
+                            "viewModel" to FragmentViewModel(fragment, isPartial),
+                            "navigationMenu" to engine.nav(),
+                            "footer" to engine.footer(),
+                        ),
+                    ).build()
             } else {
                 Response.status(Response.Status.NOT_FOUND).entity("Page not found").build()
             }
@@ -101,8 +107,14 @@ class FragmentsQuarkusResource
             val fragment = engine.getBlogPost(year, month, slug)
             val isPartial = isHtmxRequest(headers)
             return if (fragment != null) {
-                val viewModel = FragmentViewModel(fragment, isPartial)
-                Response.ok(viewModel).build()
+                Response
+                    .ok(
+                        mapOf(
+                            "viewModel" to FragmentViewModel(fragment, isPartial),
+                            "navigationMenu" to engine.nav(),
+                            "footer" to engine.footer(),
+                        ),
+                    ).build()
             } else {
                 Response.status(Response.Status.NOT_FOUND).entity("Post not found").build()
             }
@@ -200,6 +212,11 @@ class FragmentsQuarkusResource
                 .entity(rssXml)
                 .build()
         }
+
+        @GET
+        @Path("/feed.xml")
+        @Produces("application/rss+xml")
+        suspend fun feed(): Response = rss()
 
         @GET
         @Path("/blog/archive/{year}")
