@@ -86,6 +86,14 @@ data class ArchiveViewModel(
     val archiveBreadcrumbs: List<ArchiveNavigationLink>? = null,
 )
 
+/** View model for individual page and blog post content, wrapping a [FragmentViewModel] with site chrome. */
+data class ContentViewModel(
+    val viewModel: FragmentViewModel,
+    val templateName: String,
+    val navigationMenu: List<NavigationLink> = emptyList(),
+    val footer: FooterConfig? = null,
+)
+
 /** View model for search results page. */
 data class SearchViewModel(
     val query: String,

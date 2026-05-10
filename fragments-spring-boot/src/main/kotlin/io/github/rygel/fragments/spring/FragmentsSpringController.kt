@@ -6,6 +6,7 @@ import io.github.rygel.fragments.adapter.ArchiveViewModel
 import io.github.rygel.fragments.adapter.AuthorPageViewModel
 import io.github.rygel.fragments.adapter.BlogOverviewViewModel
 import io.github.rygel.fragments.adapter.CategoryViewModel
+import io.github.rygel.fragments.adapter.ContentViewModel
 import io.github.rygel.fragments.adapter.FragmentsEngine
 import io.github.rygel.fragments.adapter.HomeViewModel
 import io.github.rygel.fragments.adapter.SearchViewModel
@@ -61,9 +62,15 @@ class FragmentsSpringController(
         val fragment = engine.getPage(slug)
         val isPartial = engine.isHtmxRequest(htmxRequest)
         return if (fragment != null) {
-            model.addAttribute("viewModel", FragmentViewModel(fragment, isPartial))
-            model.addAttribute("navigationMenu", engine.nav())
-            model.addAttribute("footer", engine.footer())
+            model.addAttribute(
+                "viewModel",
+                ContentViewModel(
+                    viewModel = FragmentViewModel(fragment, isPartial),
+                    templateName = fragment.template,
+                    navigationMenu = engine.nav(),
+                    footer = engine.footer(),
+                ),
+            )
             fragment.template
         } else {
             "error/404"
@@ -113,9 +120,15 @@ class FragmentsSpringController(
         val fragment = engine.getBlogPost(year, month, slug)
         val isPartial = engine.isHtmxRequest(htmxRequest)
         return if (fragment != null) {
-            model.addAttribute("viewModel", FragmentViewModel(fragment, isPartial))
-            model.addAttribute("navigationMenu", engine.nav())
-            model.addAttribute("footer", engine.footer())
+            model.addAttribute(
+                "viewModel",
+                ContentViewModel(
+                    viewModel = FragmentViewModel(fragment, isPartial),
+                    templateName = fragment.template,
+                    navigationMenu = engine.nav(),
+                    footer = engine.footer(),
+                ),
+            )
             fragment.template
         } else {
             "error/404"

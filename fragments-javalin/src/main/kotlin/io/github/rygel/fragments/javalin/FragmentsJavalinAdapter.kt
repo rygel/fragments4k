@@ -1,12 +1,11 @@
 package io.github.rygel.fragments.javalin
 
 import io.github.rygel.fragments.FragmentViewModel
-import io.github.rygel.fragments.NavigationLink
 import io.github.rygel.fragments.adapter.ArchiveViewModel
 import io.github.rygel.fragments.adapter.AuthorPageViewModel
 import io.github.rygel.fragments.adapter.BlogOverviewViewModel
 import io.github.rygel.fragments.adapter.CategoryViewModel
-import io.github.rygel.fragments.adapter.FooterConfig
+import io.github.rygel.fragments.adapter.ContentViewModel
 import io.github.rygel.fragments.adapter.FragmentsEngine
 import io.github.rygel.fragments.adapter.HomeViewModel
 import io.github.rygel.fragments.adapter.SearchViewModel
@@ -382,13 +381,6 @@ fun RoutesConfig.fragmentsRoutes(
         }
     }
 }
-
-data class ContentViewModel(
-    val viewModel: FragmentViewModel,
-    val templateName: String,
-    val navigationMenu: List<NavigationLink>,
-    val footer: FooterConfig,
-)
 
 interface TemplateRenderer {
     fun render(
