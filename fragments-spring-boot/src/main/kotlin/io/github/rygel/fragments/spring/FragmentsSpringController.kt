@@ -12,6 +12,7 @@ import io.github.rygel.fragments.adapter.SearchViewModel
 import io.github.rygel.fragments.adapter.TagViewModel
 import io.github.rygel.fragments.lucene.SearchSuggestion
 import jakarta.servlet.http.HttpServletResponse
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
+import org.springframework.web.server.ResponseStatusException
 
 @Controller
 class FragmentsSpringController(
@@ -60,6 +62,8 @@ class FragmentsSpringController(
         val isPartial = engine.isHtmxRequest(htmxRequest)
         return if (fragment != null) {
             model.addAttribute("viewModel", FragmentViewModel(fragment, isPartial))
+            model.addAttribute("navigationMenu", engine.nav())
+            model.addAttribute("footer", engine.footer())
             fragment.template
         } else {
             "error/404"
@@ -110,6 +114,8 @@ class FragmentsSpringController(
         val isPartial = engine.isHtmxRequest(htmxRequest)
         return if (fragment != null) {
             model.addAttribute("viewModel", FragmentViewModel(fragment, isPartial))
+            model.addAttribute("navigationMenu", engine.nav())
+            model.addAttribute("footer", engine.footer())
             fragment.template
         } else {
             "error/404"
@@ -209,7 +215,7 @@ class FragmentsSpringController(
         @RequestHeader(value = FragmentViewModel.HTMX_REQUEST_HEADER, required = false) htmxRequest: String?,
         model: Model,
     ): String {
-        val yearInt = year.toIntOrNull() ?: return "error/404"
+        val yearInt = year.toIntOrNull() ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid year")
         val fragments = engine.getByYear(yearInt)
         val isPartial = engine.isHtmxRequest(htmxRequest)
         model.addAttribute(
@@ -235,8 +241,8 @@ class FragmentsSpringController(
         @RequestHeader(value = FragmentViewModel.HTMX_REQUEST_HEADER, required = false) htmxRequest: String?,
         model: Model,
     ): String {
-        val yearInt = year.toIntOrNull() ?: return "error/404"
-        val monthInt = month.toIntOrNull() ?: return "error/404"
+        val yearInt = year.toIntOrNull() ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid year")
+        val monthInt = month.toIntOrNull() ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid month")
         val fragments = engine.getByYearMonth(yearInt, monthInt)
         val isPartial = engine.isHtmxRequest(htmxRequest)
         model.addAttribute(

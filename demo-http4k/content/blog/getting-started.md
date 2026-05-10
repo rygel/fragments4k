@@ -3,7 +3,7 @@ title: Getting Started with Fragments4k
 date: 2024-03-03
 tags: [kotlin, fragments, tutorial]
 categories: [tutorial]
-visible: true
+status: PUBLISHED
 template: blog_post
 ---
 
@@ -21,9 +21,9 @@ Add the dependency for your chosen framework:
 
 ```xml
 <dependency>
-    <groupId>io.andromeda</groupId>
+    <groupId>io.github.rygel</groupId>
     <artifactId>fragments-http4k</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>0.6.6-SNAPSHOT</version>
 </dependency>
 ```
 

@@ -47,8 +47,13 @@ class FragmentsMicronautController
             val fragment = engine.getPage(slug)
             val isPartial = isHtmxRequest(headers)
             return if (fragment != null) {
-                val viewModel = FragmentViewModel(fragment, isPartial)
-                HttpResponse.ok(viewModel)
+                HttpResponse.ok(
+                    mapOf(
+                        "viewModel" to FragmentViewModel(fragment, isPartial),
+                        "navigationMenu" to engine.nav(),
+                        "footer" to engine.footer(),
+                    ),
+                )
             } else {
                 HttpResponse.notFound("Page not found")
             }
@@ -92,8 +97,13 @@ class FragmentsMicronautController
             val fragment = engine.getBlogPost(year, month, slug)
             val isPartial = isHtmxRequest(headers)
             return if (fragment != null) {
-                val viewModel = FragmentViewModel(fragment, isPartial)
-                HttpResponse.ok(viewModel)
+                HttpResponse.ok(
+                    mapOf(
+                        "viewModel" to FragmentViewModel(fragment, isPartial),
+                        "navigationMenu" to engine.nav(),
+                        "footer" to engine.footer(),
+                    ),
+                )
             } else {
                 HttpResponse.notFound("Post not found")
             }
@@ -184,6 +194,10 @@ class FragmentsMicronautController
                 .ok(rssXml)
                 .header("Content-Type", "application/rss+xml; charset=utf-8")
         }
+
+        @Get("/feed.xml")
+        @Produces(value = ["application/rss+xml;charset=utf-8"])
+        suspend fun feed(): HttpResponse<String> = rss()
 
         @Get("/blog/archive/{year}")
         suspend fun archiveYear(

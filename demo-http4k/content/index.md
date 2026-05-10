@@ -1,24 +1,17 @@
 ---
-title: Welcome to Fragments4k
-date: 2024-03-03
-visible: true
-template: index
+title: Fragments4k Demo
+slug: index
+status: PUBLISHED
+date: 2026-05-10
+template: static
 ---
 
-# Welcome to Fragments4k
+# Fragments4k Demo
 
-Fragments4k is a framework-agnostic Markdown-based blog and static site library for Kotlin.
-
-## Features
-
-- Markdown content with YAML front matter
-- Multiple framework adapters (HTTP4k, Javalin, Spring Boot, Quarkus, Micronaut)
-- HTMX support for partial rendering
-- Pagination
-- Tag and category filtering
-- RSS feed generation
-- Full-text search
+This is a demonstration of the Fragments4k content engine running on a JVM web framework.
 
 ## Getting Started
 
-Check out the [documentation](https://github.com/rygel/fragments4k) for more information.
+1. Add `.md` files to the `content/` directory
+2. Use YAML front matter to configure each fragment
+3. Access your content through the web interface
