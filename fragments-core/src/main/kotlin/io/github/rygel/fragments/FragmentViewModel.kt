@@ -3,6 +3,7 @@ package io.github.rygel.fragments
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 
 /**
  * A single heading entry extracted from a fragment's content for building a
@@ -35,6 +36,8 @@ data class TableOfContentsItem(
  * @property relationships Pre-loaded relationship data; `null` means not loaded yet.
  * @property siteUrl Base URL of the site (e.g. `"https://example.com"`); used to
  *   compute [canonicalUrl]. Defaults to empty string (canonical URL unavailable).
+ * @property dateFormat Pattern passed to [DateTimeFormatter.ofPattern] for the
+ *   [formattedDate] property. Defaults to `"MMMM d, yyyy"` (e.g. "January 15, 2026").
  */
 data class FragmentViewModel(
     val fragment: Fragment,
@@ -44,6 +47,7 @@ data class FragmentViewModel(
     private val allFragments: List<Fragment> = emptyList(),
     val relationships: ContentRelationships? = null,
     val siteUrl: String = "",
+    val dateFormat: String = "MMMM d, yyyy",
 ) {
     companion object {
         const val HTMX_REQUEST_HEADER = "HX-Request"
@@ -123,6 +127,24 @@ data class FragmentViewModel(
 
     val author: String?
         get() = fragment.author
+
+    val formattedDate: String
+        get() = fragment.date?.format(DateTimeFormatter.ofPattern(dateFormat)) ?: ""
+
+    val contentPreview: String
+        get() = fragment.preview
+
+    val year: Int?
+        get() = fragment.date?.year
+
+    val month: Int?
+        get() = fragment.date?.monthValue
+
+    val tableOfContents: List<TableOfContentsItem> by lazy { extractTableOfContents() }
+
+    val relatedPosts: List<FragmentViewModel> by lazy {
+        findRelatedPosts().map { FragmentViewModel(fragment = it, dateFormat = dateFormat, siteUrl = siteUrl) }
+    }
 
     /**
      * Converts the fragment's authoring [Fragment.date] (UTC) to the given [zoneId].

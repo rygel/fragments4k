@@ -4,6 +4,7 @@ import io.github.rygel.fragments.ArchiveNavigationLink
 import io.github.rygel.fragments.AuthorViewModel
 import io.github.rygel.fragments.FragmentViewModel
 import io.github.rygel.fragments.NavigationLink
+import io.github.rygel.fragments.SocialShareLink
 
 /** View model for the home page, displaying a list of static page fragments. */
 data class HomeViewModel(
@@ -92,6 +93,7 @@ data class ContentViewModel(
     val templateName: String,
     val navigationMenu: List<NavigationLink> = emptyList(),
     val footer: FooterConfig? = null,
+    val socialShareLinks: List<SocialShareLink> = emptyList(),
 )
 
 /** View model for search results page. */
