@@ -203,11 +203,11 @@ object ProjectGenerator {
 
     <properties>
         <java.version>17</java.version>
-        <kotlin.version>2.0.21</kotlin.version>
+        <kotlin.version>2.2.0</kotlin.version>
         <maven.compiler.source>${'$'}{java.version}</maven.compiler.source>
         <maven.compiler.target>${'$'}{java.version}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <fragments.version>1.0.0-SNAPSHOT</fragments.version>
+        <fragments.version>0.6.6</fragments.version>
     </properties>
 
     <dependencies>
@@ -270,8 +270,10 @@ $frameworkDependency
         val content = """package ${packagePath.replace(File.separator, ".")}
 
 import io.github.rygel.fragments.FileSystemFragmentRepository
-import io.github.rygel.fragments.http4k.FragmentsHttp4kAdapter
+import io.github.rygel.fragments.adapter.FragmentsEngine
 import io.github.rygel.fragments.blog.BlogEngine
+import io.github.rygel.fragments.http4k.FragmentsHttp4kAdapter
+import io.github.rygel.fragments.lucene.LuceneSearchEngine
 import io.github.rygel.fragments.static.StaticPageEngine
 import org.http4k.filter.ServerFilters.CatchAll
 import org.http4k.server.asServer
@@ -299,16 +301,19 @@ fun main() {
     }
     val staticEngine = StaticPageEngine(repository)
     val blogEngine = BlogEngine(repository)
+    val searchEngine = LuceneSearchEngine(repository, null)
     
-    val renderer = PebbleTemplates().HotReload("src/main/resources/templates")
-    val adapter = FragmentsHttp4kAdapter(
+    val engine = FragmentsEngine(
         staticEngine = staticEngine,
         blogEngine = blogEngine,
-        renderer = renderer,
+        searchEngine = searchEngine,
         siteTitle = "My Fragments Blog",
         siteDescription = "A blog powered by Fragments4k",
         siteUrl = "http://localhost:8080"
     )
+    
+    val renderer = PebbleTemplates().HotReload("src/main/resources/templates")
+    val adapter = FragmentsHttp4kAdapter(engine, renderer)
     
     val server = CatchAll { e ->
         logger.error("Error handling request", e)
@@ -336,8 +341,10 @@ fun main() {
         val content = """package ${packagePath.replace(File.separator, ".")}
 
 import io.github.rygel.fragments.FileSystemFragmentRepository
-import io.github.rygel.fragments.javalin.fragmentsRoutes
+import io.github.rygel.fragments.adapter.FragmentsEngine
 import io.github.rygel.fragments.blog.BlogEngine
+import io.github.rygel.fragments.javalin.fragmentsRoutes
+import io.github.rygel.fragments.lucene.LuceneSearchEngine
 import io.github.rygel.fragments.static.StaticPageEngine
 import io.javalin.Javalin
 import io.javalin.rendering.template.JavalinPebble
@@ -363,6 +370,16 @@ fun main() {
     }
     val staticEngine = StaticPageEngine(repository)
     val blogEngine = BlogEngine(repository)
+    val searchEngine = LuceneSearchEngine(repository, null)
+    
+    val engine = FragmentsEngine(
+        staticEngine = staticEngine,
+        blogEngine = blogEngine,
+        searchEngine = searchEngine,
+        siteTitle = "My Fragments Blog",
+        siteDescription = "A blog powered by Fragments4k",
+        siteUrl = "http://localhost:8080"
+    )
     
     val app = Javalin.create { config ->
         config.plugins.register(JavalinPebble {
@@ -370,16 +387,7 @@ fun main() {
         })
     }
     
-    app.fragmentsRoutes(
-        staticEngine = staticEngine,
-        blogEngine = blogEngine,
-        renderer = { template, viewModel ->
-            JavalinPebble.extensions.render(template, viewModel)
-        },
-        siteTitle = "My Fragments Blog",
-        siteDescription = "A blog powered by Fragments4k",
-        siteUrl = "http://localhost:8080"
-    )
+    app.fragmentsRoutes(engine, renderer = null)
     
     logger.info("Starting Fragments4k Javalin server on port 8080")
     logger.info("RSS feed available at: http://localhost:8080/rss.xml")
@@ -400,8 +408,10 @@ fun main() {
         val content = """package ${packagePath.replace(File.separator, ".")}
 
 import io.github.rygel.fragments.FileSystemFragmentRepository
-import io.github.rygel.fragments.spring.FragmentsSpringController
+import io.github.rygel.fragments.adapter.FragmentsEngine
 import io.github.rygel.fragments.blog.BlogEngine
+import io.github.rygel.fragments.lucene.LuceneSearchEngine
+import io.github.rygel.fragments.spring.FragmentsSpringController
 import io.github.rygel.fragments.static.StaticPageEngine
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
@@ -447,17 +457,29 @@ class DemoApplication {
     }
     
     @Bean
-    fun fragmentsController(
+    fun searchEngine(repository: io.github.rygel.fragments.FileSystemFragmentRepository): io.github.rygel.fragments.lucene.LuceneSearchEngine {
+        return io.github.rygel.fragments.lucene.LuceneSearchEngine(repository, null)
+    }
+    
+    @Bean
+    fun fragmentsEngine(
         staticEngine: io.github.rygel.fragments.static.StaticPageEngine,
-        blogEngine: io.github.rygel.fragments.blog.BlogEngine
-    ): FragmentsSpringController {
-        return FragmentsSpringController(
+        blogEngine: io.github.rygel.fragments.blog.BlogEngine,
+        searchEngine: io.github.rygel.fragments.lucene.LuceneSearchEngine
+    ): FragmentsEngine {
+        return FragmentsEngine(
             staticEngine = staticEngine,
             blogEngine = blogEngine,
+            searchEngine = searchEngine,
             siteTitle = "My Fragments Blog",
             siteDescription = "A blog powered by Fragments4k",
             siteUrl = "http://localhost:8080"
         )
+    }
+    
+    @Bean
+    fun fragmentsController(engine: FragmentsEngine): FragmentsSpringController {
+        return FragmentsSpringController(engine)
     }
 }
 """
