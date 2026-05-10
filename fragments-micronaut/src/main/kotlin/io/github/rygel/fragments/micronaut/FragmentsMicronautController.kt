@@ -5,6 +5,7 @@ import io.github.rygel.fragments.FragmentViewModel
 import io.github.rygel.fragments.adapter.FragmentsEngine
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpResponse
+import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Get
 import io.micronaut.http.annotation.Produces
@@ -217,6 +218,13 @@ class FragmentsMicronautController
                 )
             return HttpResponse.ok(viewModel)
         }
+
+        @Get("/api/autocomplete")
+        @Produces(MediaType.APPLICATION_JSON)
+        suspend fun autocomplete(
+            @QueryValue q: String,
+            @QueryValue(defaultValue = "10") limit: Int,
+        ): HttpResponse<Any> = HttpResponse.ok(engine.autocomplete(q, limit))
 
         @Get("/sitemap.xml")
         @Produces("application/xml;charset=utf-8")
