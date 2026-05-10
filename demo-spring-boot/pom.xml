@@ -8,6 +8,7 @@
         <groupId>io.github.rygel</groupId>
         <artifactId>fragments-parent</artifactId>
         <version>0.6.6-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>demo-spring-boot</artifactId>

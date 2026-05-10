@@ -50,7 +50,7 @@ class FragmentsSpringController(
                 footer = engine.footer(),
             ),
         )
-        return if (isPartial) "index" else "index"
+        return "index"
     }
 
     @GetMapping("/page/{slug}")
@@ -155,7 +155,7 @@ class FragmentsSpringController(
                 hasPrevious = pageResult.hasPrevious,
                 isPartialRender = isPartial,
                 navigationMenu = engine.nav(),
-                pagination = engine.pagination(pageResult.currentPage, pageResult.totalPages, "/blog"),
+                pagination = engine.pagination(pageResult.currentPage, pageResult.totalPages, "/blog/tag/$tag"),
                 footer = engine.footer(),
             ),
         )
@@ -182,7 +182,7 @@ class FragmentsSpringController(
                 hasPrevious = pageResult.hasPrevious,
                 isPartialRender = isPartial,
                 navigationMenu = engine.nav(),
-                pagination = engine.pagination(pageResult.currentPage, pageResult.totalPages, "/blog"),
+                pagination = engine.pagination(pageResult.currentPage, pageResult.totalPages, "/blog/category/$category"),
                 footer = engine.footer(),
             ),
         )
@@ -219,7 +219,7 @@ class FragmentsSpringController(
         return "blog_overview"
     }
 
-    @GetMapping(value = ["/rss.xml", "/feed.xml"], produces = [MediaType.APPLICATION_ATOM_XML_VALUE, MediaType.APPLICATION_XML_VALUE])
+    @GetMapping(value = ["/rss.xml", "/feed.xml"], produces = ["application/rss+xml;charset=utf-8", MediaType.APPLICATION_XML_VALUE])
     suspend fun rss(): String = engine.generateRssFeed()
 
     @GetMapping("/blog/archive/{year}")

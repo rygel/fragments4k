@@ -22,7 +22,7 @@ Add the dependency for your chosen framework:
 ```xml
 <dependency>
     <groupId>io.github.rygel</groupId>
-    <artifactId>fragments-http4k</artifactId>
+    <artifactId>fragments-quarkus</artifactId>
     <version>0.6.6-SNAPSHOT</version>
 </dependency>
 ```
@@ -46,9 +46,7 @@ This is my first blog post!
 ## Running the Demo
 
 ```bash
-./mvnw spring-boot:run
-# or for other frameworks
-./mvnw compile exec:java -Dexec.mainClass="your.MainClass"
+./mvnw quarkus:dev
 ```
 
 ## Next Steps

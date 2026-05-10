@@ -56,8 +56,7 @@ class FragmentsHttp4kAdapter(
             val fragments = engine.getHome()
             val viewModel =
                 HomeViewModel(
-                    fragments = fragments.map { FragmentViewModel(it) },
-                    isPartialRender = isHtmxRequest(request),
+                    fragments = fragments.map { FragmentViewModel(it, isHtmxRequest(request)) },
                     navigationMenu = engine.nav(),
                     footer = engine.footer(),
                 )
@@ -152,7 +151,7 @@ class FragmentsHttp4kAdapter(
                         engine.pagination(
                             currentPage = pageResult.currentPage,
                             totalPages = pageResult.totalPages,
-                            basePath = "/blog",
+                            basePath = "/blog/tag/$tag",
                         ),
                     footer = engine.footer(),
                 )
@@ -179,7 +178,7 @@ class FragmentsHttp4kAdapter(
                         engine.pagination(
                             currentPage = pageResult.currentPage,
                             totalPages = pageResult.totalPages,
-                            basePath = "/blog",
+                            basePath = "/blog/category/$category",
                         ),
                     footer = engine.footer(),
                 )
@@ -255,7 +254,7 @@ class FragmentsHttp4kAdapter(
             val viewModel =
                 SearchViewModel(
                     query = query,
-                    results = results.map { FragmentViewModel(it.fragment) },
+                    results = results.map { FragmentViewModel(it.fragment, isHtmxRequest(request)) },
                     siteTitle = engine.siteTitle,
                     navigationMenu = engine.nav(),
                     footer = engine.footer(),
@@ -309,7 +308,7 @@ class FragmentsHttp4kAdapter(
                 ArchiveViewModel(
                     type = "year",
                     year = year,
-                    fragments = fragments.map { FragmentViewModel(it) },
+                    fragments = fragments.map { FragmentViewModel(it, isHtmxRequest(request)) },
                     siteTitle = engine.siteTitle,
                     navigationMenu = engine.nav(),
                     footer = engine.footer(),
@@ -332,7 +331,7 @@ class FragmentsHttp4kAdapter(
                     type = "year-month",
                     year = year,
                     month = month,
-                    fragments = fragments.map { FragmentViewModel(it) },
+                    fragments = fragments.map { FragmentViewModel(it, isHtmxRequest(request)) },
                     siteTitle = engine.siteTitle,
                     navigationMenu = engine.nav(),
                     footer = engine.footer(),

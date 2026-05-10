@@ -1,6 +1,5 @@
 package io.github.rygel.fragments.demo.micronaut
 
-import io.github.rygel.fragments.micronaut.FragmentsMicronautController
 import io.micronaut.context.event.StartupEvent
 import io.micronaut.runtime.Micronaut
 import jakarta.inject.Inject
@@ -10,9 +9,6 @@ import org.slf4j.LoggerFactory
 @Singleton
 class DemoApplication {
     private val logger = LoggerFactory.getLogger("DemoApplication")
-
-    @Inject
-    lateinit var controller: FragmentsMicronautController
 
     @Inject
     fun onStart(
