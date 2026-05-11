@@ -244,7 +244,7 @@ data class FragmentViewModel(
                         if (other.categories.contains(category)) score += 1.5
                     }
 
-                    if (fragment.template == "blog" && other.template == "blog") {
+                    if (fragment.template == FragmentTemplates.BLOG && other.template == FragmentTemplates.BLOG) {
                         score += 0.5
                     }
 

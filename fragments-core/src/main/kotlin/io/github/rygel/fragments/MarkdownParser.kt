@@ -126,10 +126,10 @@ class MarkdownParser(
             val frontMatterYaml = match.groupValues[1]
             val rawContent = markdown.substring(match.range.last + 1)
             val frontMatter = parseFrontMatter(frontMatterYaml)
-            val htmlContent = renderer.render(parser.parse(rawContent))
+            val htmlContent = HtmlSanitizer.sanitize(renderer.render(parser.parse(rawContent)))
             ParsedContent(frontMatter, rawContent, htmlContent)
         } else {
-            ParsedContent(emptyMap(), markdown, renderer.render(parser.parse(markdown)))
+            ParsedContent(emptyMap(), markdown, HtmlSanitizer.sanitize(renderer.render(parser.parse(markdown))))
         }
     }
 

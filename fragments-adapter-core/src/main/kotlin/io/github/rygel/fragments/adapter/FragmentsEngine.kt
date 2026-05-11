@@ -253,4 +253,8 @@ class FragmentsEngine(
     fun searchForm(): SearchFormConfig = SearchFormGenerator.generate()
 
     fun cspHeader(): String = contentSecurityPolicy
+
+    fun close() {
+        searchEngine?.close()
+    }
 }

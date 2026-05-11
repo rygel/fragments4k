@@ -3,6 +3,8 @@ package io.github.rygel.fragments.lucene
 import io.github.rygel.fragments.Fragment
 import io.github.rygel.fragments.FragmentRepository
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.apache.lucene.analysis.standard.StandardAnalyzer
 import org.apache.lucene.document.Document
@@ -75,47 +77,50 @@ class LuceneSearchEngine(
             .ByteBuffersDirectory()
 
     @Volatile private var reader: org.apache.lucene.index.DirectoryReader? = null
+    private val indexMutex = Mutex()
 
     suspend fun index() =
-        withContext(Dispatchers.IO) {
-            val config =
-                org.apache.lucene.index
-                    .IndexWriterConfig(analyzer)
-            val writer =
-                org.apache.lucene.index
-                    .IndexWriter(directory, config)
-            writer.deleteAll()
+        indexMutex.withLock {
+            withContext(Dispatchers.IO) {
+                val config =
+                    org.apache.lucene.index
+                        .IndexWriterConfig(analyzer)
+                val writer =
+                    org.apache.lucene.index
+                        .IndexWriter(directory, config)
+                writer.deleteAll()
 
-            val fragments = repositories.flatMap { it.getAllVisible() }
+                val fragments = repositories.flatMap { it.getAllVisible() }
 
-            fragments.forEach { fragment ->
-                val doc = Document()
-                doc.add(StringField("slug", fragment.slug, Field.Store.YES))
-                doc.add(StringField("url", fragment.url, Field.Store.YES))
-                doc.add(TextField("title", fragment.title, Field.Store.YES))
-                doc.add(TextField("content", fragment.contentTextOnly, Field.Store.NO))
-                doc.add(TextField("preview", fragment.previewTextOnly, Field.Store.NO))
-                fragment.tags.forEach { tag ->
-                    doc.add(StringField("tag", tag, Field.Store.YES))
+                fragments.forEach { fragment ->
+                    val doc = Document()
+                    doc.add(StringField("slug", fragment.slug, Field.Store.YES))
+                    doc.add(StringField("url", fragment.url, Field.Store.YES))
+                    doc.add(TextField("title", fragment.title, Field.Store.YES))
+                    doc.add(TextField("content", fragment.contentTextOnly, Field.Store.NO))
+                    doc.add(TextField("preview", fragment.previewTextOnly, Field.Store.NO))
+                    fragment.tags.forEach { tag ->
+                        doc.add(StringField("tag", tag, Field.Store.YES))
+                    }
+                    fragment.categories.forEach { category ->
+                        doc.add(StringField("category", category, Field.Store.YES))
+                    }
+                    fragment.date?.let { date ->
+                        doc.add(StringField("date", date.toString(), Field.Store.YES))
+                    }
+                    writer.addDocument(doc)
                 }
-                fragment.categories.forEach { category ->
-                    doc.add(StringField("category", category, Field.Store.YES))
+
+                writer.commit()
+                writer.close()
+
+                reader = reader?.let {
+                    org.apache.lucene.index.DirectoryReader
+                        .openIfChanged(it) ?: it
                 }
-                fragment.date?.let { date ->
-                    doc.add(StringField("date", date.toString(), Field.Store.YES))
-                }
-                writer.addDocument(doc)
+                    ?: org.apache.lucene.index.DirectoryReader
+                        .open(directory)
             }
-
-            writer.commit()
-            writer.close()
-
-            reader = reader?.let {
-                org.apache.lucene.index.DirectoryReader
-                    .openIfChanged(it) ?: it
-            }
-                ?: org.apache.lucene.index.DirectoryReader
-                    .open(directory)
         }
 
     private fun requireReader(): org.apache.lucene.index.DirectoryReader =

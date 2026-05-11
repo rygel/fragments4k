@@ -2,6 +2,7 @@ package io.github.rygel.fragments.static
 
 import io.github.rygel.fragments.Fragment
 import io.github.rygel.fragments.FragmentRepository
+import io.github.rygel.fragments.FragmentTemplates
 import org.slf4j.LoggerFactory
 
 class StaticPageEngine(
@@ -22,7 +23,7 @@ class StaticPageEngine(
                 repository.getAllVisible()
             }
         return allFragments
-            .filter { it.template == "static" || it.template.isEmpty() || it.template == "default" }
+            .filter { it.template == FragmentTemplates.STATIC || it.template.isEmpty() || it.template == "default" }
             .map { resolveUrl(it) }
     }
 

@@ -11,12 +11,13 @@ package io.github.rygel.fragments
  * to opt a fragment into the corresponding content class.
  */
 object FragmentTemplates {
-    /**
-     * Template values that identify a fragment as a blog post.
-     *
-     * Set `template: blog` or `template: blog_post` in front matter.
-     * Any other value causes the fragment to be excluded from blog listings,
-     * RSS feeds, and blog-specific URL resolution.
-     */
-    val BLOG_TEMPLATES: Set<String> = setOf("blog", "blog_post")
+    const val INDEX = "index"
+    const val BLOG_OVERVIEW = "blog_overview"
+    const val BLOG_POST = "blog_post"
+    const val STATIC = "static"
+    const val BLOG = "blog"
+    const val SEARCH = "search"
+    const val ARCHIVE = "archive"
+
+    val BLOG_TEMPLATES: Set<String> = setOf(BLOG, BLOG_POST)
 }

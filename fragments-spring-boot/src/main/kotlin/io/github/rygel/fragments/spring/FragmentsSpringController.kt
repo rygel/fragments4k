@@ -1,6 +1,7 @@
 package io.github.rygel.fragments.spring
 
 import io.github.rygel.fragments.AuthorViewModel
+import io.github.rygel.fragments.FragmentTemplates
 import io.github.rygel.fragments.FragmentViewModel
 import io.github.rygel.fragments.adapter.ArchiveViewModel
 import io.github.rygel.fragments.adapter.AuthorPageViewModel
@@ -50,7 +51,7 @@ class FragmentsSpringController(
                 footer = engine.footer(),
             ),
         )
-        return "index"
+        return FragmentTemplates.INDEX
     }
 
     @GetMapping("/page/{slug}")
@@ -100,7 +101,7 @@ class FragmentsSpringController(
                 footer = engine.footer(),
             ),
         )
-        return "blog_overview"
+        return FragmentTemplates.BLOG_OVERVIEW
     }
 
     @GetMapping("/blog/page/{page}")
@@ -161,7 +162,7 @@ class FragmentsSpringController(
                 footer = engine.footer(),
             ),
         )
-        return "blog_overview"
+        return FragmentTemplates.BLOG_OVERVIEW
     }
 
     @GetMapping("/blog/category/{category}")
@@ -188,7 +189,7 @@ class FragmentsSpringController(
                 footer = engine.footer(),
             ),
         )
-        return "blog_overview"
+        return FragmentTemplates.BLOG_OVERVIEW
     }
 
     @GetMapping("/blog/author/{slug}")
@@ -218,7 +219,7 @@ class FragmentsSpringController(
                 footer = engine.footer(),
             ),
         )
-        return "blog_overview"
+        return FragmentTemplates.BLOG_OVERVIEW
     }
 
     @GetMapping(value = ["/rss.xml", "/feed.xml"], produces = ["application/rss+xml;charset=utf-8", MediaType.APPLICATION_XML_VALUE])
@@ -246,7 +247,7 @@ class FragmentsSpringController(
                 archiveBreadcrumbs = engine.generateArchiveBreadcrumbs(currentYear = yearInt),
             ),
         )
-        return "archive"
+        return FragmentTemplates.ARCHIVE
     }
 
     @GetMapping("/blog/archive/{year}/{month}")
@@ -274,7 +275,7 @@ class FragmentsSpringController(
                 archiveBreadcrumbs = engine.generateArchiveBreadcrumbs(currentYear = yearInt, currentMonth = monthInt),
             ),
         )
-        return "archive"
+        return FragmentTemplates.ARCHIVE
     }
 
     @GetMapping("/search")
@@ -296,7 +297,7 @@ class FragmentsSpringController(
                 searchForm = engine.searchForm(),
             ),
         )
-        return "search"
+        return FragmentTemplates.SEARCH
     }
 
     @GetMapping("/api/autocomplete")

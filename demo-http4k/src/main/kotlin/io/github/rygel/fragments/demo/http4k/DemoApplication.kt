@@ -1,6 +1,7 @@
 package io.github.rygel.fragments.demo.http4k
 
 import io.github.rygel.fragments.FileSystemFragmentRepository
+import io.github.rygel.fragments.FragmentTemplates
 import io.github.rygel.fragments.adapter.FragmentsEngine
 import io.github.rygel.fragments.blog.BlogEngine
 import io.github.rygel.fragments.http4k.FragmentsHttp4kAdapter
@@ -33,7 +34,7 @@ fun main() {
             basePath = fragmentsPath,
             urlBuilder = { fragment ->
                 when (fragment.template) {
-                    "blog", "blog_post" -> {
+                    FragmentTemplates.BLOG, FragmentTemplates.BLOG_POST -> {
                         val date = fragment.date ?: return@FileSystemFragmentRepository "/${fragment.slug}"
                         "/blog/${date.year}/${"%02d".format(date.monthValue)}/${fragment.slug}"
                     }
@@ -60,6 +61,8 @@ fun main() {
                 siteDescription = "A demo blog powered by Fragments4k with HTTP4k",
                 siteUrl = "http://localhost:8080",
             )
+
+        Runtime.getRuntime().addShutdownHook(Thread({ engine.close() }, "fragments-shutdown"))
 
         val renderer = PebbleTemplates().HotReload("src/main/resources/templates")
         val adapter = FragmentsHttp4kAdapter(engine, renderer)

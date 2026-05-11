@@ -50,6 +50,7 @@
         <jte.version>3.2.4</jte.version>
         <lucene.version>10.4.0</lucene.version>
         <caffeine.version>3.2.4</caffeine.version>
+        <jsoup.version>1.21.1</jsoup.version>
 
         <junit.version>6.0.3</junit.version>
         <mockk.version>1.14.9</mockk.version>
@@ -204,6 +205,11 @@
                 <groupId>com.github.ben-manes.caffeine</groupId>
                 <artifactId>caffeine</artifactId>
                 <version>${caffeine.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jsoup</groupId>
+                <artifactId>jsoup</artifactId>
+                <version>${jsoup.version}</version>
             </dependency>
 
             <dependency>

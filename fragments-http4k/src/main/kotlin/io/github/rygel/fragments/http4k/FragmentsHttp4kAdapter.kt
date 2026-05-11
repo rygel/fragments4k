@@ -2,6 +2,7 @@ package io.github.rygel.fragments.http4k
 
 import io.github.rygel.fragments.ArchiveNavigationLink
 import io.github.rygel.fragments.AuthorViewModel
+import io.github.rygel.fragments.FragmentTemplates
 import io.github.rygel.fragments.FragmentViewModel
 import io.github.rygel.fragments.NavigationLink
 import io.github.rygel.fragments.SocialShareLink
@@ -22,14 +23,42 @@ import org.http4k.routing.path
 import org.http4k.routing.routes
 import org.http4k.template.TemplateRenderer
 import org.http4k.template.ViewModel
+import org.slf4j.LoggerFactory
 
 class FragmentsHttp4kAdapter(
     private val engine: FragmentsEngine,
     private val renderer: TemplateRenderer,
 ) {
+    private val logger = LoggerFactory.getLogger(FragmentsHttp4kAdapter::class.java)
+
+    @Suppress("TooGenericExceptionCaught")
+    private val errorFilter =
+        Filter { next ->
+            { request ->
+                try {
+                    next(request)
+                } catch (e: IllegalArgumentException) {
+                    logger.warn("Bad request: {}", e.message)
+                    Response(Status.BAD_REQUEST)
+                        .header("Content-Type", "application/json")
+                        .body("""{"status":400,"error":"Bad Request","message":"${e.message?.replace("\"", "\\\"")}"}""")
+                } catch (e: NoSuchElementException) {
+                    logger.warn("Not found: {}", e.message)
+                    Response(Status.NOT_FOUND)
+                        .header("Content-Type", "application/json")
+                        .body("""{"status":404,"error":"Not Found","message":"${e.message?.replace("\"", "\\\"")}"}""")
+                } catch (e: Exception) {
+                    logger.error("Unhandled exception", e)
+                    Response(Status.INTERNAL_SERVER_ERROR)
+                        .header("Content-Type", "application/json")
+                        .body("""{"status":500,"error":"Internal Server Error","message":"An unexpected error occurred"}""")
+                }
+            }
+        }
+
     fun createRoutes(): RoutingHttpHandler {
         val cspFilter = Filter { next -> { request -> next(request).header("Content-Security-Policy", engine.cspHeader()) } }
-        return cspFilter.then(
+        return errorFilter.then(cspFilter).then(
             routes(
                 "/" bind GET to { request -> handleHome(request) },
                 "/page/{slug}" bind GET to { request -> handlePage(request) },
@@ -96,7 +125,7 @@ class FragmentsHttp4kAdapter(
                     totalPages = pageResult.totalPages,
                     hasNext = pageResult.hasNext,
                     hasPrevious = pageResult.hasPrevious,
-                    templateName = "blog_overview",
+                    templateName = FragmentTemplates.BLOG_OVERVIEW,
                     isPartialRender = isHtmxRequest(request),
                     navigationMenu = engine.nav(),
                     pagination =
@@ -365,7 +394,7 @@ class FragmentsHttp4kAdapter(
     data class HomeViewModel(
         val fragments: List<FragmentViewModel>,
         val isPartialRender: Boolean = false,
-        private val templateName: String = "index",
+        private val templateName: String = FragmentTemplates.INDEX,
         val navigationMenu: List<NavigationLink>,
         val footer: FooterConfig,
     ) : ViewModel {
@@ -378,7 +407,7 @@ class FragmentsHttp4kAdapter(
         val totalPages: Int,
         val hasNext: Boolean = false,
         val hasPrevious: Boolean = false,
-        private val templateName: String = "blog_overview",
+        private val templateName: String = FragmentTemplates.BLOG_OVERVIEW,
         val isPartialRender: Boolean = false,
         val navigationMenu: List<NavigationLink>,
         val pagination: PaginationInfo,
@@ -394,7 +423,7 @@ class FragmentsHttp4kAdapter(
         val totalPages: Int,
         val hasNext: Boolean = false,
         val hasPrevious: Boolean = false,
-        private val templateName: String = "blog_overview",
+        private val templateName: String = FragmentTemplates.BLOG_OVERVIEW,
         val isPartialRender: Boolean = false,
         val navigationMenu: List<NavigationLink>,
         val pagination: PaginationInfo,
@@ -410,7 +439,7 @@ class FragmentsHttp4kAdapter(
         val totalPages: Int,
         val hasNext: Boolean = false,
         val hasPrevious: Boolean = false,
-        private val templateName: String = "blog_overview",
+        private val templateName: String = FragmentTemplates.BLOG_OVERVIEW,
         val isPartialRender: Boolean = false,
         val navigationMenu: List<NavigationLink>,
         val pagination: PaginationInfo,
@@ -423,7 +452,7 @@ class FragmentsHttp4kAdapter(
         val query: String,
         val results: List<FragmentViewModel>,
         val siteTitle: String,
-        private val templateName: String = "search",
+        private val templateName: String = FragmentTemplates.SEARCH,
         val navigationMenu: List<NavigationLink>,
         val footer: FooterConfig,
         val searchForm: SearchFormConfig,
@@ -440,7 +469,7 @@ class FragmentsHttp4kAdapter(
         val totalPages: Int,
         val hasNext: Boolean = false,
         val hasPrevious: Boolean = false,
-        private val templateName: String = "blog_overview",
+        private val templateName: String = FragmentTemplates.BLOG_OVERVIEW,
         val isPartialRender: Boolean = false,
         val navigationMenu: List<NavigationLink>,
         val pagination: PaginationInfo,
@@ -455,7 +484,7 @@ class FragmentsHttp4kAdapter(
         val month: String? = null,
         val fragments: List<FragmentViewModel>,
         val siteTitle: String,
-        private val templateName: String = "archive",
+        private val templateName: String = FragmentTemplates.ARCHIVE,
         val navigationMenu: List<NavigationLink>,
         val footer: FooterConfig,
         val archiveYearLinks: List<ArchiveNavigationLink>? = null,

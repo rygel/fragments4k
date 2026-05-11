@@ -1,5 +1,6 @@
 package io.github.rygel.fragments.javalin
 
+import io.github.rygel.fragments.FragmentTemplates
 import io.github.rygel.fragments.FragmentViewModel
 import io.github.rygel.fragments.adapter.ArchiveViewModel
 import io.github.rygel.fragments.adapter.AuthorPageViewModel
@@ -62,7 +63,7 @@ fun RoutesConfig.fragmentsRoutes(
                     navigationMenu = engine.nav(),
                     footer = engine.footer(),
                 )
-            render(ctx, "index", viewModel)
+            render(ctx, FragmentTemplates.INDEX, viewModel)
         }
     }
 
@@ -107,7 +108,7 @@ fun RoutesConfig.fragmentsRoutes(
                         ),
                     footer = engine.footer(),
                 )
-            render(ctx, "blog_overview", viewModel)
+            render(ctx, FragmentTemplates.BLOG_OVERVIEW, viewModel)
         }
     }
 
@@ -132,7 +133,7 @@ fun RoutesConfig.fragmentsRoutes(
                         ),
                     footer = engine.footer(),
                 )
-            render(ctx, "blog_overview", viewModel)
+            render(ctx, FragmentTemplates.BLOG_OVERVIEW, viewModel)
         }
     }
 
@@ -182,7 +183,7 @@ fun RoutesConfig.fragmentsRoutes(
                         ),
                     footer = engine.footer(),
                 )
-            render(ctx, "blog_overview", viewModel)
+            render(ctx, FragmentTemplates.BLOG_OVERVIEW, viewModel)
         }
     }
 
@@ -209,7 +210,7 @@ fun RoutesConfig.fragmentsRoutes(
                         ),
                     footer = engine.footer(),
                 )
-            render(ctx, "blog_overview", viewModel)
+            render(ctx, FragmentTemplates.BLOG_OVERVIEW, viewModel)
         }
     }
 
@@ -239,7 +240,7 @@ fun RoutesConfig.fragmentsRoutes(
                         ),
                     footer = engine.footer(),
                 )
-            render(ctx, "blog_overview", viewModel)
+            render(ctx, FragmentTemplates.BLOG_OVERVIEW, viewModel)
         }
     }
 
@@ -269,7 +270,7 @@ fun RoutesConfig.fragmentsRoutes(
                             currentYear = yearInt,
                         ),
                 )
-            render(ctx, "archive", viewModel)
+            render(ctx, FragmentTemplates.ARCHIVE, viewModel)
         }
     }
 
@@ -310,7 +311,7 @@ fun RoutesConfig.fragmentsRoutes(
                             currentMonth = monthInt,
                         ),
                 )
-            render(ctx, "archive", viewModel)
+            render(ctx, FragmentTemplates.ARCHIVE, viewModel)
         }
     }
 
@@ -364,7 +365,7 @@ fun RoutesConfig.fragmentsRoutes(
                     footer = engine.footer(),
                     searchForm = engine.searchForm(),
                 )
-            render(ctx, "search", viewModel)
+            render(ctx, FragmentTemplates.SEARCH, viewModel)
         }
     }
 
