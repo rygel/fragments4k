@@ -55,6 +55,14 @@ data class SearchSuggestion(
     }
 }
 
+/**
+ * Lucene-backed full-text search engine for fragment content.
+ *
+ * When [indexPath] is provided, the index is persisted to disk via [FSDirectory].
+ * Ensure the directory has appropriate OS-level file permissions (read/write for the
+ * application user, no access for others) to prevent unauthorized index manipulation.
+ * When `null`, an in-memory [ByteBuffersDirectory] is used instead.
+ */
 class LuceneSearchEngine(
     private val repositories: List<FragmentRepository>,
     private val indexPath: Path? = null,
