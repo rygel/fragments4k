@@ -14,7 +14,7 @@
     <description>Quarkus web framework adapter</description>
 
     <properties>
-        <quarkus.version>3.35.1</quarkus.version>
+        <quarkus.version>3.35.2</quarkus.version>
     </properties>
 
     <dependencyManagement>
