@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.2.0 — 2026-05-11
+
+- 41498d8 Merge pull request #93 from rygel/fix/changelog-v2
+- be1707b docs: add v0.6.6 fixes to changelog
+- b0cd105 Merge pull request #90 from rygel/fix/url-resolution-and-naming
+- 19092f5 docs: improve urlBuilder documentation across modules
+- 25a5dfe fix: address ktlint formatting issues in adapter configurations
+- 8579602 test: add sitemap tests for date-based and static page URLs
+- f903967 fix: wire urlBuilder into adapter configurations for correct URL resolution
+- f2d4a5c fix: use fragment.url for SEO canonical URL instead of hardcoded /page/{slug}
+- c391c0a refactor: rename Fragment.content to Fragment.htmlContent with deprecated alias
+- 1e1d968 Merge pull request #87 from rygel/chore/publish-central-workflow
+- 115ec96 ci: add Maven Central publish workflow
+
 ## [Unreleased]
 
 ### Fixed
