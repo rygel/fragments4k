@@ -213,8 +213,8 @@ data class Fragment(
 
     /** `true` if the content contains a `<!--more-->` read-more split marker. */
     val hasMoreTag: Boolean by lazy {
-        htmlContent.contains("<!--more-->", ignoreCase = true) ||
-            htmlContent.contains("<!-- more -->", ignoreCase = true)
+        content.contains("<!--more-->", ignoreCase = true) ||
+            content.contains("<!-- more -->", ignoreCase = true)
     }
 
     /** Plain-text version of [preview] with all HTML tags stripped. */
@@ -226,13 +226,12 @@ data class Fragment(
      */
     val contentTextOnly: String by lazy {
         if (hasMoreTag) {
-            htmlContent
+            content
                 .substringBefore("<!--more-->")
                 .substringBefore("<!-- more -->")
-                .replace(HTML_TAG_REGEX, "")
                 .trim()
         } else {
-            htmlContent.replace(HTML_TAG_REGEX, "").trim()
+            content.trim()
         }
     }
 
