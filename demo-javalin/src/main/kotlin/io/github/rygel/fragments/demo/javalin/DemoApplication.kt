@@ -1,6 +1,8 @@
 package io.github.rygel.fragments.demo.javalin
 
 import io.github.rygel.fragments.FileSystemFragmentRepository
+import io.github.rygel.fragments.FragmentTemplates
+import io.github.rygel.fragments.adapter.ErrorResponse
 import io.github.rygel.fragments.adapter.FragmentsEngine
 import io.github.rygel.fragments.blog.BlogEngine
 import io.github.rygel.fragments.javalin.fragmentsRoutes
@@ -26,7 +28,7 @@ fun main() {
             basePath = fragmentsPath,
             urlBuilder = { fragment ->
                 when (fragment.template) {
-                    "blog", "blog_post" -> {
+                    FragmentTemplates.BLOG, FragmentTemplates.BLOG_POST -> {
                         val date = fragment.date ?: return@FileSystemFragmentRepository "/${fragment.slug}"
                         "/blog/${date.year}/${"%02d".format(date.monthValue)}/${fragment.slug}"
                     }
@@ -51,6 +53,8 @@ fun main() {
             siteUrl = "http://localhost:8080",
         )
 
+    Runtime.getRuntime().addShutdownHook(Thread({ engine.close() }, "fragments-shutdown"))
+
     val pebble = JavalinPebble()
 
     val app =
@@ -59,8 +63,22 @@ fun main() {
             config.fileRenderer(pebble)
             config.routes.fragmentsRoutes(engine, renderer = PebbleTemplateRenderer())
             config.routes.exception(Exception::class.java) { e, ctx ->
-                logger.error("Unhandled exception", e)
-                ctx.status(500).result("Internal Server Error")
+                when (e) {
+                    is IllegalArgumentException -> {
+                        logger.warn("Bad request: {}", e.message)
+                        ctx.status(400).json(ErrorResponse(400, "Bad Request", e.message ?: "Invalid request"))
+                    }
+
+                    is NoSuchElementException -> {
+                        logger.warn("Not found: {}", e.message)
+                        ctx.status(404).json(ErrorResponse(404, "Not Found", e.message ?: "Resource not found"))
+                    }
+
+                    else -> {
+                        logger.error("Unhandled exception", e)
+                        ctx.status(500).json(ErrorResponse(500, "Internal Server Error", "An unexpected error occurred"))
+                    }
+                }
             }
         }
 

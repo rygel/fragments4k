@@ -88,8 +88,10 @@ class FileSystemFragmentRepository(
     private val parser: MarkdownParser = MarkdownParser(),
 ) : FragmentRepository {
     private val logger = LoggerFactory.getLogger(FileSystemFragmentRepository::class.java)
-    private var cachedFragments: List<Fragment> = emptyList()
-    private var lastLoaded: LocalDateTime = LocalDateTime.MIN
+
+    @Volatile private var cachedFragments: List<Fragment> = emptyList()
+
+    @Volatile private var lastLoaded: LocalDateTime = LocalDateTime.MIN
 
     @Volatile private var cachedRelationships: ContentRelationships? = null
 
@@ -306,6 +308,9 @@ class FileSystemFragmentRepository(
     }
 
     private fun parseFragmentFile(file: File): Fragment {
+        if (file.length() > MAX_FILE_SIZE) {
+            throw IOException("Fragment file exceeds ${MAX_FILE_SIZE / (1024 * 1024)}MB limit: ${file.absolutePath}")
+        }
         val content = file.readText()
         val parsed = parser.parse(content)
         val frontMatter = parsed.frontMatter
@@ -398,6 +403,7 @@ class FileSystemFragmentRepository(
     }
 
     companion object {
+        private const val MAX_FILE_SIZE = 10L * 1024 * 1024
         private val SLUG_PATTERN = Regex("^[a-z0-9]+(-[a-z0-9]+)*$")
         private val SLUG_NON_ALPHANUMERIC = Regex("[^a-z0-9\\s-]")
         private val SLUG_WHITESPACE = Regex("\\s+")
