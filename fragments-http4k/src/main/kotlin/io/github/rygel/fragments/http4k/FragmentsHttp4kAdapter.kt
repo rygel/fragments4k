@@ -6,10 +6,18 @@ import io.github.rygel.fragments.FragmentTemplates
 import io.github.rygel.fragments.FragmentViewModel
 import io.github.rygel.fragments.NavigationLink
 import io.github.rygel.fragments.SocialShareLink
+import io.github.rygel.fragments.adapter.ArchiveViewModel as SharedArchiveViewModel
+import io.github.rygel.fragments.adapter.AuthorPageViewModel as SharedAuthorPageViewModel
+import io.github.rygel.fragments.adapter.BlogOverviewViewModel as SharedBlogOverviewViewModel
+import io.github.rygel.fragments.adapter.CategoryViewModel as SharedCategoryViewModel
+import io.github.rygel.fragments.adapter.ContentViewModel as SharedContentViewModel
 import io.github.rygel.fragments.adapter.FooterConfig
 import io.github.rygel.fragments.adapter.FragmentsEngine
+import io.github.rygel.fragments.adapter.HomeViewModel as SharedHomeViewModel
 import io.github.rygel.fragments.adapter.PaginationInfo
 import io.github.rygel.fragments.adapter.SearchFormConfig
+import io.github.rygel.fragments.adapter.SearchViewModel as SharedSearchViewModel
+import io.github.rygel.fragments.adapter.TagViewModel as SharedTagViewModel
 import kotlinx.coroutines.runBlocking
 import org.http4k.core.Filter
 import org.http4k.core.Method.GET
@@ -388,6 +396,14 @@ class FragmentsHttp4kAdapter(
         val footer: FooterConfig,
         val socialShareLinks: List<SocialShareLink> = emptyList(),
     ) : ViewModel {
+        constructor(vm: SharedContentViewModel) : this(
+            viewModel = vm.viewModel,
+            templateName = vm.templateName,
+            navigationMenu = vm.navigationMenu,
+            footer = requireNotNull(vm.footer),
+            socialShareLinks = vm.socialShareLinks,
+        )
+
         override fun template(): String = templateName
     }
 
@@ -398,6 +414,14 @@ class FragmentsHttp4kAdapter(
         val navigationMenu: List<NavigationLink>,
         val footer: FooterConfig,
     ) : ViewModel {
+        constructor(vm: SharedHomeViewModel, templateName: String = FragmentTemplates.INDEX) : this(
+            fragments = vm.fragments,
+            isPartialRender = vm.isPartialRender,
+            templateName = templateName,
+            navigationMenu = vm.navigationMenu,
+            footer = requireNotNull(vm.footer),
+        )
+
         override fun template(): String = templateName
     }
 
@@ -413,6 +437,18 @@ class FragmentsHttp4kAdapter(
         val pagination: PaginationInfo,
         val footer: FooterConfig,
     ) : ViewModel {
+        constructor(vm: SharedBlogOverviewViewModel) : this(
+            fragments = vm.fragments,
+            currentPage = vm.currentPage,
+            totalPages = vm.totalPages,
+            hasNext = vm.hasNext,
+            hasPrevious = vm.hasPrevious,
+            isPartialRender = vm.isPartialRender,
+            navigationMenu = vm.navigationMenu,
+            pagination = vm.pagination,
+            footer = requireNotNull(vm.footer),
+        )
+
         override fun template(): String = templateName
     }
 
@@ -429,6 +465,19 @@ class FragmentsHttp4kAdapter(
         val pagination: PaginationInfo,
         val footer: FooterConfig,
     ) : ViewModel {
+        constructor(vm: SharedTagViewModel) : this(
+            tag = vm.tag,
+            fragments = vm.fragments,
+            currentPage = vm.currentPage,
+            totalPages = vm.totalPages,
+            hasNext = vm.hasNext,
+            hasPrevious = vm.hasPrevious,
+            isPartialRender = vm.isPartialRender,
+            navigationMenu = vm.navigationMenu,
+            pagination = vm.pagination,
+            footer = requireNotNull(vm.footer),
+        )
+
         override fun template(): String = templateName
     }
 
@@ -445,6 +494,19 @@ class FragmentsHttp4kAdapter(
         val pagination: PaginationInfo,
         val footer: FooterConfig,
     ) : ViewModel {
+        constructor(vm: SharedCategoryViewModel) : this(
+            category = vm.category,
+            fragments = vm.fragments,
+            currentPage = vm.currentPage,
+            totalPages = vm.totalPages,
+            hasNext = vm.hasNext,
+            hasPrevious = vm.hasPrevious,
+            isPartialRender = vm.isPartialRender,
+            navigationMenu = vm.navigationMenu,
+            pagination = vm.pagination,
+            footer = requireNotNull(vm.footer),
+        )
+
         override fun template(): String = templateName
     }
 
@@ -457,6 +519,15 @@ class FragmentsHttp4kAdapter(
         val footer: FooterConfig,
         val searchForm: SearchFormConfig,
     ) : ViewModel {
+        constructor(vm: SharedSearchViewModel) : this(
+            query = vm.query,
+            results = vm.results,
+            siteTitle = vm.siteTitle,
+            navigationMenu = vm.navigationMenu,
+            footer = requireNotNull(vm.footer),
+            searchForm = requireNotNull(vm.searchForm),
+        )
+
         override fun template(): String = templateName
     }
 
@@ -475,6 +546,21 @@ class FragmentsHttp4kAdapter(
         val pagination: PaginationInfo,
         val footer: FooterConfig,
     ) : ViewModel {
+        constructor(vm: SharedAuthorPageViewModel) : this(
+            authorSlug = vm.authorSlug,
+            authorName = vm.authorName,
+            author = vm.author,
+            fragments = vm.fragments,
+            currentPage = vm.currentPage,
+            totalPages = vm.totalPages,
+            hasNext = vm.hasNext,
+            hasPrevious = vm.hasPrevious,
+            isPartialRender = vm.isPartialRender,
+            navigationMenu = vm.navigationMenu,
+            pagination = vm.pagination,
+            footer = requireNotNull(vm.footer),
+        )
+
         override fun template(): String = templateName
     }
 
@@ -491,6 +577,19 @@ class FragmentsHttp4kAdapter(
         val archiveMonthLinks: List<ArchiveNavigationLink>? = null,
         val archiveBreadcrumbs: List<ArchiveNavigationLink>? = null,
     ) : ViewModel {
+        constructor(vm: SharedArchiveViewModel) : this(
+            type = vm.type,
+            year = vm.year,
+            month = vm.month,
+            fragments = vm.fragments,
+            siteTitle = vm.siteTitle,
+            navigationMenu = vm.navigationMenu,
+            footer = requireNotNull(vm.footer),
+            archiveYearLinks = vm.archiveYearLinks,
+            archiveMonthLinks = vm.archiveMonthLinks,
+            archiveBreadcrumbs = vm.archiveBreadcrumbs,
+        )
+
         override fun template(): String = templateName
     }
 }

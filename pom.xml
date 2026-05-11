@@ -47,7 +47,6 @@
         <snakeyaml.version>2.6</snakeyaml.version>
         <slf4j.version>2.0.17</slf4j.version>
         <logback.version>1.5.32</logback.version>
-        <jte.version>3.2.4</jte.version>
         <lucene.version>10.4.0</lucene.version>
         <caffeine.version>3.2.4</caffeine.version>
         <jsoup.version>1.22.2</jsoup.version>
@@ -168,16 +167,6 @@
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
                 <version>${logback.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>gg.jte</groupId>
-                <artifactId>jte</artifactId>
-                <version>${jte.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>gg.jte</groupId>
-                <artifactId>jte-kotlin</artifactId>
-                <version>${jte.version}</version>
             </dependency>
 
             <dependency>

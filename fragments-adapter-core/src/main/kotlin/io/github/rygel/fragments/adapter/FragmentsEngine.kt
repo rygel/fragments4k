@@ -74,12 +74,12 @@ class FragmentsEngine(
     /**
      * Content-Security-Policy header value sent with every response.
      *
-     * The default allows `unpkg.com` for scripts (bundled templates load htmx from this CDN).
-     * If you serve htmx locally or remove it, override with a stricter policy:
-     * `"default-src 'self'; script-src 'self'; style-src 'self'"`
+     * The default allows `cdnjs.cloudflare.com` (Prism syntax highlighting).
+     * Override this to restrict or allow additional CDNs (e.g. `"default-src 'self'; script-src 'self'; style-src 'self'"`)
+     * if you serve libraries locally or use different CDN hosts.
      */
     val contentSecurityPolicy: String =
-        "default-src 'self'; script-src 'self' unpkg.com; style-src 'self'",
+        "default-src 'self'; script-src 'self' cdnjs.cloudflare.com; style-src 'self' cdnjs.cloudflare.com",
 ) {
     private val allRepositories: List<FragmentRepository> =
         listOf(staticEngine.getRepository(), blogEngine.getRepository()) + additionalRepositories

@@ -8,16 +8,21 @@ import io.github.rygel.fragments.blog.BlogEngine
 import io.github.rygel.fragments.lucene.LuceneSearchEngine
 import io.github.rygel.fragments.static.StaticPageEngine
 import jakarta.annotation.PreDestroy
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
 @Configuration
-class FragmentsSpringConfiguration {
+class FragmentsSpringConfiguration(
+    @Value("\${fragments.path:./content}")
+    private val fragmentsPath: String,
+) {
     private lateinit var searchEngineBean: LuceneSearchEngine
 
     @Bean
+    @ConditionalOnMissingBean
     fun fragmentRepository(): FragmentRepository {
-        val fragmentsPath = System.getProperty("fragments.path") ?: System.getenv("FRAGMENTS_PATH") ?: "./content"
         return FileSystemFragmentRepository(
             basePath = fragmentsPath,
             urlBuilder = { fragment ->
@@ -36,18 +41,22 @@ class FragmentsSpringConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean
     fun staticPageEngine(repository: FragmentRepository): StaticPageEngine = StaticPageEngine(repository)
 
     @Bean
+    @ConditionalOnMissingBean
     fun blogEngine(repository: FragmentRepository): BlogEngine = BlogEngine(repository)
 
     @Bean
+    @ConditionalOnMissingBean
     fun searchEngine(repository: FragmentRepository): LuceneSearchEngine {
         searchEngineBean = LuceneSearchEngine(repository)
         return searchEngineBean
     }
 
     @Bean
+    @ConditionalOnMissingBean
     fun fragmentsEngine(
         staticEngine: StaticPageEngine,
         blogEngine: BlogEngine,

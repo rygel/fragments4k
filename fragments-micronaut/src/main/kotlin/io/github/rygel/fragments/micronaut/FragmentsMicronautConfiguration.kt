@@ -8,16 +8,19 @@ import io.github.rygel.fragments.blog.BlogEngine
 import io.github.rygel.fragments.lucene.LuceneSearchEngine
 import io.github.rygel.fragments.static.StaticPageEngine
 import io.micronaut.context.annotation.Factory
+import io.micronaut.context.annotation.Property
 import jakarta.annotation.PreDestroy
 import jakarta.inject.Singleton
 
 @Factory
-class FragmentsMicronautConfiguration {
+class FragmentsMicronautConfiguration(
+    @Property(name = "fragments.path")
+    private val fragmentsPath: String = "./content",
+) {
     private lateinit var searchEngineBean: LuceneSearchEngine
 
     @Singleton
     fun fragmentRepository(): FragmentRepository {
-        val fragmentsPath = System.getProperty("fragments.path") ?: System.getenv("FRAGMENTS_PATH") ?: "./content"
         return FileSystemFragmentRepository(
             basePath = fragmentsPath,
             urlBuilder = { fragment ->
