@@ -5,7 +5,7 @@ import kotlinx.coroutines.sync.withLock
 import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.time.Instant
-import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Wrapper for cached values with expiration tracking
@@ -170,16 +170,16 @@ class InMemoryCache<K, V>(
     private val configuration: CacheConfiguration = CacheConfiguration.DEFAULT,
 ) : Cache<K, V> {
     private val logger = LoggerFactory.getLogger(InMemoryCache::class.java)
-    private val store = ConcurrentHashMap<K, CacheEntry<V>>()
+    private val store = HashMap<K, CacheEntry<V>>()
     private val mutex = Mutex()
-    private var statistics = CacheStatistics()
+    private val statistics = AtomicReference(CacheStatistics())
 
     override suspend fun get(key: K): V? =
         mutex.withLock {
             val entry = store[key]
             if (entry != null && !entry.isExpired()) {
                 if (configuration.recordStats) {
-                    statistics = statistics.hit()
+                    statistics.updateAndGet { it.hit() }
                     logger.debug("Cache hit for key: $key")
                 }
                 entry.value
@@ -189,7 +189,7 @@ class InMemoryCache<K, V>(
                     store.remove(key)
                 }
                 if (configuration.recordStats) {
-                    statistics = statistics.miss()
+                    statistics.updateAndGet { it.miss() }
                     logger.debug("Cache miss for key: $key")
                 }
                 null
@@ -209,7 +209,7 @@ class InMemoryCache<K, V>(
             val entry = store[key]
             if (entry != null && !entry.isExpired()) {
                 if (configuration.recordStats) {
-                    statistics = statistics.hit()
+                    statistics.updateAndGet { it.hit() }
                 }
                 entry.value
             } else {
@@ -226,7 +226,7 @@ class InMemoryCache<K, V>(
                     putEntry(key, value)
 
                     if (configuration.recordStats) {
-                        statistics = statistics.load(endTime - startTime)
+                        statistics.updateAndGet { it.load(endTime - startTime) }
                         logger.debug("Cache compute and load for key: $key in ${endTime - startTime}ns")
                     }
 
@@ -234,7 +234,7 @@ class InMemoryCache<K, V>(
                     value
                 } finally {
                     if (!success && configuration.recordStats) {
-                        statistics = statistics.loadFailure()
+                        statistics.updateAndGet { it.loadFailure() }
                         logger.error("Cache load failure for key: $key")
                     }
                 }
@@ -282,10 +282,10 @@ class InMemoryCache<K, V>(
         }
     }
 
-    override fun getStatistics(): CacheStatistics = statistics
+    override fun getStatistics(): CacheStatistics = statistics.get()
 
     override fun resetStatistics() {
-        statistics = statistics.reset()
+        statistics.set(CacheStatistics())
         logger.debug("Cache statistics reset")
     }
 
@@ -320,7 +320,7 @@ class InMemoryCache<K, V>(
             store.entries.minByOrNull { it.value.createdAt }?.key?.let { keyToRemove ->
                 store.remove(keyToRemove)
                 if (configuration.recordStats) {
-                    statistics = statistics.eviction()
+                    statistics.updateAndGet { it.eviction() }
                 }
                 logger.debug("Cache eviction for key: $keyToRemove (max size reached)")
             } ?: break

@@ -23,7 +23,7 @@ class StaticPageEngine(
                 repository.getAllVisible()
             }
         return allFragments
-            .filter { it.template == FragmentTemplates.STATIC || it.template.isEmpty() || it.template == "default" }
+            .filter { it.template == FragmentTemplates.STATIC || it.template.isEmpty() || it.template == FragmentTemplates.DEFAULT }
             .map { resolveUrl(it) }
     }
 
