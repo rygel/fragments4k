@@ -27,6 +27,15 @@ import io.github.rygel.fragments.static.StaticPageEngine
  * Each web framework adapter (http4k, Javalin, Spring, Quarkus, Micronaut) delegates
  * to this engine for business logic, then maps the results to framework-specific
  * HTTP responses. This eliminates duplicated logic across adapters.
+ *
+ * ## Design: Facade Pattern
+ *
+ * This class intentionally uses the Facade pattern — it aggregates blog, static page,
+ * RSS, sitemap, search, and navigation logic behind a single entry point. While the
+ * method count is large, each method is a thin delegation to a specialised component
+ * (BlogEngine, StaticPageEngine, RssGenerator, etc.). Splitting into smaller facades
+ * would increase coupling complexity without reducing actual code — the adapters still
+ * need all these capabilities together.
  */
 class FragmentsEngine(
     val staticEngine: StaticPageEngine,
@@ -62,9 +71,15 @@ class FragmentsEngine(
     val additionalFragmentProviders: List<suspend () -> List<Fragment>> = emptyList(),
     val navigationMenu: List<NavigationLink>? = null,
     val footer: FooterConfig? = null,
+    /**
+     * Content-Security-Policy header value sent with every response.
+     *
+     * The default allows `unpkg.com` for scripts (bundled templates load htmx from this CDN).
+     * If you serve htmx locally or remove it, override with a stricter policy:
+     * `"default-src 'self'; script-src 'self'; style-src 'self'"`
+     */
     val contentSecurityPolicy: String =
-        "default-src 'self'; script-src 'self' cdnjs.cloudflare.com; " +
-            "style-src 'self' 'unsafe-inline' cdnjs.cloudflare.com",
+        "default-src 'self'; script-src 'self' unpkg.com; style-src 'self'",
 ) {
     private val allRepositories: List<FragmentRepository> =
         listOf(staticEngine.getRepository(), blogEngine.getRepository()) + additionalRepositories

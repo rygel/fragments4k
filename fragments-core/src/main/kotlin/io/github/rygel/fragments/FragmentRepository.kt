@@ -13,6 +13,13 @@ import java.time.ZoneOffset
  *
  * All operations are `suspend` functions and are safe to call from coroutine
  * contexts. Implementations are expected to run I/O on [kotlinx.coroutines.Dispatchers.IO].
+ *
+ * ## Authentication & Authorization
+ *
+ * The framework adapters (Spring Boot, Quarkus, Micronaut, Javalin, http4k) expose only
+ * **read-only** HTTP endpoints. All write operations (create, update, delete, status changes)
+ * are repository-level methods that are **not** exposed as HTTP endpoints. Consumers are
+ * responsible for adding authentication to any custom endpoints that invoke write operations.
  */
 interface FragmentRepository {
     /** Returns every fragment regardless of status or visibility. */
