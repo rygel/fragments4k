@@ -11,6 +11,7 @@ package io.github.rygel.fragments
  * to opt a fragment into the corresponding content class.
  */
 object FragmentTemplates {
+    const val DEFAULT = "default"
     const val INDEX = "index"
     const val BLOG_OVERVIEW = "blog_overview"
     const val BLOG_POST = "blog_post"

@@ -234,7 +234,7 @@ class FileSystemFragmentRepository(
                 Result.success(updatedFragment)
             } catch (e: IOException) {
                 logger.error("Failed to update fragment status: $slug", e)
-                Result.failure(e)
+                Result.failure(IOException("Failed to update status of fragment '$slug' to $status: ${e.message}", e))
             }
         }
     }
@@ -615,7 +615,7 @@ class FileSystemFragmentRepository(
                     Result.success(updatedFragment)
                 } catch (e: IOException) {
                     logger.error("Failed to schedule fragment: $slug", e)
-                    Result.failure(e)
+                    Result.failure(IOException("Failed to schedule fragment '$slug' for $publishDate: ${e.message}", e))
                 }
             }
         }
@@ -776,7 +776,7 @@ class FileSystemFragmentRepository(
                 Result.success(revision)
             } catch (e: IOException) {
                 logger.error("Failed to create revision for fragment: $slug", e)
-                Result.failure(e)
+                Result.failure(IOException("Failed to create revision for fragment '$slug': ${e.message}", e))
             }
         }
 
@@ -799,10 +799,17 @@ class FileSystemFragmentRepository(
 
             val revertedFragment = revisionRepository.revertToRevision(slug, revisionId, changedBy, reason)
             if (revertedFragment.isFailure) {
-                return@withContext Result.failure(revertedFragment.exceptionOrNull() ?: Exception("Revert failed"))
+                return@withContext Result.failure(
+                    revertedFragment.exceptionOrNull()
+                        ?: IllegalStateException("Revert failed for '$slug' to revision $revisionId"),
+                )
             }
 
-            val result = revertedFragment.getOrNull() ?: return@withContext Result.failure(Exception("Revert failed"))
+            val result =
+                revertedFragment.getOrNull()
+                    ?: return@withContext Result.failure(
+                        IllegalStateException("Revert produced null result for '$slug' revision $revisionId"),
+                    )
             try {
                 val file =
                     getFragmentFile(slug) ?: return@withContext Result.failure(IllegalArgumentException("Fragment file not found: $slug"))
@@ -828,7 +835,7 @@ class FileSystemFragmentRepository(
                 Result.success(updatedFragment)
             } catch (e: IOException) {
                 logger.error("Failed to revert fragment: $slug", e)
-                Result.failure(e)
+                Result.failure(IOException("Failed to write reverted fragment '$slug' (revision $revisionId): ${e.message}", e))
             }
         }
 }

@@ -59,7 +59,7 @@ fun RoutesConfig.fragmentsRoutes(
             val fragments = engine.getHome()
             val viewModel =
                 HomeViewModel(
-                    fragments = fragments.map { FragmentViewModel(it, isHtmxRequest(ctx)) },
+                    fragments = fragments.map { FragmentViewModel(it, isHtmxRequest(ctx), siteUrl = engine.siteUrl) },
                     navigationMenu = engine.nav(),
                     footer = engine.footer(),
                 )
@@ -72,7 +72,7 @@ fun RoutesConfig.fragmentsRoutes(
         ctx.handleAsync {
             val fragment = engine.getPage(slug)
             if (fragment != null) {
-                val fragmentViewModel = FragmentViewModel(fragment, isHtmxRequest(ctx))
+                val fragmentViewModel = FragmentViewModel(fragment, isHtmxRequest(ctx), siteUrl = engine.siteUrl)
                 val viewModel =
                     ContentViewModel(
                         viewModel = fragmentViewModel,
@@ -93,7 +93,7 @@ fun RoutesConfig.fragmentsRoutes(
             val pageResult = engine.getBlogOverview(page = 1)
             val viewModel =
                 BlogOverviewViewModel(
-                    fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(ctx)) },
+                    fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(ctx), siteUrl = engine.siteUrl) },
                     currentPage = pageResult.currentPage,
                     totalPages = pageResult.totalPages,
                     hasNext = pageResult.hasNext,
@@ -118,7 +118,7 @@ fun RoutesConfig.fragmentsRoutes(
             val pageResult = engine.getBlogOverview(page = page)
             val viewModel =
                 BlogOverviewViewModel(
-                    fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(ctx)) },
+                    fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(ctx), siteUrl = engine.siteUrl) },
                     currentPage = pageResult.currentPage,
                     totalPages = pageResult.totalPages,
                     hasNext = pageResult.hasNext,
@@ -144,7 +144,7 @@ fun RoutesConfig.fragmentsRoutes(
         ctx.handleAsync {
             val fragment = engine.getBlogPost(year, month, slug)
             if (fragment != null) {
-                val fragmentViewModel = FragmentViewModel(fragment, isHtmxRequest(ctx))
+                val fragmentViewModel = FragmentViewModel(fragment, isHtmxRequest(ctx), siteUrl = engine.siteUrl)
                 val viewModel =
                     ContentViewModel(
                         viewModel = fragmentViewModel,
@@ -168,7 +168,7 @@ fun RoutesConfig.fragmentsRoutes(
             val viewModel =
                 TagViewModel(
                     tag = tag,
-                    fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(ctx)) },
+                    fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(ctx), siteUrl = engine.siteUrl) },
                     currentPage = pageResult.currentPage,
                     totalPages = pageResult.totalPages,
                     hasNext = pageResult.hasNext,
@@ -195,7 +195,7 @@ fun RoutesConfig.fragmentsRoutes(
             val viewModel =
                 CategoryViewModel(
                     category = category,
-                    fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(ctx)) },
+                    fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(ctx), siteUrl = engine.siteUrl) },
                     currentPage = pageResult.currentPage,
                     totalPages = pageResult.totalPages,
                     hasNext = pageResult.hasNext,
@@ -225,7 +225,7 @@ fun RoutesConfig.fragmentsRoutes(
                     authorSlug = slug,
                     authorName = authorViewModel?.name,
                     author = authorViewModel,
-                    fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(ctx)) },
+                    fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(ctx), siteUrl = engine.siteUrl) },
                     currentPage = pageResult.currentPage,
                     totalPages = pageResult.totalPages,
                     hasNext = pageResult.hasNext,
@@ -257,7 +257,7 @@ fun RoutesConfig.fragmentsRoutes(
                 ArchiveViewModel(
                     type = "year",
                     year = year,
-                    fragments = fragments.map { FragmentViewModel(it, isHtmxRequest(ctx)) },
+                    fragments = fragments.map { FragmentViewModel(it, isHtmxRequest(ctx), siteUrl = engine.siteUrl) },
                     siteTitle = engine.siteTitle,
                     navigationMenu = engine.nav(),
                     footer = engine.footer(),
@@ -296,7 +296,7 @@ fun RoutesConfig.fragmentsRoutes(
                     type = "year-month",
                     year = year,
                     month = month,
-                    fragments = fragments.map { FragmentViewModel(it, isHtmxRequest(ctx)) },
+                    fragments = fragments.map { FragmentViewModel(it, isHtmxRequest(ctx), siteUrl = engine.siteUrl) },
                     siteTitle = engine.siteTitle,
                     navigationMenu = engine.nav(),
                     footer = engine.footer(),
@@ -359,7 +359,7 @@ fun RoutesConfig.fragmentsRoutes(
             val viewModel =
                 SearchViewModel(
                     query = query,
-                    results = results.map { FragmentViewModel(it.fragment, isHtmxRequest(ctx)) },
+                    results = results.map { FragmentViewModel(it.fragment, isHtmxRequest(ctx), siteUrl = engine.siteUrl) },
                     siteTitle = engine.siteTitle,
                     navigationMenu = engine.nav(),
                     footer = engine.footer(),

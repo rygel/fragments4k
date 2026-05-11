@@ -86,7 +86,7 @@ class FragmentsHttp4kAdapter(
             val fragments = engine.getHome()
             val viewModel =
                 HomeViewModel(
-                    fragments = fragments.map { FragmentViewModel(it, isHtmxRequest(request)) },
+                    fragments = fragments.map { FragmentViewModel(it, isHtmxRequest(request), siteUrl = engine.siteUrl) },
                     navigationMenu = engine.nav(),
                     footer = engine.footer(),
                 )
@@ -98,7 +98,7 @@ class FragmentsHttp4kAdapter(
         return runBlocking {
             val fragment = engine.getPage(slug)
             if (fragment != null) {
-                val fragmentViewModel = FragmentViewModel(fragment, isHtmxRequest(request))
+                val fragmentViewModel = FragmentViewModel(fragment, isHtmxRequest(request), siteUrl = engine.siteUrl)
                 val viewModel =
                     ContentViewModel(
                         viewModel = fragmentViewModel,
@@ -120,7 +120,7 @@ class FragmentsHttp4kAdapter(
             val pageResult = engine.getBlogOverview(page)
             val viewModel =
                 BlogOverviewViewModel(
-                    fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(request)) },
+                    fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(request), siteUrl = engine.siteUrl) },
                     currentPage = pageResult.currentPage,
                     totalPages = pageResult.totalPages,
                     hasNext = pageResult.hasNext,
@@ -148,7 +148,7 @@ class FragmentsHttp4kAdapter(
         return runBlocking {
             val fragment = engine.getBlogPost(year, month, slug)
             if (fragment != null) {
-                val fragmentViewModel = FragmentViewModel(fragment, isHtmxRequest(request))
+                val fragmentViewModel = FragmentViewModel(fragment, isHtmxRequest(request), siteUrl = engine.siteUrl)
                 val viewModel =
                     ContentViewModel(
                         viewModel = fragmentViewModel,
@@ -172,7 +172,7 @@ class FragmentsHttp4kAdapter(
             val viewModel =
                 TagViewModel(
                     tag = tag,
-                    fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(request)) },
+                    fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(request), siteUrl = engine.siteUrl) },
                     currentPage = pageResult.currentPage,
                     totalPages = pageResult.totalPages,
                     hasNext = pageResult.hasNext,
@@ -199,7 +199,7 @@ class FragmentsHttp4kAdapter(
             val viewModel =
                 CategoryViewModel(
                     category = category,
-                    fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(request)) },
+                    fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(request), siteUrl = engine.siteUrl) },
                     currentPage = pageResult.currentPage,
                     totalPages = pageResult.totalPages,
                     hasNext = pageResult.hasNext,
@@ -229,7 +229,7 @@ class FragmentsHttp4kAdapter(
                     authorSlug = slug,
                     authorName = authorViewModel?.name,
                     author = authorViewModel,
-                    fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(request)) },
+                    fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(request), siteUrl = engine.siteUrl) },
                     currentPage = pageResult.currentPage,
                     totalPages = pageResult.totalPages,
                     hasNext = pageResult.hasNext,
@@ -286,7 +286,7 @@ class FragmentsHttp4kAdapter(
             val viewModel =
                 SearchViewModel(
                     query = query,
-                    results = results.map { FragmentViewModel(it.fragment, isHtmxRequest(request)) },
+                    results = results.map { FragmentViewModel(it.fragment, isHtmxRequest(request), siteUrl = engine.siteUrl) },
                     siteTitle = engine.siteTitle,
                     navigationMenu = engine.nav(),
                     footer = engine.footer(),
@@ -340,7 +340,7 @@ class FragmentsHttp4kAdapter(
                 ArchiveViewModel(
                     type = "year",
                     year = year,
-                    fragments = fragments.map { FragmentViewModel(it, isHtmxRequest(request)) },
+                    fragments = fragments.map { FragmentViewModel(it, isHtmxRequest(request), siteUrl = engine.siteUrl) },
                     siteTitle = engine.siteTitle,
                     navigationMenu = engine.nav(),
                     footer = engine.footer(),
@@ -363,7 +363,7 @@ class FragmentsHttp4kAdapter(
                     type = "year-month",
                     year = year,
                     month = month,
-                    fragments = fragments.map { FragmentViewModel(it, isHtmxRequest(request)) },
+                    fragments = fragments.map { FragmentViewModel(it, isHtmxRequest(request), siteUrl = engine.siteUrl) },
                     siteTitle = engine.siteTitle,
                     navigationMenu = engine.nav(),
                     footer = engine.footer(),

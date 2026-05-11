@@ -45,7 +45,7 @@ class FragmentsSpringController(
         model.addAttribute(
             "viewModel",
             HomeViewModel(
-                fragments = fragments.map { FragmentViewModel(it, isPartial) },
+                fragments = fragments.map { FragmentViewModel(it, isPartial, siteUrl = engine.siteUrl) },
                 isPartialRender = isPartial,
                 navigationMenu = engine.nav(),
                 footer = engine.footer(),
@@ -66,7 +66,7 @@ class FragmentsSpringController(
             model.addAttribute(
                 "viewModel",
                 ContentViewModel(
-                    viewModel = FragmentViewModel(fragment, isPartial),
+                    viewModel = FragmentViewModel(fragment, isPartial, siteUrl = engine.siteUrl),
                     templateName = fragment.template,
                     navigationMenu = engine.nav(),
                     footer = engine.footer(),
@@ -90,7 +90,7 @@ class FragmentsSpringController(
         model.addAttribute(
             "viewModel",
             BlogOverviewViewModel(
-                fragments = pageResult.items.map { FragmentViewModel(it, isPartial) },
+                fragments = pageResult.items.map { FragmentViewModel(it, isPartial, siteUrl = engine.siteUrl) },
                 currentPage = pageResult.currentPage,
                 totalPages = pageResult.totalPages,
                 hasNext = pageResult.hasNext,
@@ -125,7 +125,7 @@ class FragmentsSpringController(
             model.addAttribute(
                 "viewModel",
                 ContentViewModel(
-                    viewModel = FragmentViewModel(fragment, isPartial),
+                    viewModel = FragmentViewModel(fragment, isPartial, siteUrl = engine.siteUrl),
                     templateName = fragment.template,
                     navigationMenu = engine.nav(),
                     footer = engine.footer(),
@@ -151,7 +151,7 @@ class FragmentsSpringController(
             "viewModel",
             TagViewModel(
                 tag = tag,
-                fragments = pageResult.items.map { FragmentViewModel(it, isPartial) },
+                fragments = pageResult.items.map { FragmentViewModel(it, isPartial, siteUrl = engine.siteUrl) },
                 currentPage = pageResult.currentPage,
                 totalPages = pageResult.totalPages,
                 hasNext = pageResult.hasNext,
@@ -178,7 +178,7 @@ class FragmentsSpringController(
             "viewModel",
             CategoryViewModel(
                 category = category,
-                fragments = pageResult.items.map { FragmentViewModel(it, isPartial) },
+                fragments = pageResult.items.map { FragmentViewModel(it, isPartial, siteUrl = engine.siteUrl) },
                 currentPage = pageResult.currentPage,
                 totalPages = pageResult.totalPages,
                 hasNext = pageResult.hasNext,
@@ -208,7 +208,7 @@ class FragmentsSpringController(
                 authorSlug = slug,
                 authorName = author?.name,
                 author = author,
-                fragments = pageResult.items.map { FragmentViewModel(it, isPartial) },
+                fragments = pageResult.items.map { FragmentViewModel(it, isPartial, siteUrl = engine.siteUrl) },
                 currentPage = pageResult.currentPage,
                 totalPages = pageResult.totalPages,
                 hasNext = pageResult.hasNext,
@@ -239,7 +239,7 @@ class FragmentsSpringController(
             ArchiveViewModel(
                 type = "year",
                 year = year,
-                fragments = fragments.map { FragmentViewModel(it, isPartial) },
+                fragments = fragments.map { FragmentViewModel(it, isPartial, siteUrl = engine.siteUrl) },
                 siteTitle = engine.siteTitle,
                 navigationMenu = engine.nav(),
                 footer = engine.footer(),
@@ -267,7 +267,7 @@ class FragmentsSpringController(
                 type = "year-month",
                 year = year,
                 month = month,
-                fragments = fragments.map { FragmentViewModel(it, isPartial) },
+                fragments = fragments.map { FragmentViewModel(it, isPartial, siteUrl = engine.siteUrl) },
                 siteTitle = engine.siteTitle,
                 navigationMenu = engine.nav(),
                 footer = engine.footer(),
@@ -290,7 +290,7 @@ class FragmentsSpringController(
             "viewModel",
             SearchViewModel(
                 query = query,
-                results = results.map { FragmentViewModel(it.fragment, isPartial) },
+                results = results.map { FragmentViewModel(it.fragment, isPartial, siteUrl = engine.siteUrl) },
                 siteTitle = engine.siteTitle,
                 navigationMenu = engine.nav(),
                 footer = engine.footer(),

@@ -18,8 +18,8 @@ class FileSystemFragmentRevisionRepository(
     private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 
     init {
-        if (!revisionsDir.exists()) {
-            revisionsDir.mkdirs()
+        if (!revisionsDir.exists() && !revisionsDir.mkdirs()) {
+            throw IllegalStateException("Failed to create revisions directory: ${revisionsDir.absolutePath}")
         }
     }
 
