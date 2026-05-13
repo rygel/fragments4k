@@ -42,7 +42,9 @@ fun RoutesConfig.fragmentsRoutes(
     }
 
     before("*") { ctx ->
-        ctx.header("Content-Security-Policy", engine.cspHeader())
+        engine.securityHeaders().forEach { (name, value) ->
+            ctx.header(name, value)
+        }
     }
 
     val render: (Context, String, Any) -> Unit = { ctx, template, viewModel ->

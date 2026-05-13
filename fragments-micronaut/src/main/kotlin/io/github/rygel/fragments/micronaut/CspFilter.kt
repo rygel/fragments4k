@@ -20,12 +20,12 @@ class CspFilter
         override fun doFilter(
             request: HttpRequest<*>,
             chain: ServerFilterChain,
-        ): Publisher<MutableHttpResponse<*>> = CspPublisher(chain.proceed(request), engine.cspHeader())
+        ): Publisher<MutableHttpResponse<*>> = SecurityHeadersPublisher(chain.proceed(request), engine.securityHeaders())
     }
 
-private class CspPublisher(
+private class SecurityHeadersPublisher(
     private val source: Publisher<MutableHttpResponse<*>>,
-    private val cspHeaderValue: String,
+    private val headers: Map<String, String>,
 ) : Publisher<MutableHttpResponse<*>> {
     override fun subscribe(subscriber: Subscriber<in MutableHttpResponse<*>>) {
         source.subscribe(
@@ -33,7 +33,9 @@ private class CspPublisher(
                 override fun onSubscribe(s: Subscription) = subscriber.onSubscribe(s)
 
                 override fun onNext(response: MutableHttpResponse<*>) {
-                    response.header("Content-Security-Policy", cspHeaderValue)
+                    headers.forEach { (name, value) ->
+                        response.header(name, value)
+                    }
                     subscriber.onNext(response)
                 }
 

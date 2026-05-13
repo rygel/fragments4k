@@ -20,6 +20,8 @@ class CspFilter
             requestContext: ContainerRequestContext,
             responseContext: ContainerResponseContext,
         ) {
-            responseContext.headers.add("Content-Security-Policy", engine.cspHeader())
+            engine.securityHeaders().forEach { (name, value) ->
+                responseContext.headers.add(name, value)
+            }
         }
     }

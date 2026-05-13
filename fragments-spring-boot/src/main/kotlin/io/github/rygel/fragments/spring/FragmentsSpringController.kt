@@ -31,8 +31,10 @@ class FragmentsSpringController(
     private val engine: FragmentsEngine,
 ) {
     @ModelAttribute
-    fun setCspHeader(response: HttpServletResponse) {
-        response.setHeader("Content-Security-Policy", engine.cspHeader())
+    fun setSecurityHeaders(response: HttpServletResponse) {
+        engine.securityHeaders().forEach { (name, value) ->
+            response.setHeader(name, value)
+        }
     }
 
     @GetMapping("/")

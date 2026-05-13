@@ -316,6 +316,14 @@ class FragmentsEngine(
 
     fun cspHeader(): String = contentSecurityPolicy
 
+    fun securityHeaders(): Map<String, String> =
+        mapOf(
+            "Content-Security-Policy" to contentSecurityPolicy,
+            "X-Content-Type-Options" to "nosniff",
+            "X-Frame-Options" to "DENY",
+            "Referrer-Policy" to "strict-origin-when-cross-origin",
+        )
+
     fun close() {
         searchEngine?.close()
     }

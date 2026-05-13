@@ -145,4 +145,13 @@ class FragmentsEngineTest {
         assertNotNull(links)
         assertTrue(links.isNotEmpty())
     }
+
+    @Test
+    fun testSecurityHeadersIncludesAllRequiredHeaders() {
+        val headers = engine.securityHeaders()
+        assertEquals("nosniff", headers["X-Content-Type-Options"])
+        assertEquals("DENY", headers["X-Frame-Options"])
+        assertEquals("strict-origin-when-cross-origin", headers["Referrer-Policy"])
+        assertTrue(headers.containsKey("Content-Security-Policy"))
+    }
 }
