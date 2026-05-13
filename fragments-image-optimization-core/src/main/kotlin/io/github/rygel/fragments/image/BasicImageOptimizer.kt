@@ -95,7 +95,8 @@ class BasicImageOptimizer : ImageOptimizer {
                 val outputPath = file.parent + File.separator + fileName
 
                 file.inputStream().use { inputStream ->
-                    val image = ImageIO.read(inputStream) ?: return@withContext Result.failure(IllegalArgumentException("Could not read image"))
+                    val image =
+                        ImageIO.read(inputStream) ?: return@withContext Result.failure(IllegalArgumentException("Could not read image"))
                     val originalSize = file.length()
 
                     val resizedImage = resizeImage(image, options)

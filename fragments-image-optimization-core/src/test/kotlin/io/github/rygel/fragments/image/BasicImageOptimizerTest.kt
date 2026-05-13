@@ -245,33 +245,37 @@ class BasicImageOptimizerTest {
 
     @Test
     fun rejectsNegativeMaxWidth() {
-        val exception = assertThrows<IllegalArgumentException> {
-            ImageResizeOptions(maxWidth = -1)
-        }
+        val exception =
+            assertThrows<IllegalArgumentException> {
+                ImageResizeOptions(maxWidth = -1)
+            }
         assertTrue(exception.message?.contains("maxWidth") == true)
     }
 
     @Test
     fun rejectsZeroMaxHeight() {
-        val exception = assertThrows<IllegalArgumentException> {
-            ImageResizeOptions(maxHeight = 0)
-        }
+        val exception =
+            assertThrows<IllegalArgumentException> {
+                ImageResizeOptions(maxHeight = 0)
+            }
         assertTrue(exception.message?.contains("maxHeight") == true)
     }
 
     @Test
     fun rejectsQualityAboveOne() {
-        val exception = assertThrows<IllegalArgumentException> {
-            ImageResizeOptions(quality = 1.5f)
-        }
+        val exception =
+            assertThrows<IllegalArgumentException> {
+                ImageResizeOptions(quality = 1.5f)
+            }
         assertTrue(exception.message?.contains("Quality") == true)
     }
 
     @Test
     fun rejectsNegativeQuality() {
-        val exception = assertThrows<IllegalArgumentException> {
-            ImageResizeOptions(quality = -0.1f)
-        }
+        val exception =
+            assertThrows<IllegalArgumentException> {
+                ImageResizeOptions(quality = -0.1f)
+            }
         assertTrue(exception.message?.contains("Quality") == true)
     }
 
