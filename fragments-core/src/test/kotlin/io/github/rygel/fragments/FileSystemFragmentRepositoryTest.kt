@@ -497,6 +497,14 @@ class FileSystemFragmentRepositoryTest {
         assertFalse(FragmentStatus.canTransition(FragmentStatus.SCHEDULED, FragmentStatus.EXPIRED))
     }
 
+    @Test
+    fun missingDirectoryReturnsEmptyList() =
+        runBlocking {
+            val missingRepo = FileSystemFragmentRepository("/nonexistent/path/that/does/not/exist")
+            val result = missingRepo.getAll()
+            assertTrue(result.isEmpty())
+        }
+
     private fun createTestFile(
         filename: String,
         content: String,
