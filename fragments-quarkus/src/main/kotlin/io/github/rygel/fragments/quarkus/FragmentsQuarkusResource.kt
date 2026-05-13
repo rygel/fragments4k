@@ -64,7 +64,7 @@ class FragmentsQuarkusResource
                     )
                 Response.ok(contentViewModel).build()
             } else {
-                Response.status(Response.Status.NOT_FOUND).entity("Page not found").build()
+                throw NoSuchElementException("Page not found")
             }
         }
 
@@ -119,7 +119,7 @@ class FragmentsQuarkusResource
                     )
                 Response.ok(contentViewModel).build()
             } else {
-                Response.status(Response.Status.NOT_FOUND).entity("Post not found").build()
+                throw NoSuchElementException("Post not found")
             }
         }
 
@@ -227,7 +227,7 @@ class FragmentsQuarkusResource
             @PathParam("year") year: String,
             @Context headers: HttpHeaders,
         ): Response {
-            val yearInt = year.toIntOrNull() ?: return Response.status(Response.Status.BAD_REQUEST).entity("Invalid year").build()
+            val yearInt = year.toIntOrNull() ?: throw IllegalArgumentException("Invalid year")
             val fragments = engine.getByYear(yearInt)
             val isPartial = isHtmxRequest(headers)
             val viewModel =
@@ -251,8 +251,8 @@ class FragmentsQuarkusResource
             @PathParam("month") month: String,
             @Context headers: HttpHeaders,
         ): Response {
-            val yearInt = year.toIntOrNull() ?: return Response.status(Response.Status.BAD_REQUEST).entity("Invalid year").build()
-            val monthInt = month.toIntOrNull() ?: return Response.status(Response.Status.BAD_REQUEST).entity("Invalid month").build()
+            val yearInt = year.toIntOrNull() ?: throw IllegalArgumentException("Invalid year")
+            val monthInt = month.toIntOrNull() ?: throw IllegalArgumentException("Invalid month")
             val fragments = engine.getByYearMonth(yearInt, monthInt)
             val isPartial = isHtmxRequest(headers)
             val viewModel =
@@ -276,7 +276,7 @@ class FragmentsQuarkusResource
             @QueryParam("q") query: String?,
             @Context headers: HttpHeaders,
         ): Response {
-            if (query.isNullOrBlank()) return Response.status(Response.Status.BAD_REQUEST).entity("Query parameter 'q' is required").build()
+            if (query.isNullOrBlank()) throw IllegalArgumentException("Query parameter 'q' is required")
             val results = engine.search(query)
             val isPartial = isHtmxRequest(headers)
             val viewModel =

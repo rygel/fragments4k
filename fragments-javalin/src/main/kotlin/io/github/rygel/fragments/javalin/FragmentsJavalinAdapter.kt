@@ -7,6 +7,7 @@ import io.github.rygel.fragments.adapter.AuthorPageViewModel
 import io.github.rygel.fragments.adapter.BlogOverviewViewModel
 import io.github.rygel.fragments.adapter.CategoryViewModel
 import io.github.rygel.fragments.adapter.ContentViewModel
+import io.github.rygel.fragments.adapter.ErrorResponse
 import io.github.rygel.fragments.adapter.FragmentsEngine
 import io.github.rygel.fragments.adapter.HomeViewModel
 import io.github.rygel.fragments.adapter.SearchViewModel
@@ -43,6 +44,14 @@ fun RoutesConfig.fragmentsRoutes(
 
     before("*") { ctx ->
         ctx.header("Content-Security-Policy", engine.cspHeader())
+    }
+
+    exception(IllegalArgumentException::class.java) { e, ctx ->
+        ctx.status(400).json(ErrorResponse.badRequest(e.message ?: "Invalid request"))
+    }
+
+    exception(NoSuchElementException::class.java) { e, ctx ->
+        ctx.status(404).json(ErrorResponse.notFound(e.message ?: "Resource not found"))
     }
 
     val render: (Context, String, Any) -> Unit = { ctx, template, viewModel ->
@@ -83,7 +92,7 @@ fun RoutesConfig.fragmentsRoutes(
                     )
                 render(ctx, fragment.template, viewModel)
             } else {
-                ctx.status(404).result("Page not found: $slug")
+                throw NoSuchElementException("Page not found: $slug")
             }
         }
     }
@@ -155,7 +164,7 @@ fun RoutesConfig.fragmentsRoutes(
                     )
                 render(ctx, fragment.template, viewModel)
             } else {
-                ctx.status(404).result("Post not found")
+                throw NoSuchElementException("Post not found")
             }
         }
     }
@@ -246,11 +255,7 @@ fun RoutesConfig.fragmentsRoutes(
 
     get("/blog/archive/{year}") { ctx ->
         val year = ctx.pathParam("year")
-        val yearInt = year.toIntOrNull()
-        if (yearInt == null) {
-            ctx.status(400).result("Invalid year")
-            return@get
-        }
+        val yearInt = year.toIntOrNull() ?: throw IllegalArgumentException("Invalid year")
         ctx.handleAsync {
             val fragments = engine.getByYear(yearInt)
             val viewModel =
@@ -277,17 +282,8 @@ fun RoutesConfig.fragmentsRoutes(
     get("/blog/archive/{year}/{month}") { ctx ->
         val year = ctx.pathParam("year")
         val month = ctx.pathParam("month")
-        val yearInt = year.toIntOrNull()
-        val monthInt = month.toIntOrNull()
-
-        if (yearInt == null) {
-            ctx.status(400).result("Invalid year")
-            return@get
-        }
-        if (monthInt == null) {
-            ctx.status(400).result("Invalid month")
-            return@get
-        }
+        val yearInt = year.toIntOrNull() ?: throw IllegalArgumentException("Invalid year")
+        val monthInt = month.toIntOrNull() ?: throw IllegalArgumentException("Invalid month")
 
         ctx.handleAsync {
             val fragments = engine.getByYearMonth(yearInt, monthInt)
@@ -349,11 +345,7 @@ fun RoutesConfig.fragmentsRoutes(
     }
 
     get("/search") { ctx ->
-        val query = ctx.queryParam("q")
-        if (query == null) {
-            ctx.status(400).result("Query parameter 'q' is required")
-            return@get
-        }
+        val query = ctx.queryParam("q") ?: throw IllegalArgumentException("Query parameter 'q' is required")
         ctx.handleAsync {
             val results = engine.search(query)
             val viewModel =
@@ -370,11 +362,7 @@ fun RoutesConfig.fragmentsRoutes(
     }
 
     get("/api/autocomplete") { ctx ->
-        val query = ctx.queryParam("q")
-        if (query == null) {
-            ctx.status(400).result("Query parameter 'q' is required")
-            return@get
-        }
+        val query = ctx.queryParam("q") ?: throw IllegalArgumentException("Query parameter 'q' is required")
         val limit = ctx.queryParam("limit")?.toIntOrNull() ?: 10
         ctx.handleAsync {
             val suggestions = engine.autocomplete(query, limit)

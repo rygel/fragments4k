@@ -6,12 +6,12 @@ import io.github.rygel.fragments.FragmentTemplates
 import io.github.rygel.fragments.FragmentViewModel
 import io.github.rygel.fragments.NavigationLink
 import io.github.rygel.fragments.SocialShareLink
-import io.github.rygel.fragments.TextEscapeUtils
 import io.github.rygel.fragments.adapter.ArchiveViewModel as SharedArchiveViewModel
 import io.github.rygel.fragments.adapter.AuthorPageViewModel as SharedAuthorPageViewModel
 import io.github.rygel.fragments.adapter.BlogOverviewViewModel as SharedBlogOverviewViewModel
 import io.github.rygel.fragments.adapter.CategoryViewModel as SharedCategoryViewModel
 import io.github.rygel.fragments.adapter.ContentViewModel as SharedContentViewModel
+import io.github.rygel.fragments.adapter.ErrorResponse
 import io.github.rygel.fragments.adapter.FooterConfig
 import io.github.rygel.fragments.adapter.FragmentsEngine
 import io.github.rygel.fragments.adapter.HomeViewModel as SharedHomeViewModel
@@ -26,6 +26,7 @@ import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.Status
 import org.http4k.core.then
+import org.http4k.format.Jackson
 import org.http4k.routing.RoutingHttpHandler
 import org.http4k.routing.bind
 import org.http4k.routing.path
@@ -40,6 +41,8 @@ class FragmentsHttp4kAdapter(
 ) {
     private val logger = LoggerFactory.getLogger(FragmentsHttp4kAdapter::class.java)
 
+    private val json = Jackson
+
     @Suppress("TooGenericExceptionCaught")
     private val errorFilter =
         Filter { next ->
@@ -50,17 +53,17 @@ class FragmentsHttp4kAdapter(
                     logger.warn("Bad request: {}", e.message)
                     Response(Status.BAD_REQUEST)
                         .header("Content-Type", "application/json")
-                        .body("""{"status":400,"error":"Bad Request","message":"${e.message?.replace("\"", "\\\"")}"}""")
+                        .body(json.asFormatString(ErrorResponse.badRequest(e.message ?: "Invalid request")))
                 } catch (e: NoSuchElementException) {
                     logger.warn("Not found: {}", e.message)
                     Response(Status.NOT_FOUND)
                         .header("Content-Type", "application/json")
-                        .body("""{"status":404,"error":"Not Found","message":"${e.message?.replace("\"", "\\\"")}"}""")
+                        .body(json.asFormatString(ErrorResponse.notFound(e.message ?: "Resource not found")))
                 } catch (e: Exception) {
                     logger.error("Unhandled exception", e)
                     Response(Status.INTERNAL_SERVER_ERROR)
                         .header("Content-Type", "application/json")
-                        .body("""{"status":500,"error":"Internal Server Error","message":"An unexpected error occurred"}""")
+                        .body(json.asFormatString(ErrorResponse.internalError()))
                 }
             }
         }
@@ -118,7 +121,7 @@ class FragmentsHttp4kAdapter(
                     )
                 renderResponse(viewModel)
             } else {
-                Response(Status.NOT_FOUND).body("Page not found: $slug")
+                throw NoSuchElementException("Page not found: $slug")
             }
         }
     }
@@ -168,7 +171,7 @@ class FragmentsHttp4kAdapter(
                     )
                 renderResponse(viewModel)
             } else {
-                Response(Status.NOT_FOUND).body("Post not found")
+                throw NoSuchElementException("Post not found")
             }
         }
     }
@@ -289,7 +292,7 @@ class FragmentsHttp4kAdapter(
         }
 
     private fun handleSearch(request: Request): Response {
-        val query = request.query("q") ?: return Response(Status.BAD_REQUEST).body("Query parameter 'q' is required")
+        val query = request.query("q") ?: throw IllegalArgumentException("Query parameter 'q' is required")
         return runBlocking {
             val results = engine.search(query)
             val viewModel =
@@ -306,33 +309,20 @@ class FragmentsHttp4kAdapter(
     }
 
     private fun handleAutocomplete(request: Request): Response {
-        val query = request.query("q") ?: return Response(Status.BAD_REQUEST).body("Query parameter 'q' is required")
+        val query = request.query("q") ?: throw IllegalArgumentException("Query parameter 'q' is required")
         val limit = request.query("limit")?.toIntOrNull() ?: 10
         return runBlocking {
             val suggestions = engine.autocomplete(query, limit)
-            val json =
-                buildString {
-                    append("[")
-                    suggestions.forEachIndexed { index, suggestion ->
-                        if (index > 0) append(",")
-                        append(
-                            """{"text":"${TextEscapeUtils.escapeJson(
-                                suggestion.text,
-                            )}","frequency":${suggestion.frequency},"type":"${suggestion.type.name}"}""",
-                        )
-                    }
-                    append("]")
-                }
             Response(Status.OK)
                 .header("Content-Type", "application/json; charset=utf-8")
-                .body(json)
+                .body(json.asFormatString(suggestions))
         }
     }
 
     private fun handleArchiveYear(request: Request): Response {
         val year = request.path("year") ?: return Response(Status.NOT_FOUND)
         return runBlocking {
-            val yearInt = year.toIntOrNull() ?: return@runBlocking Response(Status.BAD_REQUEST).body("Invalid year")
+            val yearInt = year.toIntOrNull() ?: throw IllegalArgumentException("Invalid year")
             val fragments = engine.getByYear(yearInt)
             val viewModel =
                 ArchiveViewModel(
@@ -353,8 +343,8 @@ class FragmentsHttp4kAdapter(
         val year = request.path("year") ?: return Response(Status.NOT_FOUND)
         val month = request.path("month") ?: return Response(Status.NOT_FOUND)
         return runBlocking {
-            val yearInt = year.toIntOrNull() ?: return@runBlocking Response(Status.BAD_REQUEST).body("Invalid year")
-            val monthInt = month.toIntOrNull() ?: return@runBlocking Response(Status.BAD_REQUEST).body("Invalid month")
+            val yearInt = year.toIntOrNull() ?: throw IllegalArgumentException("Invalid year")
+            val monthInt = month.toIntOrNull() ?: throw IllegalArgumentException("Invalid month")
             val fragments = engine.getByYearMonth(yearInt, monthInt)
             val viewModel =
                 ArchiveViewModel(

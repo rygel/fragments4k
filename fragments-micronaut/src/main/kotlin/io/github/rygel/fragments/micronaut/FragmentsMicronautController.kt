@@ -58,7 +58,7 @@ class FragmentsMicronautController
                     )
                 HttpResponse.ok(contentViewModel)
             } else {
-                HttpResponse.notFound("Page not found")
+                throw NoSuchElementException("Page not found")
             }
         }
 
@@ -110,7 +110,7 @@ class FragmentsMicronautController
                     )
                 HttpResponse.ok(contentViewModel)
             } else {
-                HttpResponse.notFound("Post not found")
+                throw NoSuchElementException("Post not found")
             }
         }
 
@@ -209,7 +209,7 @@ class FragmentsMicronautController
             year: String,
             headers: HttpHeaders,
         ): HttpResponse<Any> {
-            val yearInt = year.toIntOrNull() ?: return HttpResponse.badRequest("Invalid year")
+            val yearInt = year.toIntOrNull() ?: throw IllegalArgumentException("Invalid year")
             val fragments = engine.getByYear(yearInt)
             val isPartial = isHtmxRequest(headers)
             val viewModel =
@@ -232,8 +232,8 @@ class FragmentsMicronautController
             month: String,
             headers: HttpHeaders,
         ): HttpResponse<Any> {
-            val yearInt = year.toIntOrNull() ?: return HttpResponse.badRequest("Invalid year")
-            val monthInt = month.toIntOrNull() ?: return HttpResponse.badRequest("Invalid month")
+            val yearInt = year.toIntOrNull() ?: throw IllegalArgumentException("Invalid year")
+            val monthInt = month.toIntOrNull() ?: throw IllegalArgumentException("Invalid month")
             val fragments = engine.getByYearMonth(yearInt, monthInt)
             val isPartial = isHtmxRequest(headers)
             val viewModel =
