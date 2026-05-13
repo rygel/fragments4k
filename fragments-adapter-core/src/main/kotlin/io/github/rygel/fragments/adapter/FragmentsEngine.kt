@@ -100,7 +100,7 @@ class FragmentsEngine(
 
     suspend fun getPage(slug: String): Fragment? {
         val validation = RequestValidation.validateSlug(slug)
-        if (!validation.isValid) return null
+        if (!validation.isValid) throw IllegalArgumentException(validation.errorMessage)
         return staticEngine.getPage(validation.value)
     }
 
@@ -117,7 +117,7 @@ class FragmentsEngine(
         slug: String,
     ): Fragment? {
         val validatedSlug = RequestValidation.validateSlug(slug)
-        if (!validatedSlug.isValid) return null
+        if (!validatedSlug.isValid) throw IllegalArgumentException(validatedSlug.errorMessage)
         return blogEngine.getPost(year, month, validatedSlug.value)
     }
 
@@ -127,7 +127,7 @@ class FragmentsEngine(
         slug: String,
     ): Pair<Fragment?, ContentRelationships?> {
         val validatedSlug = RequestValidation.validateSlug(slug)
-        if (!validatedSlug.isValid) return null to null
+        if (!validatedSlug.isValid) throw IllegalArgumentException(validatedSlug.errorMessage)
         return blogEngine.getPostWithRelationships(year, month, validatedSlug.value)
     }
 
@@ -136,7 +136,7 @@ class FragmentsEngine(
         page: Int = 1,
     ): Page<Fragment> {
         val validatedTag = RequestValidation.validateTag(tag)
-        if (!validatedTag.isValid) return Page.create(emptyList(), 1, 10)
+        if (!validatedTag.isValid) throw IllegalArgumentException(validatedTag.errorMessage)
         return blogEngine.getByTag(validatedTag.value, RequestValidation.validatePage(page).value)
     }
 
@@ -145,7 +145,7 @@ class FragmentsEngine(
         page: Int = 1,
     ): Page<Fragment> {
         val validatedCategory = RequestValidation.validateCategory(category)
-        if (!validatedCategory.isValid) return Page.create(emptyList(), 1, 10)
+        if (!validatedCategory.isValid) throw IllegalArgumentException(validatedCategory.errorMessage)
         return blogEngine.getByCategory(validatedCategory.value, RequestValidation.validatePage(page).value)
     }
 
@@ -154,7 +154,7 @@ class FragmentsEngine(
         page: Int = 1,
     ): Page<Fragment> {
         val validatedAuthor = RequestValidation.validateAuthorId(authorId)
-        if (!validatedAuthor.isValid) return Page.create(emptyList(), 1, 10)
+        if (!validatedAuthor.isValid) throw IllegalArgumentException(validatedAuthor.errorMessage)
         return blogEngine.getByAuthor(validatedAuthor.value, RequestValidation.validatePage(page).value)
     }
 
@@ -168,7 +168,7 @@ class FragmentsEngine(
 
     suspend fun getByYear(year: Int): List<Fragment> {
         val validation = RequestValidation.validateYear(year)
-        if (!validation.isValid) return emptyList()
+        if (!validation.isValid) throw IllegalArgumentException(validation.errorMessage)
         return blogEngine.getByYear(validation.value)
     }
 
@@ -178,7 +178,8 @@ class FragmentsEngine(
     ): List<Fragment> {
         val validatedYear = RequestValidation.validateYear(year)
         val validatedMonth = RequestValidation.validateMonth(month)
-        if (!validatedYear.isValid || !validatedMonth.isValid) return emptyList()
+        if (!validatedYear.isValid) throw IllegalArgumentException(validatedYear.errorMessage)
+        if (!validatedMonth.isValid) throw IllegalArgumentException(validatedMonth.errorMessage)
         return blogEngine.getByYearMonth(validatedYear.value, validatedMonth.value)
     }
 
@@ -193,7 +194,7 @@ class FragmentsEngine(
         maxResults: Int = 50,
     ): List<SearchResult> {
         val validatedQuery = RequestValidation.validateSearchQuery(query)
-        if (!validatedQuery.isValid) return emptyList()
+        if (!validatedQuery.isValid) throw IllegalArgumentException(validatedQuery.errorMessage)
         return searchEngine?.search(validatedQuery.value, RequestValidation.validateMaxResults(maxResults).value) ?: emptyList()
     }
 
@@ -202,7 +203,7 @@ class FragmentsEngine(
         limit: Int = 10,
     ): List<SearchSuggestion> {
         val validatedQuery = RequestValidation.validateSearchQuery(query)
-        if (!validatedQuery.isValid) return emptyList()
+        if (!validatedQuery.isValid) throw IllegalArgumentException(validatedQuery.errorMessage)
         return searchEngine?.autocomplete(validatedQuery.value, RequestValidation.validateAutocompleteLimit(limit).value) ?: emptyList()
     }
 
