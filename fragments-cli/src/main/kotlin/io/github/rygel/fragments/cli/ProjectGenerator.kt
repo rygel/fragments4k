@@ -198,14 +198,15 @@ object ProjectGenerator {
                 }
             }
 
-        val frameworkVersionProperty = when (framework) {
-            "http4k" -> "        <http4k.version>$HTTP4K_VERSION</http4k.version>"
-            "javalin" -> "        <javalin.version>$JAVALIN_VERSION</javalin.version>"
-            "spring-boot" -> "        <spring-boot.version>$SPRING_BOOT_VERSION</spring-boot.version>"
-            "quarkus" -> "        <quarkus.version>$QUARKUS_VERSION</quarkus.version>"
-            "micronaut" -> "        <micronaut.version>$MICRONAUT_VERSION</micronaut.version>"
-            else -> ""
-        }
+        val frameworkVersionProperty =
+            when (framework) {
+                "http4k" -> "        <http4k.version>$HTTP4K_VERSION</http4k.version>"
+                "javalin" -> "        <javalin.version>$JAVALIN_VERSION</javalin.version>"
+                "spring-boot" -> "        <spring-boot.version>$SPRING_BOOT_VERSION</spring-boot.version>"
+                "quarkus" -> "        <quarkus.version>$QUARKUS_VERSION</quarkus.version>"
+                "micronaut" -> "        <micronaut.version>$MICRONAUT_VERSION</micronaut.version>"
+                else -> ""
+            }
 
         return """<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
