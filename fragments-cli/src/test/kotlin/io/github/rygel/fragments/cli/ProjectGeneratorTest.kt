@@ -221,4 +221,120 @@ class ProjectGeneratorTest {
         val content = props.readText()
         assertTrue(content.contains("8080"), "application.properties should configure port 8080")
     }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["http4k", "spring-boot", "javalin", "quarkus", "micronaut"])
+    fun pomXmlContainsBomImport(framework: String) {
+        val dir = generateProject(framework)
+
+        val pomContent = dir.resolve("pom.xml").readText()
+        assertTrue(
+            pomContent.contains("<artifactId>fragments-bom</artifactId>"),
+            "pom.xml should import fragments-bom",
+        )
+        assertTrue(
+            pomContent.contains("<type>pom</type>"),
+            "fragments-bom should be imported as pom type",
+        )
+        assertTrue(
+            pomContent.contains("<scope>import</scope>"),
+            "fragments-bom should be imported with import scope",
+        )
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["http4k", "spring-boot", "javalin", "quarkus", "micronaut"])
+    fun pomXmlContainsVersionProperties(framework: String) {
+        val dir = generateProject(framework)
+
+        val pomContent = dir.resolve("pom.xml").readText()
+        assertTrue(
+            pomContent.contains("<java.version>17</java.version>"),
+            "pom.xml should declare java.version property",
+        )
+        assertTrue(
+            pomContent.contains("<kotlin.version>2.2.0</kotlin.version>"),
+            "pom.xml should declare kotlin.version property",
+        )
+        assertTrue(
+            pomContent.contains("<fragments.version>0.6.6</fragments.version>"),
+            "pom.xml should declare fragments.version property",
+        )
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["http4k"])
+    fun pomXmlContainsHttp4kVersionProperty(framework: String) {
+        val dir = generateProject(framework)
+
+        val pomContent = dir.resolve("pom.xml").readText()
+        assertTrue(
+            pomContent.contains("<http4k.version>6.31.1.0</http4k.version>"),
+            "pom.xml should declare http4k.version property",
+        )
+        assertTrue(
+            pomContent.contains("{http4k.version}"),
+            "http4k dependencies should use version property",
+        )
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["javalin"])
+    fun pomXmlContainsJavalinVersionProperty(framework: String) {
+        val dir = generateProject(framework)
+
+        val pomContent = dir.resolve("pom.xml").readText()
+        assertTrue(
+            pomContent.contains("<javalin.version>7.1.0</javalin.version>"),
+            "pom.xml should declare javalin.version property",
+        )
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["spring-boot"])
+    fun pomXmlContainsSpringBootVersionProperty(framework: String) {
+        val dir = generateProject(framework)
+
+        val pomContent = dir.resolve("pom.xml").readText()
+        assertTrue(
+            pomContent.contains("<spring-boot.version>3.3.2</spring-boot.version>"),
+            "pom.xml should declare spring-boot.version property",
+        )
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["http4k", "spring-boot", "javalin", "quarkus", "micronaut"])
+    fun readmeContainsProductionChecklist(framework: String) {
+        val dir = generateProject(framework)
+
+        val readme = dir.resolve("README.md").readText()
+        assertTrue(
+            readme.contains("Production Checklist"),
+            "README should contain production checklist section",
+        )
+        assertTrue(
+            readme.contains("siteUrl"),
+            "README should mention setting siteUrl",
+        )
+        assertTrue(
+            readme.contains("CSP"),
+            "README should mention CSP configuration",
+        )
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["http4k", "spring-boot", "javalin", "quarkus", "micronaut"])
+    fun readmeContainsSecurityNote(framework: String) {
+        val dir = generateProject(framework)
+
+        val readme = dir.resolve("README.md").readText()
+        assertTrue(
+            readme.contains("sanitizes all HTML content"),
+            "README should explain HTML sanitization",
+        )
+        assertTrue(
+            readme.contains("SanitizerProfile.STRICT"),
+            "README should mention strict sanitizer profile option",
+        )
+    }
 }
