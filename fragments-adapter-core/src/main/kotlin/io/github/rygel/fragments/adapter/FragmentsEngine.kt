@@ -95,54 +95,89 @@ class FragmentsEngine(
 
     suspend fun getHome(): List<Fragment> = staticEngine.getAllStaticPages()
 
-    suspend fun getPage(slug: String): Fragment? = staticEngine.getPage(slug)
+    suspend fun getPage(slug: String): Fragment? {
+        val validation = RequestValidation.validateSlug(slug)
+        if (!validation.isValid) return null
+        return staticEngine.getPage(validation.value)
+    }
 
     // -- Blog -----------------------------------------------------------------
 
     suspend fun getBlogOverview(
         page: Int = 1,
         includeDrafts: Boolean = false,
-    ): Page<Fragment> = blogEngine.getOverview(includeDrafts, page)
+    ): Page<Fragment> = blogEngine.getOverview(includeDrafts, RequestValidation.validatePage(page).value)
 
     suspend fun getBlogPost(
         year: String,
         month: String,
         slug: String,
-    ): Fragment? = blogEngine.getPost(year, month, slug)
+    ): Fragment? {
+        val validatedSlug = RequestValidation.validateSlug(slug)
+        if (!validatedSlug.isValid) return null
+        return blogEngine.getPost(year, month, validatedSlug.value)
+    }
 
     suspend fun getBlogPostWithRelationships(
         year: String,
         month: String,
         slug: String,
-    ): Pair<Fragment?, ContentRelationships?> = blogEngine.getPostWithRelationships(year, month, slug)
+    ): Pair<Fragment?, ContentRelationships?> {
+        val validatedSlug = RequestValidation.validateSlug(slug)
+        if (!validatedSlug.isValid) return null to null
+        return blogEngine.getPostWithRelationships(year, month, validatedSlug.value)
+    }
 
     suspend fun getByTag(
         tag: String,
         page: Int = 1,
-    ): Page<Fragment> = blogEngine.getByTag(tag, page)
+    ): Page<Fragment> {
+        val validatedTag = RequestValidation.validateTag(tag)
+        if (!validatedTag.isValid) return Page.create(emptyList(), 1, 10)
+        return blogEngine.getByTag(validatedTag.value, RequestValidation.validatePage(page).value)
+    }
 
     suspend fun getByCategory(
         category: String,
         page: Int = 1,
-    ): Page<Fragment> = blogEngine.getByCategory(category, page)
+    ): Page<Fragment> {
+        val validatedCategory = RequestValidation.validateCategory(category)
+        if (!validatedCategory.isValid) return Page.create(emptyList(), 1, 10)
+        return blogEngine.getByCategory(validatedCategory.value, RequestValidation.validatePage(page).value)
+    }
 
     suspend fun getByAuthor(
         authorId: String,
         page: Int = 1,
-    ): Page<Fragment> = blogEngine.getByAuthor(authorId, page)
+    ): Page<Fragment> {
+        val validatedAuthor = RequestValidation.validateAuthorId(authorId)
+        if (!validatedAuthor.isValid) return Page.create(emptyList(), 1, 10)
+        return blogEngine.getByAuthor(validatedAuthor.value, RequestValidation.validatePage(page).value)
+    }
 
     suspend fun getAuthor(slugOrId: String): AuthorViewModel? {
-        val author = authorRepository?.getBySlugOrId(slugOrId) ?: return null
-        val postCount = blogEngine.getByAuthor(slugOrId, 1).totalItems
+        val validation = RequestValidation.validateAuthorId(slugOrId)
+        if (!validation.isValid) return null
+        val author = authorRepository?.getBySlugOrId(validation.value) ?: return null
+        val postCount = blogEngine.getByAuthor(validation.value, 1).totalItems
         return AuthorViewModel(author, postCount = postCount)
     }
 
-    suspend fun getByYear(year: Int): List<Fragment> = blogEngine.getByYear(year)
+    suspend fun getByYear(year: Int): List<Fragment> {
+        val validation = RequestValidation.validateYear(year)
+        if (!validation.isValid) return emptyList()
+        return blogEngine.getByYear(validation.value)
+    }
 
     suspend fun getByYearMonth(
         year: Int,
         month: Int,
-    ): List<Fragment> = blogEngine.getByYearMonth(year, month)
+    ): List<Fragment> {
+        val validatedYear = RequestValidation.validateYear(year)
+        val validatedMonth = RequestValidation.validateMonth(month)
+        if (!validatedYear.isValid || !validatedMonth.isValid) return emptyList()
+        return blogEngine.getByYearMonth(validatedYear.value, validatedMonth.value)
+    }
 
     suspend fun getAllTags(): Map<String, Int> = blogEngine.getAllTags()
 
@@ -153,12 +188,20 @@ class FragmentsEngine(
     suspend fun search(
         query: String,
         maxResults: Int = 50,
-    ): List<SearchResult> = searchEngine?.search(query, maxResults) ?: emptyList()
+    ): List<SearchResult> {
+        val validatedQuery = RequestValidation.validateSearchQuery(query)
+        if (!validatedQuery.isValid) return emptyList()
+        return searchEngine?.search(validatedQuery.value, RequestValidation.validateMaxResults(maxResults).value) ?: emptyList()
+    }
 
     suspend fun autocomplete(
         query: String,
         limit: Int = 10,
-    ): List<SearchSuggestion> = searchEngine?.autocomplete(query, limit) ?: emptyList()
+    ): List<SearchSuggestion> {
+        val validatedQuery = RequestValidation.validateSearchQuery(query)
+        if (!validatedQuery.isValid) return emptyList()
+        return searchEngine?.autocomplete(validatedQuery.value, RequestValidation.validateAutocompleteLimit(limit).value) ?: emptyList()
+    }
 
     // -- Feed generation ------------------------------------------------------
 
