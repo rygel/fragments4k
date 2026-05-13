@@ -53,6 +53,4 @@ object BreadcrumbGenerator {
             append("}")
         }
     }
-
-
 }

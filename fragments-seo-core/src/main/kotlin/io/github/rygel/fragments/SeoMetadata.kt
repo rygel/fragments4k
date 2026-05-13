@@ -96,10 +96,9 @@ data class SeoMetadata(
         )
 
         author?.let {
+            val escapedAuthor = TextEscapeUtils.escapeJson(it)
             jsonBuilder.append(
-                ",\n                \"author\": {\n                    \"@type\": \"Person\",\n                    \"name\": \"${TextEscapeUtils.escapeJson(
-                    it,
-                )}\"",
+                ",\n                \"author\": {\n                    \"@type\": \"Person\",\n                    \"name\": \"$escapedAuthor\"",
             )
             authorUrl?.let { url ->
                 jsonBuilder.append(",\n                    \"url\": \"${TextEscapeUtils.escapeJson(url)}\"")
@@ -159,8 +158,6 @@ data class SeoMetadata(
                 appendLine("""</script>""")
             }
         }
-
-
 
     /**
      * Generates a BreadcrumbList JSON-LD string from an explicit list of crumbs.

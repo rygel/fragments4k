@@ -54,6 +54,4 @@ object PersonSchemaGenerator {
             append("\n}")
         }
     }
-
-
 }

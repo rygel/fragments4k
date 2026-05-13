@@ -18,7 +18,13 @@ object ArchiveNavigationGenerator {
     ): List<ArchiveNavigationLink> {
         val years =
             if (availableYears.isEmpty()) {
-                (java.time.LocalDate.now().year downTo java.time.LocalDate.now().year - 4).toList()
+                (
+                    java.time.LocalDate
+                        .now()
+                        .year downTo java.time.LocalDate
+                        .now()
+                        .year - 4
+                ).toList()
             } else {
                 availableYears.sortedDescending()
             }

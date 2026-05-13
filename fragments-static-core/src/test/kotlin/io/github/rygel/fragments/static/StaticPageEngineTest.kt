@@ -44,87 +44,95 @@ class StaticPageEngineTest {
     )
 
     @Test
-    fun testGetPageReturnsMatchingFragment() = runBlocking {
-        val fragment = aFragment(slug = "about")
-        repository.addFragment(fragment)
+    fun testGetPageReturnsMatchingFragment() =
+        runBlocking {
+            val fragment = aFragment(slug = "about")
+            repository.addFragment(fragment)
 
-        val result = engine.getPage("about")
+            val result = engine.getPage("about")
 
-        assertNotNull(result)
-        assertEquals("about", result!!.slug)
-    }
-
-    @Test
-    fun testGetPageReturnsNullForMissingSlug() = runBlocking {
-        assertNull(engine.getPage("nonexistent"))
-    }
+            assertNotNull(result)
+            assertEquals("about", result!!.slug)
+        }
 
     @Test
-    fun testGetPageResolvesUrlWhenNull() = runBlocking {
-        repository.addFragment(aFragment(slug = "about", resolvedUrl = null))
-
-        val result = engine.getPage("about")
-
-        assertNotNull(result)
-        assertEquals("/page/about", result!!.resolvedUrl)
-    }
+    fun testGetPageReturnsNullForMissingSlug() =
+        runBlocking {
+            assertNull(engine.getPage("nonexistent"))
+        }
 
     @Test
-    fun testGetPagePreservesExistingResolvedUrl() = runBlocking {
-        repository.addFragment(aFragment(slug = "about", resolvedUrl = "/custom/about-page"))
+    fun testGetPageResolvesUrlWhenNull() =
+        runBlocking {
+            repository.addFragment(aFragment(slug = "about", resolvedUrl = null))
 
-        val result = engine.getPage("about")
+            val result = engine.getPage("about")
 
-        assertNotNull(result)
-        assertEquals("/custom/about-page", result!!.resolvedUrl)
-    }
-
-    @Test
-    fun testGetAllStaticPagesFiltersByTemplate() = runBlocking {
-        repository.addFragment(aFragment(slug = "static-page", template = FragmentTemplates.STATIC))
-        repository.addFragment(aFragment(slug = "default-page", template = FragmentTemplates.DEFAULT))
-        repository.addFragment(aFragment(slug = "blog-post", template = FragmentTemplates.BLOG))
-
-        val results = engine.getAllStaticPages()
-
-        assertEquals(2, results.size)
-        val slugs = results.map { it.slug }.toSet()
-        assertTrue(slugs.contains("static-page"))
-        assertTrue(slugs.contains("default-page"))
-    }
+            assertNotNull(result)
+            assertEquals("/page/about", result!!.resolvedUrl)
+        }
 
     @Test
-    fun testGetAllStaticPagesExcludesDraftsByDefault() = runBlocking {
-        repository.addFragment(aFragment(slug = "published", status = FragmentStatus.PUBLISHED))
-        repository.addFragment(aFragment(slug = "draft", status = FragmentStatus.DRAFT, visible = false))
+    fun testGetPagePreservesExistingResolvedUrl() =
+        runBlocking {
+            repository.addFragment(aFragment(slug = "about", resolvedUrl = "/custom/about-page"))
 
-        val results = engine.getAllStaticPages(includeDrafts = false)
+            val result = engine.getPage("about")
 
-        assertEquals(1, results.size)
-        assertEquals("published", results[0].slug)
-    }
-
-    @Test
-    fun testGetAllStaticPagesIncludesDraftsWhenFlagSet() = runBlocking {
-        repository.addFragment(aFragment(slug = "published", status = FragmentStatus.PUBLISHED))
-        repository.addFragment(aFragment(slug = "draft", status = FragmentStatus.DRAFT, visible = false))
-
-        val results = engine.getAllStaticPages(includeDrafts = true)
-
-        assertEquals(2, results.size)
-        val slugs = results.map { it.slug }.toSet()
-        assertTrue(slugs.contains("published"))
-        assertTrue(slugs.contains("draft"))
-    }
+            assertNotNull(result)
+            assertEquals("/custom/about-page", result!!.resolvedUrl)
+        }
 
     @Test
-    fun testCustomPageUrlPrefix() = runBlocking {
-        val customEngine = StaticPageEngine(repository, pageUrlPrefix = "/docs")
-        repository.addFragment(aFragment(slug = "guide", resolvedUrl = null))
+    fun testGetAllStaticPagesFiltersByTemplate() =
+        runBlocking {
+            repository.addFragment(aFragment(slug = "static-page", template = FragmentTemplates.STATIC))
+            repository.addFragment(aFragment(slug = "default-page", template = FragmentTemplates.DEFAULT))
+            repository.addFragment(aFragment(slug = "blog-post", template = FragmentTemplates.BLOG))
 
-        val result = customEngine.getPage("guide")
+            val results = engine.getAllStaticPages()
 
-        assertNotNull(result)
-        assertEquals("/docs/guide", result!!.resolvedUrl)
-    }
+            assertEquals(2, results.size)
+            val slugs = results.map { it.slug }.toSet()
+            assertTrue(slugs.contains("static-page"))
+            assertTrue(slugs.contains("default-page"))
+        }
+
+    @Test
+    fun testGetAllStaticPagesExcludesDraftsByDefault() =
+        runBlocking {
+            repository.addFragment(aFragment(slug = "published", status = FragmentStatus.PUBLISHED))
+            repository.addFragment(aFragment(slug = "draft", status = FragmentStatus.DRAFT, visible = false))
+
+            val results = engine.getAllStaticPages(includeDrafts = false)
+
+            assertEquals(1, results.size)
+            assertEquals("published", results[0].slug)
+        }
+
+    @Test
+    fun testGetAllStaticPagesIncludesDraftsWhenFlagSet() =
+        runBlocking {
+            repository.addFragment(aFragment(slug = "published", status = FragmentStatus.PUBLISHED))
+            repository.addFragment(aFragment(slug = "draft", status = FragmentStatus.DRAFT, visible = false))
+
+            val results = engine.getAllStaticPages(includeDrafts = true)
+
+            assertEquals(2, results.size)
+            val slugs = results.map { it.slug }.toSet()
+            assertTrue(slugs.contains("published"))
+            assertTrue(slugs.contains("draft"))
+        }
+
+    @Test
+    fun testCustomPageUrlPrefix() =
+        runBlocking {
+            val customEngine = StaticPageEngine(repository, pageUrlPrefix = "/docs")
+            repository.addFragment(aFragment(slug = "guide", resolvedUrl = null))
+
+            val result = customEngine.getPage("guide")
+
+            assertNotNull(result)
+            assertEquals("/docs/guide", result!!.resolvedUrl)
+        }
 }

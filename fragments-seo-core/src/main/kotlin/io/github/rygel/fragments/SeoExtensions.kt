@@ -86,4 +86,3 @@ fun Author.personSchema(siteUrl: String): String {
         socialLinks = socialUrls,
     )
 }
-

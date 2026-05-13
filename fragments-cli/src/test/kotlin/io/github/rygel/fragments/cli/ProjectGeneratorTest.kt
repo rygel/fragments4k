@@ -1,16 +1,15 @@
 package io.github.rygel.fragments.cli
 
-import java.io.File
-import java.nio.file.Files
-import java.nio.file.Path
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.io.TempDir
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import java.io.File
+import java.nio.file.Files
+import java.nio.file.Path
 
 class ProjectGeneratorTest {
-
     @TempDir
     lateinit var tempDir: Path
 

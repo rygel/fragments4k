@@ -10,7 +10,10 @@ import org.junit.jupiter.api.Test
 class ArchiveNavigationTest {
     @Test
     fun testGenerateYearLinksWithDefaultYears() {
-        val currentYear = java.time.LocalDate.now().year
+        val currentYear =
+            java.time.LocalDate
+                .now()
+                .year
         val yearLinks = ArchiveNavigationGenerator.generateYearLinks()
 
         assertEquals(5, yearLinks.size)

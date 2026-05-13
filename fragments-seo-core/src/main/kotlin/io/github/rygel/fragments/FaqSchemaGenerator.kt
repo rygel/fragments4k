@@ -59,6 +59,4 @@ object FaqSchemaGenerator {
             append("}")
         }
     }
-
-
 }

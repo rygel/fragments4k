@@ -302,10 +302,11 @@ class SeoMetadataTest {
                 title = "Test",
                 description = "Test description",
                 canonicalUrl = "https://example.com/test",
-                additionalMetaTags = listOf(
-                    """<meta property="fb:app_id" content="123456789">""",
-                    """<meta property="article:tag" content="kotlin">""",
-                ),
+                additionalMetaTags =
+                    listOf(
+                        """<meta property="fb:app_id" content="123456789">""",
+                        """<meta property="article:tag" content="kotlin">""",
+                    ),
             )
 
         val allTags = seo.generateAllMetaTags()
@@ -321,7 +322,8 @@ class SeoMetadataTest {
                 title = "Test",
                 description = "Test description",
                 canonicalUrl = "https://example.com/test",
-                additionalJsonLd = """
+                additionalJsonLd =
+                    """
                     {
                         "@context": "https://schema.org",
                         "@type": "WebSite",
@@ -332,7 +334,7 @@ class SeoMetadataTest {
                             "query-input": "required name=search_term_string"
                         }
                     }
-                """.trimIndent(),
+                    """.trimIndent(),
             )
 
         val allTags = seo.generateAllMetaTags()
