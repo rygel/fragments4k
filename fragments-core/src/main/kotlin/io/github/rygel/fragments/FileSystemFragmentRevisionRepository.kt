@@ -17,7 +17,7 @@ class FileSystemFragmentRevisionRepository(
     private val fragmentsIndexFile = File(revisionsDir, "index.json")
     private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 
-    init {
+    private fun ensureRevisionsDir() {
         if (!revisionsDir.exists() && !revisionsDir.mkdirs()) {
             throw IllegalStateException("Failed to create revisions directory: ${revisionsDir.absolutePath}")
         }
@@ -48,6 +48,7 @@ class FileSystemFragmentRevisionRepository(
                     diff = null,
                 )
 
+            ensureRevisionsDir()
             val revisionFile = File(revisionsDir, "${revision.id}.json")
             revisionFile.writeText(serializeRevision(revision))
 
@@ -296,6 +297,7 @@ class FileSystemFragmentRevisionRepository(
     }
 
     private fun saveIndex(index: MutableMap<String, MutableList<String>>) {
+        ensureRevisionsDir()
         val json =
             index.entries.joinToString(",\n  ") { (key, value) ->
                 "\"${TextEscapeUtils.escapeJson(key)}\": [${value.joinToString(", ") { "\"${TextEscapeUtils.escapeJson(it)}\"" }}]"

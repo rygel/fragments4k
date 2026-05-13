@@ -89,6 +89,10 @@ class FileSystemFragmentRepository(
 ) : FragmentRepository {
     private val logger = LoggerFactory.getLogger(FileSystemFragmentRepository::class.java)
 
+    private val canonicalBasePath: String by lazy {
+        File(basePath).canonicalPath
+    }
+
     @Volatile private var cachedFragments: List<Fragment> = emptyList()
 
     @Volatile private var lastLoaded: LocalDateTime = LocalDateTime.MIN
@@ -264,9 +268,7 @@ class FileSystemFragmentRepository(
     }
 
     private fun getFragmentFile(slug: String): File? =
-        File(basePath)
-            .walkTopDown()
-            .filter { it.isFile && it.extension == extension.removePrefix(".") }
+        safeWalk()
             .find { it.nameWithoutExtension == slug }
 
     private fun cacheUpdatedFragment(fragment: Fragment) {
@@ -275,6 +277,18 @@ class FileSystemFragmentRepository(
             cachedFragments = cachedFragments.toMutableList().apply { this[index] = fragment }
         }
     }
+
+    private fun isWithinBasePath(file: File): Boolean {
+        val canonical = file.canonicalPath
+        return canonical.startsWith(canonicalBasePath)
+    }
+
+    private fun safeWalk(): Sequence<File> =
+        File(basePath)
+            .walkTopDown()
+            .filter { it.isFile }
+            .filter { it.extension == extension.removePrefix(".") }
+            .filter { isWithinBasePath(it) }
 
     private fun loadFragments(): List<Fragment> =
         if (cachedFragments.isEmpty() || lastLoaded.isEqual(LocalDateTime.MIN)) {
@@ -290,11 +304,7 @@ class FileSystemFragmentRepository(
             return emptyList()
         }
 
-        val files =
-            directory
-                .walkTopDown()
-                .filter { it.isFile && it.extension == extension.removePrefix(".") }
-                .toList()
+        val files = safeWalk().toList()
 
         return files
             .mapNotNull { file ->
