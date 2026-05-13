@@ -234,6 +234,35 @@ class LuceneSearchEngineTest {
         }
 
     @Test
+    fun testAutocompleteReturnsEmptyForSingleCharacterPrefix() =
+        runBlocking {
+            val suggestions = engine.autocomplete("k", limit = 10)
+            assertTrue(suggestions.isEmpty(), "Single character prefix should be rejected for being too broad")
+        }
+
+    @Test
+    fun testSearchReturnsEmptyForBlankQuery() =
+        runBlocking {
+            val results = engine.search("   ")
+            assertTrue(results.isEmpty())
+        }
+
+    @Test
+    fun testSearchReturnsEmptyForOverlongQuery() =
+        runBlocking {
+            val longQuery = "kotlin " + "a".repeat(500)
+            val results = engine.search(longQuery)
+            assertTrue(results.isEmpty())
+        }
+
+    @Test
+    fun testSearchClampsNegativeMaxResults() =
+        runBlocking {
+            val results = engine.search("kotlin", maxResults = -1)
+            assertTrue(results.isNotEmpty(), "Negative maxResults should be clamped to 1, not cause an error")
+        }
+
+    @Test
     fun testAutocompleteRespectsLimit() =
         runBlocking {
             val suggestions = engine.autocomplete("p", limit = 1)

@@ -73,6 +73,8 @@ class LuceneSearchEngine(
         private const val TITLE_BOOST = 2.0f
         private const val CONTENT_BOOST = 1.0f
         private const val MAX_TAG_CATEGORY_RESULTS = 100
+        private const val MAX_QUERY_LENGTH = 500
+        private const val MIN_AUTOCOMPLETE_PREFIX_LENGTH = 2
         private val logger = LoggerFactory.getLogger(LuceneSearchEngine::class.java)
     }
 
@@ -145,7 +147,12 @@ class LuceneSearchEngine(
         maxResults: Int = 10,
     ): List<SearchResult> =
         withContext(Dispatchers.IO) {
-            search(SearchOptions(query = queryString, maxResults = maxResults))
+            val trimmed = queryString.trim()
+            if (trimmed.isBlank() || trimmed.length > MAX_QUERY_LENGTH) {
+                return@withContext emptyList()
+            }
+            val clampedResults = maxResults.coerceIn(1, MAX_TAG_CATEGORY_RESULTS)
+            search(SearchOptions(query = trimmed, maxResults = clampedResults))
         }
 
     suspend fun search(options: SearchOptions): List<SearchResult> =
@@ -169,16 +176,19 @@ class LuceneSearchEngine(
         limit: Int = 10,
     ): List<SearchSuggestion> =
         withContext(Dispatchers.IO) {
-            if (query.isBlank()) return@withContext emptyList()
+            val trimmed = query.trim()
+            if (trimmed.isBlank() || trimmed.length > MAX_QUERY_LENGTH) return@withContext emptyList()
+            if (trimmed.length < MIN_AUTOCOMPLETE_PREFIX_LENGTH) return@withContext emptyList()
 
-            val lowerQuery = query.lowercase()
+            val clampedLimit = limit.coerceIn(1, MAX_TAG_CATEGORY_RESULTS)
+            val lowerQuery = trimmed.lowercase()
             withSearcher { searcher ->
                 val titleQuery =
                     WildcardQuery(
                         org.apache.lucene.index
                             .Term("title", "$lowerQuery*"),
                     )
-                val topDocs = searcher.search(titleQuery, limit * 3)
+                val topDocs = searcher.search(titleQuery, clampedLimit * 3)
 
                 val suggestions = mutableSetOf<SearchSuggestion>()
                 topDocs.scoreDocs.forEach { scoreDoc ->
@@ -199,7 +209,7 @@ class LuceneSearchEngine(
                         }
                     }
                 }
-                suggestions.take(limit).toList()
+                suggestions.take(clampedLimit).toList()
             }
         }
 
