@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.io.TempDir
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
@@ -218,6 +219,69 @@ class BasicImageOptimizerTest {
             assertTrue(query.contains("max-width"))
             assertTrue(query.contains("$width"))
         }
+
+    @Test
+    fun rejectsUnsupportedFormat() =
+        runBlocking {
+            val testImage = createTestImage(100, 100)
+            val result = optimizer.optimize(testImage.absolutePath, ImageResizeOptions(format = "bmp"))
+
+            assertTrue(result.isFailure, "Should reject unsupported format")
+            val exception = result.exceptionOrNull()
+            assertTrue(
+                exception?.message?.contains("Unsupported image format") == true,
+                "Error message should mention unsupported format, got: ${exception?.message}",
+            )
+        }
+
+    @Test
+    fun webpFormatIsRejectedAsUnsupported() =
+        runBlocking {
+            val testImage = createTestImage(100, 100)
+            val result = optimizer.optimize(testImage.absolutePath, ImageResizeOptions(format = "webp"))
+
+            assertTrue(result.isFailure, "WebP should be rejected as unsupported (not silently converted)")
+        }
+
+    @Test
+    fun rejectsNegativeMaxWidth() {
+        val exception = assertThrows<IllegalArgumentException> {
+            ImageResizeOptions(maxWidth = -1)
+        }
+        assertTrue(exception.message?.contains("maxWidth") == true)
+    }
+
+    @Test
+    fun rejectsZeroMaxHeight() {
+        val exception = assertThrows<IllegalArgumentException> {
+            ImageResizeOptions(maxHeight = 0)
+        }
+        assertTrue(exception.message?.contains("maxHeight") == true)
+    }
+
+    @Test
+    fun rejectsQualityAboveOne() {
+        val exception = assertThrows<IllegalArgumentException> {
+            ImageResizeOptions(quality = 1.5f)
+        }
+        assertTrue(exception.message?.contains("Quality") == true)
+    }
+
+    @Test
+    fun rejectsNegativeQuality() {
+        val exception = assertThrows<IllegalArgumentException> {
+            ImageResizeOptions(quality = -0.1f)
+        }
+        assertTrue(exception.message?.contains("Quality") == true)
+    }
+
+    @Test
+    fun acceptsBoundaryQualityValues() {
+        val zero = ImageResizeOptions(quality = 0.0f)
+        assertEquals(0.0f, zero.quality)
+        val one = ImageResizeOptions(quality = 1.0f)
+        assertEquals(1.0f, one.quality)
+    }
 
     private fun createTestImage(
         width: Int,
