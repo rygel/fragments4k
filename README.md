@@ -358,6 +358,80 @@ java -jar fragments-cli.jar run --watch --content-dir=./content --port=8080
 ./mvnw verify -T 4
 ```
 
+## Security Model
+
+### Content Sanitization
+
+All Markdown content is sanitized before rendering using an OWASP-style HTML safelist:
+
+- **`SanitizerProfile.RELAXED_TRUSTED_AUTHOR`** (default) — allows `class`, `id`, and most HTML tags. Suitable for content written by trusted authors.
+- **`SanitizerProfile.STRICT`** — strips `class`, `id`, and limits tags to a minimal safe set. Use this when accepting content from untrusted authors.
+
+```kotlin
+val parser = MarkdownParser(sanitizerProfile = SanitizerProfile.STRICT)
+```
+
+### Content Security Policy
+
+The default CSP is strict and self-only:
+
+```
+default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:;
+font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'
+```
+
+Override it to allow CDNs or inline styles:
+
+```kotlin
+val engine = FragmentsEngine(
+    contentSecurityPolicy = "default-src 'self'; style-src 'self' 'unsafe-inline' cdnjs.cloudflare.com"
+)
+```
+
+### Filesystem Trust Boundary
+
+`FileSystemFragmentRepository` validates that all file operations stay within the configured content root. Symlinks pointing outside the base directory are rejected.
+
+### Input Validation
+
+All public route inputs (slugs, tags, categories, search queries, pagination) are validated centrally in `RequestValidation`. Invalid inputs return a **400 Bad Request** with a descriptive error message.
+
+### Search Bounds
+
+`LuceneSearchEngine` enforces maximum query length (500 characters), minimum autocomplete prefix (2 characters), and clamps result limits.
+
+## Production Readiness Checklist
+
+Before deploying to production:
+
+- [ ] Set `siteUrl` to your real domain
+- [ ] Review CSP defaults — tighten or override as needed
+- [ ] Configure `urlBuilder` for your URL scheme
+- [ ] Choose `SanitizerProfile.STRICT` if accepting untrusted content
+- [ ] Run `mvn test` and ensure all tests pass
+- [ ] Keep dependencies current — check for security advisories
+- [ ] Set filesystem permissions on the content directory
+- [ ] Remove or protect draft content (set `status: DRAFT`)
+- [ ] Review `SECURITY_QUALITY.md` for CI scanning configuration
+
+## Adapter Consistency
+
+All five framework adapters provide consistent behavior:
+
+| Feature | HTTP4k | Javalin | Spring Boot | Quarkus | Micronaut |
+|---------|--------|---------|-------------|---------|-----------|
+| JSON error responses | Yes | Yes | Yes | Yes | Yes |
+| CSP header | Yes | Yes | Yes | Yes | Yes |
+| Input validation (400) | Yes | Yes | Yes | Yes | Yes |
+| Missing content (404) | Yes | Yes | Yes | Yes | Yes |
+| RSS/Sitemap/Robots | Yes | Yes | Yes | Yes | Yes |
+
+Error responses follow a consistent JSON structure:
+
+```json
+{"status": 400, "error": "Bad Request", "message": "Invalid slug: contains illegal characters"}
+```
+
 ## License
 
 [Apache License 2.0](LICENSE)
