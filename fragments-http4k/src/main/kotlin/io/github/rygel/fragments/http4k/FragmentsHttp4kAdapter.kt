@@ -6,6 +6,7 @@ import io.github.rygel.fragments.FragmentTemplates
 import io.github.rygel.fragments.FragmentViewModel
 import io.github.rygel.fragments.NavigationLink
 import io.github.rygel.fragments.SocialShareLink
+import io.github.rygel.fragments.TextEscapeUtils
 import io.github.rygel.fragments.adapter.ArchiveViewModel as SharedArchiveViewModel
 import io.github.rygel.fragments.adapter.AuthorPageViewModel as SharedAuthorPageViewModel
 import io.github.rygel.fragments.adapter.BlogOverviewViewModel as SharedBlogOverviewViewModel
@@ -315,9 +316,9 @@ class FragmentsHttp4kAdapter(
                     suggestions.forEachIndexed { index, suggestion ->
                         if (index > 0) append(",")
                         append(
-                            """{"text":${escapeJson(
+                            """{"text":"${TextEscapeUtils.escapeJson(
                                 suggestion.text,
-                            )},"frequency":${suggestion.frequency},"type":"${suggestion.type.name}"}""",
+                            )}","frequency":${suggestion.frequency},"type":"${suggestion.type.name}"}""",
                         )
                     }
                     append("]")
@@ -326,17 +327,6 @@ class FragmentsHttp4kAdapter(
                 .header("Content-Type", "application/json; charset=utf-8")
                 .body(json)
         }
-    }
-
-    private fun escapeJson(value: String): String {
-        val escaped =
-            value
-                .replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r")
-                .replace("\t", "\\t")
-        return "\"$escaped\""
     }
 
     private fun handleArchiveYear(request: Request): Response {

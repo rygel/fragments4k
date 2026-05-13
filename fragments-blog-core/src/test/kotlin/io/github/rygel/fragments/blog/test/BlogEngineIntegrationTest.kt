@@ -117,7 +117,7 @@ class BlogEngineIntegrationTest {
         }
 
     @Test
-    fun `getAllPosts returns all blog posts with resolved date-based URLs`() =
+    fun testGetAllPostsReturnsAllWithResolvedDateBasedUrls() =
         runBlocking {
             val repository = InMemoryFragmentRepository()
             repository.addFragment(
@@ -156,7 +156,7 @@ class BlogEngineIntegrationTest {
         }
 
     @Test
-    fun `getAllPosts excludes drafts by default`() =
+    fun testGetAllPostsExcludesDraftsByDefault() =
         runBlocking {
             val repository = InMemoryFragmentRepository()
             repository.addFragment(

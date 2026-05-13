@@ -10,17 +10,18 @@ import org.junit.jupiter.api.Test
 class ArchiveNavigationTest {
     @Test
     fun testGenerateYearLinksWithDefaultYears() {
+        val currentYear = java.time.LocalDate.now().year
         val yearLinks = ArchiveNavigationGenerator.generateYearLinks()
 
         assertEquals(5, yearLinks.size)
-        assertEquals("2024", yearLinks[0].label)
-        assertEquals("2023", yearLinks[1].label)
-        assertEquals("2022", yearLinks[2].label)
-        assertEquals("2021", yearLinks[3].label)
-        assertEquals("2020", yearLinks[4].label)
+        assertEquals(currentYear.toString(), yearLinks[0].label)
+        assertEquals((currentYear - 1).toString(), yearLinks[1].label)
+        assertEquals((currentYear - 2).toString(), yearLinks[2].label)
+        assertEquals((currentYear - 3).toString(), yearLinks[3].label)
+        assertEquals((currentYear - 4).toString(), yearLinks[4].label)
 
-        assertEquals("/blog/archive/2024", yearLinks[0].url)
-        assertEquals("/blog/archive/2023", yearLinks[1].url)
+        assertEquals("/blog/archive/$currentYear", yearLinks[0].url)
+        assertEquals("/blog/archive/${currentYear - 1}", yearLinks[1].url)
     }
 
     @Test

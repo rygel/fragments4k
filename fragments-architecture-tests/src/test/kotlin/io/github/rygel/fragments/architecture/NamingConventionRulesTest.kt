@@ -17,7 +17,7 @@ class NamingConventionRulesTest {
             .importPackages("io.github.rygel.fragments")
 
     @Test
-    fun `repository interfaces must end with Repository`() {
+    fun testRepositoryInterfacesMustEndWithRepository() {
         classes()
             .that()
             .resideInAPackage("io.github.rygel.fragments..")
@@ -32,7 +32,7 @@ class NamingConventionRulesTest {
     }
 
     @Test
-    fun `classes implementing repository interfaces must end with Repository`() {
+    fun testClassesImplementingRepositoryMustEndWithRepository() {
         classes()
             .that()
             .implement(io.github.rygel.fragments.FragmentRepository::class.java)
@@ -43,7 +43,7 @@ class NamingConventionRulesTest {
     }
 
     @Test
-    fun `factory classes must end with Factory or Generator`() {
+    fun testFactoryClassesMustEndWithFactoryOrGenerator() {
         classes()
             .that()
             .resideInAPackage("io.github.rygel.fragments..")

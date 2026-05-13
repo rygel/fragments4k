@@ -81,6 +81,7 @@
 
     <modules>
         <module>fragments-core</module>
+        <module>fragments-seo-core</module>
         <module>fragments-static-core</module>
         <module>fragments-blog-core</module>
         <module>fragments-cache-core</module>
@@ -93,7 +94,6 @@
         <module>fragments-chat-core</module>
         <module>fragments-navigation-core</module>
         <module>fragments-social-core</module>
-        <module>fragments-seo-core</module>
         <module>fragments-adapter-core</module>
         <module>fragments-http4k</module>
         <module>fragments-javalin</module>

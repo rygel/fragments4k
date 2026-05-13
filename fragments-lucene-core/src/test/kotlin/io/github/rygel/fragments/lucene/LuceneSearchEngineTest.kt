@@ -35,7 +35,7 @@ class LuceneSearchEngineTest {
     // ── Standard search ─────────────────────────────────────────────────────
 
     @Test
-    fun `standard search returns fragment whose title matches`() =
+    fun testStandardSearchReturnsFragmentWhoseTitleMatches() =
         runBlocking {
             val results = engine.search("Kotlin")
             assertTrue(
@@ -45,7 +45,7 @@ class LuceneSearchEngineTest {
         }
 
     @Test
-    fun `standard search does not return unrelated fragment`() =
+    fun testStandardSearchDoesNotReturnUnrelatedFragment() =
         runBlocking {
             val results = engine.search("Kotlin")
             assertFalse(
@@ -55,7 +55,7 @@ class LuceneSearchEngineTest {
         }
 
     @Test
-    fun `standard search excludes draft fragments`() =
+    fun testStandardSearchExcludesDraftFragments() =
         runBlocking {
             val results = engine.search("draft")
             assertFalse(
@@ -65,7 +65,7 @@ class LuceneSearchEngineTest {
         }
 
     @Test
-    fun `title match scores higher than content-only match`() =
+    fun testTitleMatchScoresHigherThanContentOnlyMatch() =
         runBlocking {
             // "Kotlin" is in the title of kotlin-guide; java-tutorial only mentions kotlin in content
             val results = engine.search("Kotlin")
@@ -78,7 +78,7 @@ class LuceneSearchEngineTest {
         }
 
     @Test
-    fun `search respects maxResults limit`() =
+    fun testSearchRespectsMaxResultsLimit() =
         runBlocking {
             val results = engine.search(SearchOptions(query = "programming", maxResults = 2))
             assertTrue(results.size <= 2, "Expected at most 2 results, got ${results.size}")
@@ -87,7 +87,7 @@ class LuceneSearchEngineTest {
     // ── Phrase search ────────────────────────────────────────────────────────
 
     @Test
-    fun `phrase search returns fragment containing exact phrase`() =
+    fun testPhraseSearchReturnsFragmentContainingExactPhrase() =
         runBlocking {
             val results = engine.search(SearchOptions(query = "modern programming language", phraseSearch = true))
             assertTrue(
@@ -97,7 +97,7 @@ class LuceneSearchEngineTest {
         }
 
     @Test
-    fun `phrase search does not return fragment missing the phrase`() =
+    fun testPhraseSearchDoesNotReturnFragmentMissingPhrase() =
         runBlocking {
             val results = engine.search(SearchOptions(query = "modern programming language", phraseSearch = true))
             assertFalse(
@@ -107,7 +107,7 @@ class LuceneSearchEngineTest {
         }
 
     @Test
-    fun `single-word phrase search returns matching fragment`() =
+    fun testSingleWordPhraseSearchReturnsMatchingFragment() =
         runBlocking {
             val results = engine.search(SearchOptions(query = "android", phraseSearch = true))
             assertTrue(
@@ -119,7 +119,7 @@ class LuceneSearchEngineTest {
     // ── Fuzzy search ─────────────────────────────────────────────────────────
 
     @Test
-    fun `fuzzy search finds fragment with typo in content`() =
+    fun testFuzzySearchFindsFragmentWithTypoInContent() =
         runBlocking {
             // "programing" (one m) is a typo for "programming"
             val results = engine.search(SearchOptions(query = "programing", fuzzySearch = true, fuzzyThreshold = 0.7f))
@@ -127,7 +127,7 @@ class LuceneSearchEngineTest {
         }
 
     @Test
-    fun `fuzzy search finds match on title`() =
+    fun testFuzzySearchFindsMatchOnTitle() =
         runBlocking {
             // "Kotln" is a typo for "Kotlin" — should still find kotlin-guide via title
             val results = engine.search(SearchOptions(query = "Kotln", fuzzySearch = true, fuzzyThreshold = 0.6f))
@@ -140,7 +140,7 @@ class LuceneSearchEngineTest {
     // ── Tag search ───────────────────────────────────────────────────────────
 
     @Test
-    fun `searchByTag returns only fragments tagged with exact tag`() =
+    fun testSearchByTagReturnsOnlyFragmentsTaggedWithExactTag() =
         runBlocking {
             val results = engine.searchByTag("kotlin")
             assertTrue(
@@ -154,7 +154,7 @@ class LuceneSearchEngineTest {
         }
 
     @Test
-    fun `searchByTag does not return partial tag matches`() =
+    fun testSearchByTagDoesNotReturnPartialTagMatches() =
         runBlocking {
             // Searching for "kot" should NOT return results tagged "kotlin"
             val results = engine.searchByTag("kot")
@@ -165,7 +165,7 @@ class LuceneSearchEngineTest {
         }
 
     @Test
-    fun `searchByTag returns empty list when no fragments have tag`() =
+    fun testSearchByTagReturnsEmptyListWhenNoFragmentsHaveTag() =
         runBlocking {
             val results = engine.searchByTag("nonexistent-tag")
             assertTrue(results.isEmpty(), "Expected empty list for unknown tag")
@@ -174,7 +174,7 @@ class LuceneSearchEngineTest {
     // ── Category search ──────────────────────────────────────────────────────
 
     @Test
-    fun `searchByCategory returns fragments in that category`() =
+    fun testSearchByCategoryReturnsFragmentsInThatCategory() =
         runBlocking {
             val results = engine.searchByCategory("recipes")
             assertTrue(
@@ -188,7 +188,7 @@ class LuceneSearchEngineTest {
         }
 
     @Test
-    fun `searchByCategory does not return partial category matches`() =
+    fun testSearchByCategoryDoesNotReturnPartialCategoryMatches() =
         runBlocking {
             val results = engine.searchByCategory("recipe")
             assertFalse(
@@ -198,7 +198,7 @@ class LuceneSearchEngineTest {
         }
 
     @Test
-    fun `searchByCategory returns empty list for unknown category`() =
+    fun testSearchByCategoryReturnsEmptyListForUnknownCategory() =
         runBlocking {
             val results = engine.searchByCategory("unknown-category")
             assertTrue(results.isEmpty())
@@ -207,7 +207,7 @@ class LuceneSearchEngineTest {
     // ── Autocomplete ─────────────────────────────────────────────────────────
 
     @Test
-    fun `autocomplete returns title suggestion matching prefix`() =
+    fun testAutocompleteReturnsTitleSuggestionMatchingPrefix() =
         runBlocking {
             val suggestions = engine.autocomplete("Kot", limit = 10)
             assertTrue(
@@ -217,7 +217,7 @@ class LuceneSearchEngineTest {
         }
 
     @Test
-    fun `autocomplete returns tag suggestion matching prefix`() =
+    fun testAutocompleteReturnsTagSuggestionMatchingPrefix() =
         runBlocking {
             val suggestions = engine.autocomplete("kot", limit = 10)
             assertTrue(
@@ -227,14 +227,14 @@ class LuceneSearchEngineTest {
         }
 
     @Test
-    fun `autocomplete returns empty list for blank query`() =
+    fun testAutocompleteReturnsEmptyListForBlankQuery() =
         runBlocking {
             val suggestions = engine.autocomplete("", limit = 10)
             assertTrue(suggestions.isEmpty())
         }
 
     @Test
-    fun `autocomplete respects limit`() =
+    fun testAutocompleteRespectsLimit() =
         runBlocking {
             val suggestions = engine.autocomplete("p", limit = 1)
             assertTrue(suggestions.size <= 1)
@@ -243,7 +243,7 @@ class LuceneSearchEngineTest {
     // ── Multiple repositories ────────────────────────────────────────────────
 
     @Test
-    fun `search across multiple repositories returns results from both`() =
+    fun testSearchAcrossMultipleRepositoriesReturnsResultsFromBoth() =
         runBlocking {
             val repo2 = SimpleTestRepository()
             repo2.addAll(

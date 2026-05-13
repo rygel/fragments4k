@@ -228,16 +228,16 @@ class FileSystemFragmentRevisionRepository(
     private fun serializeRevision(revision: FragmentRevision): String =
         """
             |{
-            |  "id": "${escapeJson(revision.id)}",
-            |  "fragmentSlug": "${escapeJson(revision.fragmentSlug)}",
+            |  "id": "${TextEscapeUtils.escapeJson(revision.id)}",
+            |  "fragmentSlug": "${TextEscapeUtils.escapeJson(revision.fragmentSlug)}",
             |  "version": ${revision.version},
-            |  "title": "${escapeJson(revision.title)}",
-            |  "content": "${escapeJson(revision.content)}",
-            |  "preview": "${escapeJson(revision.preview)}",
-            |  "changedBy": ${revision.changedBy?.let { "\"${escapeJson(it)}\"" } ?: "null"},
+            |  "title": "${TextEscapeUtils.escapeJson(revision.title)}",
+            |  "content": "${TextEscapeUtils.escapeJson(revision.content)}",
+            |  "preview": "${TextEscapeUtils.escapeJson(revision.preview)}",
+            |  "changedBy": ${revision.changedBy?.let { "\"${TextEscapeUtils.escapeJson(it)}\"" } ?: "null"},
             |  "changedAt": "${revision.changedAt.format(formatter)}",
-            |  "changeReason": ${revision.changeReason?.let { "\"${escapeJson(it)}\"" } ?: "null"},
-            |  "previousRevisionId": ${revision.previousRevisionId?.let { "\"${escapeJson(it)}\"" } ?: "null"}
+            |  "changeReason": ${revision.changeReason?.let { "\"${TextEscapeUtils.escapeJson(it)}\"" } ?: "null"},
+            |  "previousRevisionId": ${revision.previousRevisionId?.let { "\"${TextEscapeUtils.escapeJson(it)}\"" } ?: "null"}
             |}
         """.trimMargin().trim()
 
@@ -298,7 +298,7 @@ class FileSystemFragmentRevisionRepository(
     private fun saveIndex(index: MutableMap<String, MutableList<String>>) {
         val json =
             index.entries.joinToString(",\n  ") { (key, value) ->
-                "\"${escapeJson(key)}\": [${value.joinToString(", ") { "\"${escapeJson(it)}\"" }}]"
+                "\"${TextEscapeUtils.escapeJson(key)}\": [${value.joinToString(", ") { "\"${TextEscapeUtils.escapeJson(it)}\"" }}]"
             }
         fragmentsIndexFile.writeText("{\n  $json\n}")
     }
@@ -384,14 +384,6 @@ class FileSystemFragmentRevisionRepository(
             value.toDoubleOrNull() != null -> value.toDouble() as Any
             else -> value as Any
         }
-
-    private fun escapeJson(text: String): String =
-        text
-            .replace("\\", "\\\\")
-            .replace("\"", "\\\"")
-            .replace("\n", "\\n")
-            .replace("\r", "\\r")
-            .replace("\t", "\\t")
 
     private fun generateDiff(
         from: FragmentRevision,

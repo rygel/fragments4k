@@ -21,7 +21,7 @@ class ModuleDependencyRulesTest {
     // -- Core isolation -------------------------------------------------------
 
     @Test
-    fun `core must not depend on any adapter module`() {
+    fun testCoreMustNotDependOnAnyAdapterModule() {
         noClasses()
             .that()
             .resideInAPackage("io.github.rygel.fragments")
@@ -48,34 +48,34 @@ class ModuleDependencyRulesTest {
     }
 
     @Test
-    fun `http4k adapter must not depend on other adapters`() {
+    fun testHttp4kAdapterMustNotDependOnOtherAdapters() {
         adapterMustNotDependOnOtherAdapters("io.github.rygel.fragments.http4k..")
     }
 
     @Test
-    fun `javalin adapter must not depend on other adapters`() {
+    fun testJavalinAdapterMustNotDependOnOtherAdapters() {
         adapterMustNotDependOnOtherAdapters("io.github.rygel.fragments.javalin..")
     }
 
     @Test
-    fun `spring adapter must not depend on other adapters`() {
+    fun testSpringAdapterMustNotDependOnOtherAdapters() {
         adapterMustNotDependOnOtherAdapters("io.github.rygel.fragments.spring..")
     }
 
     @Test
-    fun `quarkus adapter must not depend on other adapters`() {
+    fun testQuarkusAdapterMustNotDependOnOtherAdapters() {
         adapterMustNotDependOnOtherAdapters("io.github.rygel.fragments.quarkus..")
     }
 
     @Test
-    fun `micronaut adapter must not depend on other adapters`() {
+    fun testMicronautAdapterMustNotDependOnOtherAdapters() {
         adapterMustNotDependOnOtherAdapters("io.github.rygel.fragments.micronaut..")
     }
 
     // -- Cycle detection ------------------------------------------------------
 
     @Test
-    fun `there must be no cyclic dependencies between packages`() {
+    fun testNoCyclicDependenciesBetweenPackages() {
         slices()
             .matching("io.github.rygel.fragments.(*)..")
             .should()

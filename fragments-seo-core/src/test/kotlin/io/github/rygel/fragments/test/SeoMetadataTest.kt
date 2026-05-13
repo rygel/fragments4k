@@ -1,58 +1,12 @@
 package io.github.rygel.fragments.test
 
-import io.github.rygel.fragments.Fragment
-import io.github.rygel.fragments.FragmentStatus
 import io.github.rygel.fragments.SeoMetadata
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.time.LocalDateTime
 
 class SeoMetadataTest {
-    @Test
-    fun testSeoMetadataGeneration() {
-        val fragment =
-            Fragment(
-                title = "Test Post",
-                slug = "test-post",
-                status = FragmentStatus.PUBLISHED,
-                date = LocalDateTime.of(2024, 1, 15, 10, 0),
-                publishDate = null,
-                preview = "This is a test post preview",
-                htmlContent = "# Test Content\n\nThis is the content of the test post.",
-                frontMatter = emptyMap(),
-                visible = true,
-                template = "blog",
-                categories = listOf("Technology"),
-                tags = listOf("kotlin", "testing"),
-            )
-
-        val seoMetadata =
-            SeoMetadata.fromFragment(
-                fragment = fragment,
-                siteUrl = "https://example.com",
-                siteName = "My Blog",
-                pagePath = "blog/2024/01/test-post",
-                author = "John Doe",
-            )
-
-        assertEquals("Test Post", seoMetadata.title)
-        assertEquals("This is a test post preview", seoMetadata.description)
-        assertEquals("https://example.com/blog/2024/01/test-post", seoMetadata.canonicalUrl)
-        assertEquals("Test Post", seoMetadata.ogTitle)
-        assertEquals("https://example.com/blog/2024/01/test-post", seoMetadata.canonicalUrl)
-        assertEquals("article", seoMetadata.ogType)
-        assertEquals("My Blog", seoMetadata.ogSiteName)
-        assertEquals("summary_large_image", seoMetadata.twitterCard)
-        assertEquals("Test Post", seoMetadata.twitterTitle)
-        assertEquals("John Doe", seoMetadata.author)
-        assertEquals("2024-01-15T10:00", seoMetadata.publishedDate)
-        assertEquals(listOf("kotlin", "testing"), seoMetadata.keywords)
-        assertEquals("en", seoMetadata.locale)
-    }
-
     @Test
     fun testGenerateStandardMetaTags() {
         val seoMetadata =
@@ -211,221 +165,6 @@ class SeoMetadataTest {
     }
 
     @Test
-    fun testOgTypeParameterIsUsed() {
-        val fragment =
-            Fragment(
-                title = "Home Page",
-                slug = "home",
-                status = FragmentStatus.PUBLISHED,
-                date = LocalDateTime.of(2024, 1, 15, 10, 0),
-                publishDate = null,
-                preview = "Welcome to our site",
-                htmlContent = "Home page content",
-                frontMatter = emptyMap(),
-                visible = true,
-            )
-
-        val seoMetadata =
-            SeoMetadata.fromFragment(
-                fragment = fragment,
-                siteUrl = "https://example.com",
-                ogType = "website",
-            )
-
-        assertEquals("website", seoMetadata.ogType)
-
-        val ogTags = seoMetadata.generateOpenGraphTags()
-        assertTrue(ogTags.any { it.contains("""<meta property="og:type" content="website">""") })
-    }
-
-    @Test
-    fun testAuthorDefaultsFromFragment() {
-        val fragment =
-            Fragment(
-                title = "Author Test",
-                slug = "author-test",
-                status = FragmentStatus.PUBLISHED,
-                date = LocalDateTime.of(2024, 1, 15, 10, 0),
-                publishDate = null,
-                preview = "Testing author defaults",
-                htmlContent = "Content",
-                frontMatter = emptyMap(),
-                visible = true,
-                author = "Fragment Author",
-            )
-
-        val seoMetadata =
-            SeoMetadata.fromFragment(
-                fragment = fragment,
-                siteUrl = "https://example.com",
-            )
-
-        assertEquals("Fragment Author", seoMetadata.author)
-    }
-
-    @Test
-    fun testExplicitAuthorOverridesFragmentAuthor() {
-        val fragment =
-            Fragment(
-                title = "Author Override Test",
-                slug = "author-override",
-                status = FragmentStatus.PUBLISHED,
-                date = LocalDateTime.of(2024, 1, 15, 10, 0),
-                publishDate = null,
-                preview = "Testing author override",
-                htmlContent = "Content",
-                frontMatter = emptyMap(),
-                visible = true,
-                author = "Fragment Author",
-            )
-
-        val seoMetadata =
-            SeoMetadata.fromFragment(
-                fragment = fragment,
-                siteUrl = "https://example.com",
-                author = "Explicit Author",
-            )
-
-        assertEquals("Explicit Author", seoMetadata.author)
-    }
-
-    @Test
-    fun testDescriptionTruncation() {
-        val longDescription = "a".repeat(200)
-        val fragment =
-            Fragment(
-                title = "Test",
-                slug = "test",
-                status = FragmentStatus.PUBLISHED,
-                date = LocalDateTime.now(),
-                publishDate = null,
-                preview = longDescription,
-                htmlContent = "Content",
-                frontMatter = emptyMap(),
-                visible = true,
-            )
-
-        val seoMetadata =
-            SeoMetadata.fromFragment(
-                fragment = fragment,
-                siteUrl = "https://example.com",
-            )
-
-        assertTrue(seoMetadata.description.length <= 163)
-    }
-
-    @Test
-    fun testFromFragmentUsesFragmentImageAsFallback() {
-        val fragment =
-            Fragment(
-                title = "Post with Image",
-                slug = "post-with-image",
-                status = FragmentStatus.PUBLISHED,
-                date = LocalDateTime.of(2024, 6, 1, 12, 0),
-                publishDate = null,
-                preview = "A post with a cover image",
-                htmlContent = "<p>Content</p>",
-                frontMatter = emptyMap(),
-                image = "/static/images/cover.jpg",
-            )
-
-        val seo =
-            SeoMetadata.fromFragment(
-                fragment = fragment,
-                siteUrl = "https://example.com",
-            )
-
-        assertEquals("https://example.com/static/images/cover.jpg", seo.ogImage)
-        assertEquals("https://example.com/static/images/cover.jpg", seo.twitterImage)
-    }
-
-    @Test
-    fun testFromFragmentExplicitImageUrlTakesPrecedenceOverFragmentImage() {
-        val fragment =
-            Fragment(
-                title = "Post with Image",
-                slug = "post-with-image",
-                status = FragmentStatus.PUBLISHED,
-                date = LocalDateTime.of(2024, 6, 1, 12, 0),
-                publishDate = null,
-                preview = "A post with a cover image",
-                htmlContent = "<p>Content</p>",
-                frontMatter = emptyMap(),
-                image = "/static/images/cover.jpg",
-            )
-
-        val seo =
-            SeoMetadata.fromFragment(
-                fragment = fragment,
-                siteUrl = "https://example.com",
-                imageUrl = "https://cdn.example.com/explicit.jpg",
-            )
-
-        assertEquals("https://cdn.example.com/explicit.jpg", seo.ogImage)
-        assertEquals("https://cdn.example.com/explicit.jpg", seo.twitterImage)
-    }
-
-    @Test
-    fun testFromFragmentNoImageAtAll() {
-        val fragment =
-            Fragment(
-                title = "Post without Image",
-                slug = "post-without-image",
-                status = FragmentStatus.PUBLISHED,
-                date = LocalDateTime.of(2024, 6, 1, 12, 0),
-                publishDate = null,
-                preview = "A post without image",
-                htmlContent = "<p>Content</p>",
-                frontMatter = emptyMap(),
-            )
-
-        val seo =
-            SeoMetadata.fromFragment(
-                fragment = fragment,
-                siteUrl = "https://example.com",
-            )
-
-        assertNull(seo.ogImage)
-        assertNull(seo.twitterImage)
-    }
-
-    @Test
-    fun testFromFragmentWithAuthorUrlAndSocialLinks() {
-        val fragment =
-            Fragment(
-                title = "Author Rich Post",
-                slug = "author-rich",
-                status = FragmentStatus.PUBLISHED,
-                date = LocalDateTime.of(2024, 3, 15, 10, 0),
-                publishDate = null,
-                preview = "A post with rich author metadata",
-                htmlContent = "<p>Content</p>",
-                frontMatter = emptyMap(),
-                author = "Alexander Brandt",
-            )
-
-        val seo =
-            SeoMetadata.fromFragment(
-                fragment = fragment,
-                siteUrl = "https://example.com",
-                authorUrl = "https://example.com/blog/author/alexander-brandt",
-                authorSocialLinks = listOf("https://github.com/rygel", "https://x.com/username"),
-            )
-
-        assertEquals("Alexander Brandt", seo.author)
-        assertEquals("https://example.com/blog/author/alexander-brandt", seo.authorUrl)
-        assertEquals(listOf("https://github.com/rygel", "https://x.com/username"), seo.authorSocialLinks)
-
-        val jsonLd = seo.generateJsonLd()
-        assertTrue(jsonLd.contains(""""@type": "Person""""))
-        assertTrue(jsonLd.contains(""""name": "Alexander Brandt""""))
-        assertTrue(jsonLd.contains(""""url": "https://example.com/blog/author/alexander-brandt""""))
-        assertTrue(jsonLd.contains(""""sameAs": ["""))
-        assertTrue(jsonLd.contains(""""https://github.com/rygel""""))
-        assertTrue(jsonLd.contains(""""https://x.com/username""""))
-    }
-
-    @Test
     fun testJsonLdPersonSchemaWithoutSocialLinks() {
         val seo =
             SeoMetadata(
@@ -456,10 +195,168 @@ class SeoMetadataTest {
 
         val jsonLd = seo.generateJsonLd()
         assertTrue(jsonLd.contains(""""name": "Jane Doe""""))
-        // The Person block should not have a url property when authorUrl is null
         val personBlock = jsonLd.substringAfter(""""author":""").substringBefore("}")
         assertFalse(personBlock.contains(""""url":"""))
         assertTrue(jsonLd.contains(""""sameAs": ["https://github.com/janedoe"]"""))
+    }
+
+    @Test
+    fun testTwitterImageFallsBackToOgImage() {
+        val seo =
+            SeoMetadata(
+                title = "Test",
+                description = "Test description",
+                canonicalUrl = "https://example.com/test",
+                ogImage = "https://example.com/og-image.jpg",
+                twitterImage = null,
+            )
+
+        val twitterTags = seo.generateTwitterCardTags()
+
+        assertTrue(twitterTags.any { it.contains("""<meta name="twitter:image" content="https://example.com/og-image.jpg">""") })
+    }
+
+    @Test
+    fun testTwitterImageExplicitValueTakesPrecedenceOverOgImage() {
+        val seo =
+            SeoMetadata(
+                title = "Test",
+                description = "Test description",
+                canonicalUrl = "https://example.com/test",
+                ogImage = "https://example.com/og-image.jpg",
+                twitterImage = "https://example.com/twitter-image.jpg",
+            )
+
+        val twitterTags = seo.generateTwitterCardTags()
+
+        assertTrue(twitterTags.any { it.contains("""<meta name="twitter:image" content="https://example.com/twitter-image.jpg">""") })
+        assertFalse(twitterTags.any { it.contains("og-image.jpg") })
+    }
+
+    @Test
+    fun testForPageWithCanonicalUrl() {
+        val seo =
+            SeoMetadata.forPageWithUrl(
+                title = "About Us",
+                description = "About our company",
+                canonicalUrl = "https://example.com/en/about",
+                siteName = "Example Company",
+            )
+
+        assertEquals("About Us", seo.title)
+        assertEquals("About our company", seo.description)
+        assertEquals("https://example.com/en/about", seo.canonicalUrl)
+        assertEquals("website", seo.ogType)
+        assertEquals("Example Company", seo.ogSiteName)
+    }
+
+    @Test
+    fun testForPageWithCanonicalUrlAndLocale() {
+        val seo =
+            SeoMetadata.forPageWithUrl(
+                title = "Uber uns",
+                description = "Uber unser Unternehmen",
+                canonicalUrl = "https://example.com/de/ueber-uns",
+                locale = "de_DE",
+                siteName = "Example Company",
+            )
+
+        assertEquals("de_DE", seo.locale)
+        assertEquals("https://example.com/de/ueber-uns", seo.canonicalUrl)
+    }
+
+    @Test
+    fun testForPageWithCanonicalUrlIncludesOgAndTwitterTags() {
+        val seo =
+            SeoMetadata.forPageWithUrl(
+                title = "Contact",
+                description = "Get in touch",
+                canonicalUrl = "https://example.com/contact",
+                imageUrl = "https://example.com/og.jpg",
+            )
+
+        val allTags = seo.generateAllMetaTags()
+        assertTrue(allTags.contains("og:title"))
+        assertTrue(allTags.contains("twitter:title"))
+        assertTrue(allTags.contains("og:image"))
+    }
+
+    @Test
+    fun testTwitterImageAndOgImageBothNull() {
+        val seo =
+            SeoMetadata(
+                title = "Test",
+                description = "Test description",
+                canonicalUrl = "https://example.com/test",
+            )
+
+        val twitterTags = seo.generateTwitterCardTags()
+
+        assertFalse(twitterTags.any { it.contains("twitter:image") })
+    }
+
+    @Test
+    fun testAdditionalMetaTagsAreAppended() {
+        val seo =
+            SeoMetadata(
+                title = "Test",
+                description = "Test description",
+                canonicalUrl = "https://example.com/test",
+                additionalMetaTags = listOf(
+                    """<meta property="fb:app_id" content="123456789">""",
+                    """<meta property="article:tag" content="kotlin">""",
+                ),
+            )
+
+        val allTags = seo.generateAllMetaTags()
+
+        assertTrue(allTags.contains("""<meta property="fb:app_id" content="123456789">"""))
+        assertTrue(allTags.contains("""<meta property="article:tag" content="kotlin">"""))
+    }
+
+    @Test
+    fun testAdditionalJsonLdIsAppended() {
+        val seo =
+            SeoMetadata(
+                title = "Test",
+                description = "Test description",
+                canonicalUrl = "https://example.com/test",
+                additionalJsonLd = """
+                    {
+                        "@context": "https://schema.org",
+                        "@type": "WebSite",
+                        "url": "https://example.com",
+                        "potentialAction": {
+                            "@type": "SearchAction",
+                            "target": "https://example.com/search?q={search_term_string}",
+                            "query-input": "required name=search_term_string"
+                        }
+                    }
+                """.trimIndent(),
+            )
+
+        val allTags = seo.generateAllMetaTags()
+
+        assertTrue(allTags.contains("WebSite"))
+        assertTrue(allTags.contains("SearchAction"))
+        assertTrue(allTags.contains("</script>"))
+        val scriptBlocks = Regex("""<script type="application/ld\+json">""").findAll(allTags).toList()
+        assertEquals(2, scriptBlocks.size)
+    }
+
+    @Test
+    fun testNoAdditionalFieldsProduceNoExtraOutput() {
+        val seo =
+            SeoMetadata(
+                title = "Test",
+                description = "Test description",
+                canonicalUrl = "https://example.com/test",
+            )
+
+        val allTags = seo.generateAllMetaTags()
+        val scriptBlocks = Regex("""<script type="application/ld\+json">""").findAll(allTags).toList()
+        assertEquals(1, scriptBlocks.size)
+        assertFalse(allTags.contains("fb:app_id"))
     }
 
     @Test

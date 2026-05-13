@@ -397,14 +397,7 @@ This document outlines planned features and enhancements for the Fragments proje
      - Note: Tests have minor compilation issues with nullable handling
    - Compiles successfully, core functionality complete
 
-- [ ] **Search Result Caching**
-  - Current: No caching of search results
-  - Goal: Cache search queries and result sets with intelligent invalidation
-  - Impact: Dramatically improves search performance for popular queries
-  - Technical: Search cache abstraction, cache key generation, TTL management
-  - Estimation: 1-2 weeks
- 
- - [x] **HTTP Response Caching** ✅
+  - [x] **HTTP Response Caching** ✅
    - Current: Basic caching support in adapters
    - Goal: Comprehensive HTTP caching strategy with ETags, cache-control headers
    - Impact: Improves global performance and reduces server load

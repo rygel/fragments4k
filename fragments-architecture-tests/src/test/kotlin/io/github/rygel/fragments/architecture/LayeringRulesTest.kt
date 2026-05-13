@@ -27,7 +27,7 @@ class LayeringRulesTest {
     // -- Core API contract -----------------------------------------------------
 
     @Test
-    fun `repository interfaces in core must be interfaces not classes`() {
+    fun testRepositoryInterfacesInCoreMustBeInterfacesNotClasses() {
         classes()
             .that()
             .resideInAPackage("io.github.rygel.fragments")
@@ -56,57 +56,57 @@ class LayeringRulesTest {
     // -- Feature module isolation from adapters --------------------------------
 
     @Test
-    fun `blog module must not depend on adapters`() {
+    fun testBlogModuleMustNotDependOnAdapters() {
         featureModuleMustNotDependOnAdapters("io.github.rygel.fragments.blog..")
     }
 
     @Test
-    fun `cache module must not depend on adapters`() {
+    fun testCacheModuleMustNotDependOnAdapters() {
         featureModuleMustNotDependOnAdapters("io.github.rygel.fragments.cache..")
     }
 
     @Test
-    fun `rss module must not depend on adapters`() {
+    fun testRssModuleMustNotDependOnAdapters() {
         featureModuleMustNotDependOnAdapters("io.github.rygel.fragments.rss..")
     }
 
     @Test
-    fun `lucene module must not depend on adapters`() {
+    fun testLuceneModuleMustNotDependOnAdapters() {
         featureModuleMustNotDependOnAdapters("io.github.rygel.fragments.lucene..")
     }
 
     @Test
-    fun `sitemap module must not depend on adapters`() {
+    fun testSitemapModuleMustNotDependOnAdapters() {
         featureModuleMustNotDependOnAdapters("io.github.rygel.fragments.sitemap..")
     }
 
     @Test
-    fun `livereload module must not depend on adapters`() {
+    fun testLivereloadModuleMustNotDependOnAdapters() {
         featureModuleMustNotDependOnAdapters("io.github.rygel.fragments.livereload..")
     }
 
     @Test
-    fun `chat module must not depend on adapters`() {
+    fun testChatModuleMustNotDependOnAdapters() {
         featureModuleMustNotDependOnAdapters("io.github.rygel.fragments.chat..")
     }
 
     @Test
-    fun `navigation module must not depend on adapters`() {
+    fun testNavigationModuleMustNotDependOnAdapters() {
         featureModuleMustNotDependOnAdapters("io.github.rygel.fragments.navigation..")
     }
 
     @Test
-    fun `social module must not depend on adapters`() {
+    fun testSocialModuleMustNotDependOnAdapters() {
         featureModuleMustNotDependOnAdapters("io.github.rygel.fragments.social..")
     }
 
     @Test
-    fun `seo module must not depend on adapters`() {
+    fun testSeoModuleMustNotDependOnAdapters() {
         featureModuleMustNotDependOnAdapters("io.github.rygel.fragments.seo..")
     }
 
     @Test
-    fun `image module must not depend on adapters`() {
+    fun testImageModuleMustNotDependOnAdapters() {
         featureModuleMustNotDependOnAdapters("io.github.rygel.fragments.image..")
     }
 

@@ -16,7 +16,7 @@ class RssGeneratorTest {
     private val repository = mockk<FragmentRepository>()
 
     @Test
-    fun `generated RSS feed is valid XML`() =
+    fun testGeneratedRssFeedIsValidXml() =
         runBlocking {
             coEvery { repository.getAllVisible() } returns listOf(fragment("post", "A Post"))
             val generator = RssGenerator(repository)
@@ -26,7 +26,7 @@ class RssGeneratorTest {
         }
 
     @Test
-    fun `feed contains channel metadata`() =
+    fun testFeedContainsChannelMetadata() =
         runBlocking {
             coEvery { repository.getAllVisible() } returns emptyList()
             val generator = RssGenerator(repository)
@@ -45,7 +45,7 @@ class RssGeneratorTest {
         }
 
     @Test
-    fun `feed contains item elements with correct fields`() =
+    fun testFeedContainsItemElementsWithCorrectFields() =
         runBlocking {
             coEvery { repository.getAllVisible() } returns
                 listOf(
@@ -62,7 +62,7 @@ class RssGeneratorTest {
         }
 
     @Test
-    fun `feed properly escapes XML special characters`() =
+    fun testFeedProperlyEscapesXmlSpecialCharacters() =
         runBlocking {
             coEvery { repository.getAllVisible() } returns
                 listOf(
@@ -78,7 +78,7 @@ class RssGeneratorTest {
         }
 
     @Test
-    fun `feed includes blog posts from multiple repositories`() =
+    fun testFeedIncludesBlogPostsFromMultipleRepositories() =
         runBlocking {
             val staticRepo = mockk<FragmentRepository>()
             val blogRepo = mockk<FragmentRepository>()
@@ -95,7 +95,7 @@ class RssGeneratorTest {
         }
 
     @Test
-    fun `feed excludes non-blog templates`() =
+    fun testFeedExcludesNonBlogTemplates() =
         runBlocking {
             coEvery { repository.getAllVisible() } returns
                 listOf(
@@ -114,7 +114,7 @@ class RssGeneratorTest {
         }
 
     @Test
-    fun `feed deduplicates fragments by slug`() =
+    fun testFeedDeduplicatesFragmentsBySlug() =
         runBlocking {
             val repo1 = mockk<FragmentRepository>()
             val repo2 = mockk<FragmentRepository>()
@@ -131,7 +131,7 @@ class RssGeneratorTest {
         }
 
     @Test
-    fun `feed includes categories and tags`() =
+    fun testFeedIncludesCategoriesAndTags() =
         runBlocking {
             coEvery { repository.getAllVisible() } returns
                 listOf(
@@ -147,7 +147,7 @@ class RssGeneratorTest {
         }
 
     @Test
-    fun `feed declares Atom namespace for self link`() =
+    fun testFeedDeclaresAtomNamespaceForSelfLink() =
         runBlocking {
             coEvery { repository.getAllVisible() } returns emptyList()
             val generator = RssGenerator(repository)
@@ -160,7 +160,7 @@ class RssGeneratorTest {
         }
 
     @Test
-    fun `feed with empty fragments produces valid XML with no items`() =
+    fun testFeedWithEmptyFragmentsProducesValidXmlWithNoItems() =
         runBlocking {
             coEvery { repository.getAllVisible() } returns emptyList()
             val generator = RssGenerator(repository)
@@ -172,7 +172,7 @@ class RssGeneratorTest {
         }
 
     @Test
-    fun `feed limits output to 20 items`() =
+    fun testFeedLimitsOutputTo20Items() =
         runBlocking {
             val fragments = (1..30).map { fragment("post-$it", "Post $it") }
             coEvery { repository.getAllVisible() } returns fragments
@@ -186,7 +186,7 @@ class RssGeneratorTest {
         }
 
     @Test
-    fun `feed escapes ampersands in URLs`() =
+    fun testFeedEscapesAmpersandsInUrls() =
         runBlocking {
             coEvery { repository.getAllVisible() } returns
                 listOf(
@@ -204,7 +204,7 @@ class RssGeneratorTest {
         }
 
     @Test
-    fun `feed handles fragment with null date`() =
+    fun testFeedHandlesFragmentWithNullDate() =
         runBlocking {
             val frag =
                 Fragment(
@@ -230,7 +230,7 @@ class RssGeneratorTest {
         }
 
     @Test
-    fun `feed escapes all XML special characters in descriptions`() =
+    fun testFeedEscapesAllXmlSpecialCharactersInDescriptions() =
         runBlocking {
             val frag =
                 Fragment(
@@ -254,7 +254,7 @@ class RssGeneratorTest {
         }
 
     @Test
-    fun `feed sorts items by date descending`() =
+    fun testFeedSortsItemsByDateDescending() =
         runBlocking {
             coEvery { repository.getAllVisible() } returns
                 listOf(
@@ -274,7 +274,7 @@ class RssGeneratorTest {
         }
 
     @Test
-    fun `feed uses locale-independent date formatting`() =
+    fun testFeedUsesLocaleIndependentDateFormatting() =
         runBlocking {
             coEvery { repository.getAllVisible() } returns
                 listOf(
@@ -289,7 +289,7 @@ class RssGeneratorTest {
         }
 
     @Test
-    fun `fragments without resolvedUrl are excluded from feed`() =
+    fun testFragmentsWithoutResolvedUrlExcludedFromFeed() =
         runBlocking {
             coEvery { repository.getAllVisible() } returns
                 listOf(
