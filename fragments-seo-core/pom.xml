@@ -15,13 +15,13 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.github.rygel</groupId>
-            <artifactId>fragments-core</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-stdlib</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.rygel</groupId>
+            <artifactId>fragments-core</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>

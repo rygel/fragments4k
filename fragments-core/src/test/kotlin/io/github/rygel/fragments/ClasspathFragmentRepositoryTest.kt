@@ -23,14 +23,14 @@ class ClasspathFragmentRepositoryTest {
     // ── Loading ───────────────────────────────────────────────────────────────
 
     @Test
-    fun `loads all fragments listed in index`() =
+    fun testLoadsAllFragmentsListedInIndex() =
         runBlocking {
             val all = repository.getAll()
             assertEquals(8, all.size)
         }
 
     @Test
-    fun `returns empty list when index file is missing`() =
+    fun testReturnsEmptyListWhenIndexFileIsMissing() =
         runBlocking {
             val repo = ClasspathFragmentRepository(basePath = "nonexistent-directory")
             val all = repo.getAll()
@@ -38,7 +38,7 @@ class ClasspathFragmentRepositoryTest {
         }
 
     @Test
-    fun `skips commented and blank lines in index`() =
+    fun testSkipsCommentedAndBlankLinesInIndex() =
         runBlocking {
             // The index for this test has 8 real entries; comments/blanks would cause extras
             val all = repository.getAll()
@@ -48,7 +48,7 @@ class ClasspathFragmentRepositoryTest {
     // ── getAllVisible ─────────────────────────────────────────────────────────
 
     @Test
-    fun `getAllVisible returns only published non-expired fragments`() =
+    fun testGetAllVisibleReturnsOnlyPublishedNonExpiredFragments() =
         runBlocking {
             val visible = repository.getAllVisible()
             val slugs = visible.map { it.slug }
@@ -58,28 +58,28 @@ class ClasspathFragmentRepositoryTest {
         }
 
     @Test
-    fun `getAllVisible excludes draft fragments`() =
+    fun testGetAllVisibleExcludesDraftFragments() =
         runBlocking {
             val visible = repository.getAllVisible()
             assertTrue(visible.none { it.slug == "draft-post" }, "draft-post must not be visible")
         }
 
     @Test
-    fun `getAllVisible excludes fragments with past expiry date`() =
+    fun testGetAllVisibleExcludesFragmentsWithPastExpiryDate() =
         runBlocking {
             val visible = repository.getAllVisible()
             assertTrue(visible.none { it.slug == "expired-post" }, "expired-post must not be visible")
         }
 
     @Test
-    fun `getAllVisible excludes scheduled fragments with future publish date`() =
+    fun testGetAllVisibleExcludesScheduledFragmentsWithFuturePublishDate() =
         runBlocking {
             val visible = repository.getAllVisible()
             assertTrue(visible.none { it.slug == "scheduled-post" }, "scheduled-post must not be visible")
         }
 
     @Test
-    fun `getAllVisible returns fragments sorted by date descending`() =
+    fun testGetAllVisibleReturnsFragmentsSortedByDateDescending() =
         runBlocking {
             val visible = repository.getAllVisible().filter { it.date != null }
             val dates = visible.map { it.date!! }
@@ -89,7 +89,7 @@ class ClasspathFragmentRepositoryTest {
     // ── getBySlug ─────────────────────────────────────────────────────────────
 
     @Test
-    fun `getBySlug returns correct fragment`() =
+    fun testGetBySlugReturnsCorrectFragment() =
         runBlocking {
             val fragment = repository.getBySlug("published-post")
             assertNotNull(fragment)
@@ -97,7 +97,7 @@ class ClasspathFragmentRepositoryTest {
         }
 
     @Test
-    fun `getBySlug returns null for unknown slug`() =
+    fun testGetBySlugReturnsNullForUnknownSlug() =
         runBlocking {
             val fragment = repository.getBySlug("does-not-exist")
             assertNull(fragment)
@@ -106,7 +106,7 @@ class ClasspathFragmentRepositoryTest {
     // ── getByTag ──────────────────────────────────────────────────────────────
 
     @Test
-    fun `getByTag returns fragments with matching tag`() =
+    fun testGetByTagReturnsFragmentsWithMatchingTag() =
         runBlocking {
             val results = repository.getByTag("kotlin")
             val slugs = results.map { it.slug }
@@ -116,7 +116,7 @@ class ClasspathFragmentRepositoryTest {
         }
 
     @Test
-    fun `getByTag is case-insensitive`() =
+    fun testGetByTagIsCaseInsensitive() =
         runBlocking {
             val lower = repository.getByTag("kotlin")
             val upper = repository.getByTag("KOTLIN")
@@ -124,7 +124,7 @@ class ClasspathFragmentRepositoryTest {
         }
 
     @Test
-    fun `getByTag returns empty list for unknown tag`() =
+    fun testGetByTagReturnsEmptyListForUnknownTag() =
         runBlocking {
             val results = repository.getByTag("nonexistent-tag")
             assertTrue(results.isEmpty())
@@ -133,7 +133,7 @@ class ClasspathFragmentRepositoryTest {
     // ── getByCategory ─────────────────────────────────────────────────────────
 
     @Test
-    fun `getByCategory returns fragments in matching category`() =
+    fun testGetByCategoryReturnsFragmentsInMatchingCategory() =
         runBlocking {
             val results = repository.getByCategory("kotlin")
             val slugs = results.map { it.slug }
@@ -142,7 +142,7 @@ class ClasspathFragmentRepositoryTest {
         }
 
     @Test
-    fun `getByCategory is case-insensitive`() =
+    fun testGetByCategoryIsCaseInsensitive() =
         runBlocking {
             val lower = repository.getByCategory("education")
             val upper = repository.getByCategory("EDUCATION")
@@ -152,7 +152,7 @@ class ClasspathFragmentRepositoryTest {
     // ── getByStatus ───────────────────────────────────────────────────────────
 
     @Test
-    fun `getByStatus returns only fragments with matching status`() =
+    fun testGetByStatusReturnsOnlyFragmentsWithMatchingStatus() =
         runBlocking {
             val drafts = repository.getByStatus(FragmentStatus.DRAFT)
             assertEquals(1, drafts.size)
@@ -160,7 +160,7 @@ class ClasspathFragmentRepositoryTest {
         }
 
     @Test
-    fun `getByStatus returns scheduled fragments`() =
+    fun testGetByStatusReturnsScheduledFragments() =
         runBlocking {
             val scheduled = repository.getByStatus(FragmentStatus.SCHEDULED)
             assertEquals(1, scheduled.size)
@@ -170,14 +170,14 @@ class ClasspathFragmentRepositoryTest {
     // ── getByAuthor ───────────────────────────────────────────────────────────
 
     @Test
-    fun `getByAuthor returns fragments matching author id`() =
+    fun testGetByAuthorReturnsFragmentsMatchingAuthorId() =
         runBlocking {
             val results = repository.getByAuthor("alex")
             assertTrue(results.any { it.slug == "published-post" })
         }
 
     @Test
-    fun `getByAuthor returns empty for unknown author`() =
+    fun testGetByAuthorReturnsEmptyForUnknownAuthor() =
         runBlocking {
             val results = repository.getByAuthor("unknown-author")
             assertTrue(results.isEmpty())
@@ -186,21 +186,21 @@ class ClasspathFragmentRepositoryTest {
     // ── Front matter ──────────────────────────────────────────────────────────
 
     @Test
-    fun `fragment has correct title from front matter`() =
+    fun testFragmentHasCorrectTitleFromFrontMatter() =
         runBlocking {
             val fragment = repository.getBySlug("published-post")!!
             assertEquals("Published Post", fragment.title)
         }
 
     @Test
-    fun `fragment has correct template from front matter`() =
+    fun testFragmentHasCorrectTemplateFromFrontMatter() =
         runBlocking {
             val fragment = repository.getBySlug("published-post")!!
             assertEquals("blog", fragment.template)
         }
 
     @Test
-    fun `fragment has correct tags from front matter`() =
+    fun testFragmentHasCorrectTagsFromFrontMatter() =
         runBlocking {
             val fragment = repository.getBySlug("published-post")!!
             assertTrue(fragment.tags.contains("kotlin"))
@@ -208,7 +208,7 @@ class ClasspathFragmentRepositoryTest {
         }
 
     @Test
-    fun `fragment has correct categories from front matter`() =
+    fun testFragmentHasCorrectCategoriesFromFrontMatter() =
         runBlocking {
             val fragment = repository.getBySlug("published-post")!!
             assertTrue(fragment.categories.contains("tech"))
@@ -216,7 +216,7 @@ class ClasspathFragmentRepositoryTest {
         }
 
     @Test
-    fun `fragment HTML content is rendered from markdown`() =
+    fun testFragmentHtmlContentRenderedFromMarkdown() =
         runBlocking {
             val fragment = repository.getBySlug("published-post")!!
             assertTrue(fragment.htmlContent.contains("<h1>"), "content should be rendered HTML")
@@ -224,7 +224,7 @@ class ClasspathFragmentRepositoryTest {
         }
 
     @Test
-    fun `fragment preview is extracted up to more tag`() =
+    fun testFragmentPreviewExtractedUpToMoreTag() =
         runBlocking {
             val fragment = repository.getBySlug("published-post")!!
             assertTrue(fragment.preview.contains("published post"), "preview should contain text before more tag")
@@ -232,7 +232,7 @@ class ClasspathFragmentRepositoryTest {
         }
 
     @Test
-    fun `getAll returns fragments sorted by order`() =
+    fun testGetAllReturnsFragmentsSortedByOrder() =
         runBlocking {
             val all = repository.getAll()
             val withOrder = all.filter { it.slug in listOf("ordered-first", "ordered-last") }
@@ -243,14 +243,14 @@ class ClasspathFragmentRepositoryTest {
     // ── URL building ──────────────────────────────────────────────────────────
 
     @Test
-    fun `default url uses baseUrl and slug`() =
+    fun testDefaultUrlUsesBaseUrlAndSlug() =
         runBlocking {
             val fragment = repository.getBySlug("published-post")!!
             assertEquals("/blog/published-post", fragment.url)
         }
 
     @Test
-    fun `urlBuilder overrides default url`() =
+    fun testUrlBuilderOverridesDefaultUrl() =
         runBlocking {
             val repo =
                 ClasspathFragmentRepository(
@@ -265,7 +265,7 @@ class ClasspathFragmentRepositoryTest {
     // ── getByYearMonthAndSlug ─────────────────────────────────────────────────
 
     @Test
-    fun `getByYearMonthAndSlug returns fragment matching date and slug`() =
+    fun testGetByYearMonthAndSlugReturnsMatchingFragment() =
         runBlocking {
             val fragment = repository.getByYearMonthAndSlug("2024", "3", "published-post")
             assertNotNull(fragment)
@@ -273,7 +273,7 @@ class ClasspathFragmentRepositoryTest {
         }
 
     @Test
-    fun `getByYearMonthAndSlug returns null for wrong month`() =
+    fun testGetByYearMonthAndSlugReturnsNullForWrongMonth() =
         runBlocking {
             val fragment = repository.getByYearMonthAndSlug("2024", "12", "published-post")
             assertNull(fragment)
@@ -282,7 +282,7 @@ class ClasspathFragmentRepositoryTest {
     // ── Scheduling ────────────────────────────────────────────────────────────
 
     @Test
-    fun `getScheduledFragmentsDueForPublication returns nothing for far-future threshold`() =
+    fun testGetScheduledFragmentsDueReturnsNothingForFarFutureThreshold() =
         runBlocking {
             val due =
                 repository.getScheduledFragmentsDueForPublication(
@@ -294,7 +294,7 @@ class ClasspathFragmentRepositoryTest {
     // ── reload ────────────────────────────────────────────────────────────────
 
     @Test
-    fun `reload re-reads fragments from classpath`() =
+    fun testReloadReReadsFragmentsFromClasspath() =
         runBlocking {
             repository.getAll() // prime cache
             repository.reload()
@@ -305,7 +305,7 @@ class ClasspathFragmentRepositoryTest {
     // ── Write operations ──────────────────────────────────────────────────────
 
     @Test
-    fun `updateFragmentStatus returns failure`() =
+    fun testUpdateFragmentStatusReturnsFailure() =
         runBlocking<Unit> {
             val result = repository.updateFragmentStatus("published-post", FragmentStatus.ARCHIVED)
             assertTrue(result.isFailure)
@@ -313,21 +313,21 @@ class ClasspathFragmentRepositoryTest {
         }
 
     @Test
-    fun `createRevision returns failure`() =
+    fun testCreateRevisionReturnsFailure() =
         runBlocking {
             val result = repository.createRevision("published-post")
             assertTrue(result.isFailure)
         }
 
     @Test
-    fun `getFragmentRevisions returns empty list`() =
+    fun testGetFragmentRevisionsReturnsEmptyList() =
         runBlocking {
             val revisions = repository.getFragmentRevisions("published-post")
             assertTrue(revisions.isEmpty())
         }
 
     @Test
-    fun `revertToRevision returns failure`() =
+    fun testRevertToRevisionReturnsFailure() =
         runBlocking {
             val result = repository.revertToRevision("published-post", "any-revision-id")
             assertTrue(result.isFailure)

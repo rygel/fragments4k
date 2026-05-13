@@ -1,8 +1,16 @@
 package io.github.rygel.fragments
 
 /**
+ * A question/answer pair for FAQ structured data generation.
+ */
+data class FaqItem(
+    val question: String,
+    val answer: String,
+)
+
+/**
  * Generates [FAQPage](https://schema.org/FAQPage) JSON-LD structured data
- * from [FaqEntry] lists.
+ * from [FaqItem] lists.
  *
  * The output is a self-contained JSON-LD object suitable for embedding in a
  * `<script type="application/ld+json">` block. Search engines use this markup
@@ -10,20 +18,18 @@ package io.github.rygel.fragments
  *
  * Usage:
  * ```kotlin
- * val jsonLd = FaqSchemaGenerator.fromFragment(fragment)
- * // or
- * val jsonLd = FaqSchemaGenerator.generate(listOf(FaqEntry("Q?", "A.")))
+ * val jsonLd = FaqSchemaGenerator.generate(listOf(FaqItem("Q?", "A.")))
  * ```
  */
 object FaqSchemaGenerator {
     /**
-     * Generates FAQPage JSON-LD from a list of [FaqEntry] objects.
+     * Generates FAQPage JSON-LD from a list of [FaqItem] objects.
      *
-     * @param faqEntries The FAQ question/answer pairs.
-     * @return A JSON-LD string, or an empty string if [faqEntries] is empty.
+     * @param faqItems The FAQ question/answer pairs.
+     * @return A JSON-LD string, or an empty string if [faqItems] is empty.
      */
-    fun generate(faqEntries: List<FaqEntry>): String {
-        if (faqEntries.isEmpty()) return ""
+    fun generate(faqItems: List<FaqItem>): String {
+        if (faqItems.isEmpty()) return ""
 
         return buildString {
             append("{\n")
@@ -33,42 +39,24 @@ object FaqSchemaGenerator {
             append("\n")
             append("""  "mainEntity": [""")
             append("\n")
-            faqEntries.forEachIndexed { index, entry ->
+            faqItems.forEachIndexed { index, entry ->
                 append("    {\n")
                 append("""      "@type": "Question",""")
                 append("\n")
-                append("""      "name": "${escapeJson(entry.question)}",""")
+                append("""      "name": "${TextEscapeUtils.escapeJson(entry.question)}",""")
                 append("\n")
                 append("      \"acceptedAnswer\": {\n")
                 append("""        "@type": "Answer",""")
                 append("\n")
-                append("""        "text": "${escapeJson(entry.answer)}"""")
+                append("""        "text": "${TextEscapeUtils.escapeJson(entry.answer)}"""")
                 append("\n")
                 append("      }\n")
                 append("    }")
-                if (index < faqEntries.size - 1) append(",")
+                if (index < faqItems.size - 1) append(",")
                 append("\n")
             }
             append("  ]\n")
             append("}")
         }
     }
-
-    /**
-     * Convenience method that extracts FAQ entries from a [Fragment] and
-     * generates the JSON-LD.
-     *
-     * @param fragment The fragment whose [Fragment.faq] entries to use.
-     * @return A JSON-LD string, or an empty string if the fragment has no FAQ entries.
-     */
-    fun fromFragment(fragment: Fragment): String = generate(fragment.faq)
-
-    private fun escapeJson(text: String): String =
-        text
-            .replace("\\", "\\\\")
-            .replace("\"", "\\\"")
-            .replace("\b", "\\b")
-            .replace("\n", "\\n")
-            .replace("\r", "\\r")
-            .replace("\t", "\\t")
 }

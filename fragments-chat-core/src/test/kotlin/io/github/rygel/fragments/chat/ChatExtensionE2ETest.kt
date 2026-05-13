@@ -47,7 +47,7 @@ class ChatExtensionE2ETest {
     // -------------------------------------------------------------------------
 
     @Test
-    fun `chat block in article is rendered to chat-container HTML`() =
+    fun testChatBlockRendersToContainerHtml() =
         runBlocking {
             write(
                 "getting-started.md",
@@ -82,7 +82,7 @@ class ChatExtensionE2ETest {
         }
 
     @Test
-    fun `surrounding markdown is not affected by chat block`() =
+    fun testSurroundingMarkdownNotAffectedByChatBlock() =
         runBlocking {
             write(
                 "mixed-content.md",
@@ -121,7 +121,7 @@ class ChatExtensionE2ETest {
     // -------------------------------------------------------------------------
 
     @Test
-    fun `front matter is parsed correctly when document contains chat block`() =
+    fun testFrontMatterParsedCorrectlyWithChatBlock() =
         runBlocking {
             write(
                 "annotated-article.md",
@@ -159,7 +159,7 @@ class ChatExtensionE2ETest {
     // -------------------------------------------------------------------------
 
     @Test
-    fun `multiple chat blocks in one document all render`() =
+    fun testMultipleChatBlocksInOneDocumentAllRender() =
         runBlocking {
             write(
                 "multi-chat.md",
@@ -197,7 +197,7 @@ class ChatExtensionE2ETest {
         }
 
     @Test
-    fun `multiple turns within a single chat block all render`() =
+    fun testMultipleTurnsWithinSingleChatBlockAllRender() =
         runBlocking {
             write(
                 "long-chat.md",
@@ -225,7 +225,7 @@ class ChatExtensionE2ETest {
     // -------------------------------------------------------------------------
 
     @Test
-    fun `kotlin fenced block renders as code, not chat`() =
+    fun testKotlinFencedBlockRendersAsCodeNotChat() =
         runBlocking {
             write(
                 "code-article.md",
@@ -248,7 +248,7 @@ class ChatExtensionE2ETest {
         }
 
     @Test
-    fun `document with no chat blocks renders normally`() =
+    fun testDocumentWithNoChatBlocksRendersNormally() =
         runBlocking {
             write(
                 "plain-article.md",
@@ -275,7 +275,7 @@ class ChatExtensionE2ETest {
     // -------------------------------------------------------------------------
 
     @Test
-    fun `getAll returns fragment with chat content`() =
+    fun testGetAllReturnsFragmentWithChatContent() =
         runBlocking {
             write(
                 "listed.md",
@@ -298,7 +298,7 @@ class ChatExtensionE2ETest {
         }
 
     @Test
-    fun `getAllVisible excludes draft fragments regardless of chat content`() =
+    fun testGetAllVisibleExcludesDraftsRegardlessOfChatContent() =
         runBlocking {
             write(
                 "draft-chat.md",
@@ -320,7 +320,7 @@ class ChatExtensionE2ETest {
         }
 
     @Test
-    fun `getByTag works for fragment containing chat block`() =
+    fun testGetByTagWorksForFragmentContainingChatBlock() =
         runBlocking {
             write(
                 "tagged-chat.md",
@@ -349,7 +349,7 @@ class ChatExtensionE2ETest {
     // -------------------------------------------------------------------------
 
     @Test
-    fun `custom user-speaker names are applied end-to-end`() =
+    fun testCustomUserSpeakerNamesAppliedEndToEnd() =
         runBlocking {
             val customRepo =
                 FileSystemFragmentRepository(
@@ -388,7 +388,7 @@ class ChatExtensionE2ETest {
     // -------------------------------------------------------------------------
 
     @Test
-    fun `getBySlug returns null for non-existent slug`() =
+    fun testGetBySlugReturnsNullForNonExistentSlug() =
         runBlocking {
             assertNull(repository.getBySlug("does-not-exist"))
         }

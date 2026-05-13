@@ -35,58 +35,23 @@ object PersonSchemaGenerator {
             append("{\n")
             append("    \"@context\": \"https://schema.org\",\n")
             append("    \"@type\": \"Person\",\n")
-            personId?.let { append("    \"@id\": \"${escapeJson(it)}\",\n") }
-            append("    \"name\": \"${escapeJson(name)}\"")
+            personId?.let { append("    \"@id\": \"${TextEscapeUtils.escapeJson(it)}\",\n") }
+            append("    \"name\": \"${TextEscapeUtils.escapeJson(name)}\"")
             bio?.let {
-                append(",\n    \"description\": \"${escapeJson(it)}\"")
+                append(",\n    \"description\": \"${TextEscapeUtils.escapeJson(it)}\"")
             }
             image?.let {
                 val resolvedImage = if (it.startsWith("http://") || it.startsWith("https://")) it else "$siteUrl$it"
-                append(",\n    \"image\": \"${escapeJson(resolvedImage)}\"")
+                append(",\n    \"image\": \"${TextEscapeUtils.escapeJson(resolvedImage)}\"")
             }
             personUrl?.let {
-                append(",\n    \"url\": \"${escapeJson(it)}\"")
+                append(",\n    \"url\": \"${TextEscapeUtils.escapeJson(it)}\"")
             }
             if (socialLinks.isNotEmpty()) {
-                val linksJson = socialLinks.joinToString(", ") { link -> "\"${escapeJson(link)}\"" }
+                val linksJson = socialLinks.joinToString(", ") { link -> "\"${TextEscapeUtils.escapeJson(link)}\"" }
                 append(",\n    \"sameAs\": [$linksJson]")
             }
             append("\n}")
         }
     }
-
-    /**
-     * Convenience method that builds a Person JSON-LD block from an [Author] model.
-     *
-     * Social link URLs are resolved from [Author.allSocialLinks] (which combines
-     * the legacy `twitter`/`github`/`linkedin`/`website` fields with the free-form
-     * [Author.socialLinks] map).
-     *
-     * @param author The author to generate structured data for.
-     * @param siteUrl Base URL of the site.
-     */
-    fun fromAuthor(
-        author: Author,
-        siteUrl: String,
-    ): String {
-        val socialUrls = author.allSocialLinks.map { it.second }
-        return generate(
-            name = author.name,
-            siteUrl = siteUrl,
-            authorSlug = author.slug,
-            bio = author.bio,
-            image = author.avatar,
-            url = author.website,
-            socialLinks = socialUrls,
-        )
-    }
-
-    private fun escapeJson(text: String): String =
-        text
-            .replace("\\", "\\\\")
-            .replace("\"", "\\\"")
-            .replace("\b", "\\b")
-            .replace("\n", "\\n")
-            .replace("\r", "\\r")
-            .replace("\t", "\\t")
 }
