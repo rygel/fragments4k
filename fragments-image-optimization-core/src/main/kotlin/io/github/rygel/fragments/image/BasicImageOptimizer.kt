@@ -73,7 +73,10 @@ class BasicImageOptimizer : ImageOptimizer {
                         )
 
                     return@withContext Result.success(optimizedImage)
-                } catch (e: Exception) {
+                } catch (e: IOException) {
+                    logger.error("Failed to optimize image", e)
+                    return@withContext Result.failure(e)
+                } catch (e: IllegalArgumentException) {
                     logger.error("Failed to optimize image", e)
                     return@withContext Result.failure(e)
                 }
@@ -143,7 +146,10 @@ class BasicImageOptimizer : ImageOptimizer {
 
                     return@withContext Result.success(optimizedImage)
                 }
-            } catch (e: Exception) {
+            } catch (e: IOException) {
+                logger.error("Failed to optimize image", e)
+                return@withContext Result.failure(e)
+            } catch (e: IllegalArgumentException) {
                 logger.error("Failed to optimize image", e)
                 return@withContext Result.failure(e)
             }
