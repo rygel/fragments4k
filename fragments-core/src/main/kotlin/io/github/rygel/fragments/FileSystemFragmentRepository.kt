@@ -93,7 +93,7 @@ class FileSystemFragmentRepository(
 
     @Volatile private var lastLoaded: LocalDateTime = LocalDateTime.MIN
 
-    @Volatile private var cachedRelationships: ContentRelationships? = null
+    @Volatile private var cachedRelationships: MutableMap<String, ContentRelationships> = mutableMapOf()
 
     override suspend fun getAll(): List<Fragment> =
         withContext(Dispatchers.IO) {
@@ -258,7 +258,7 @@ class FileSystemFragmentRepository(
     override suspend fun reload() {
         withContext(Dispatchers.IO) {
             cachedFragments = loadFragmentsFromDisk()
-            cachedRelationships = null
+            cachedRelationships.clear()
             lastLoaded = LocalDateTime.now(ZoneOffset.UTC)
         }
     }
@@ -743,7 +743,7 @@ class FileSystemFragmentRepository(
         config: io.github.rygel.fragments.RelationshipConfig,
     ): ContentRelationships? {
         return withContext(Dispatchers.IO) {
-            cachedRelationships ?: run {
+            cachedRelationships[slug] ?: run {
                 val currentFragment = getBySlug(slug) ?: return@withContext null
                 val allFragments =
                     getAllVisible()
@@ -755,7 +755,7 @@ class FileSystemFragmentRepository(
                         allFragments = allFragments,
                         config = config,
                     )
-                cachedRelationships = relationships
+                cachedRelationships[slug] = relationships
                 relationships
             }
         }

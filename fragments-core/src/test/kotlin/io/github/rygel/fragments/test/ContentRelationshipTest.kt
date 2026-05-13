@@ -2,6 +2,7 @@ package io.github.rygel.fragments.test
 
 import io.github.rygel.fragments.ContentRelationshipGenerator
 import io.github.rygel.fragments.ContentRelationships
+import io.github.rygel.fragments.FileSystemFragmentRepository
 import io.github.rygel.fragments.Fragment
 import io.github.rygel.fragments.FragmentStatus
 import io.github.rygel.fragments.FragmentViewModel
@@ -11,7 +12,11 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
+import java.io.File
+import java.nio.file.Path
 import java.time.LocalDateTime
 
 class ContentRelationshipTest {
@@ -777,4 +782,134 @@ class ContentRelationshipTest {
         assertFalse(relationships1.relatedByCategory.isEmpty())
         assertTrue(relationships1.relatedByCategory.any { it.slug == "post-2" })
     }
+
+    @TempDir
+    lateinit var tempDir: Path
+
+    private lateinit var fsRepository: FileSystemFragmentRepository
+
+    @BeforeEach
+    fun setUpFsRepo() {
+        fsRepository = FileSystemFragmentRepository(tempDir.toString())
+    }
+
+    private fun createMdFile(
+        filename: String,
+        content: String,
+    ) {
+        File(tempDir.toFile(), filename).writeText(content)
+    }
+
+    @Test
+    fun testRelationshipsAreCachedPerSlug() =
+        runBlocking {
+            createMdFile(
+                "post-1.md",
+                """
+                ---
+                title: First Post
+                slug: post-1
+                date: 2024-01-01
+                tags: kotlin
+                categories: tech
+                visible: true
+                ---
+                Content 1
+                """.trimIndent(),
+            )
+            createMdFile(
+                "post-2.md",
+                """
+                ---
+                title: Second Post
+                slug: post-2
+                date: 2024-01-02
+                tags: kotlin
+                categories: tech
+                visible: true
+                ---
+                Content 2
+                """.trimIndent(),
+            )
+            createMdFile(
+                "post-3.md",
+                """
+                ---
+                title: Third Post
+                slug: post-3
+                date: 2024-01-03
+                tags: kotlin
+                categories: tech
+                visible: true
+                ---
+                Content 3
+                """.trimIndent(),
+            )
+
+            fsRepository.reload()
+
+            val rel1 = fsRepository.getRelationships("post-1")!!
+            val rel2 = fsRepository.getRelationships("post-2")!!
+
+            assertEquals("post-2", rel1.next?.slug, "post-1's next should be post-2")
+            assertNull(rel1.previous, "post-1 should have no previous")
+
+            assertEquals("post-3", rel2.next?.slug, "post-2's next should be post-3 (not stale post-2 from post-1 cache)")
+            assertEquals("post-1", rel2.previous?.slug, "post-2's previous should be post-1")
+        }
+
+    @Test
+    fun testRelationshipsCacheInvalidatedOnReload() =
+        runBlocking {
+            createMdFile(
+                "post-1.md",
+                """
+                ---
+                title: First Post
+                slug: post-1
+                date: 2024-01-01
+                visible: true
+                ---
+                Content 1
+                """.trimIndent(),
+            )
+            createMdFile(
+                "post-2.md",
+                """
+                ---
+                title: Second Post
+                slug: post-2
+                date: 2024-01-02
+                visible: true
+                ---
+                Content 2
+                """.trimIndent(),
+            )
+
+            fsRepository.reload()
+
+            val beforeReload = fsRepository.getRelationships("post-1")!!
+            assertEquals("post-2", beforeReload.next?.slug)
+
+            createMdFile(
+                "post-3.md",
+                """
+                ---
+                title: Third Post
+                slug: post-3
+                date: 2024-01-03
+                visible: true
+                ---
+                Content 3
+                """.trimIndent(),
+            )
+
+            fsRepository.reload()
+
+            val afterReload = fsRepository.getRelationships("post-1")!!
+            assertEquals("post-2", afterReload.next?.slug)
+
+            val post2Relationships = fsRepository.getRelationships("post-2")!!
+            assertEquals("post-3", post2Relationships.next?.slug)
+        }
 }
