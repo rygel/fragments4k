@@ -280,11 +280,11 @@ class FileSystemFragmentRepository(
 
     private fun isWithinBasePath(file: File): Boolean {
         val canonical = file.canonicalPath
-        return canonical.startsWith(canonicalBasePath)
+        return canonical == canonicalBasePath || canonical.startsWith(canonicalBasePath + File.separatorChar)
     }
 
     private fun safeWalk(): Sequence<File> =
-        File(basePath)
+        File(canonicalBasePath)
             .walkTopDown()
             .filter { it.isFile }
             .filter { it.extension == extension.removePrefix(".") }
