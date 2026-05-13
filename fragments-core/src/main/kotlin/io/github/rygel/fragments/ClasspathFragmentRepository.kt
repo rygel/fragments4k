@@ -72,6 +72,10 @@ class ClasspathFragmentRepository(
 
     companion object {
         const val INDEX_FILE_NAME = "index.list"
+        private val SLUG_NON_ALPHANUMERIC = Regex("[^a-z0-9\\s-]")
+        private val SLUG_WHITESPACE = Regex("\\s+")
+        private val SLUG_CONSECUTIVE_DASHES = Regex("-+")
+        private val MORE_TAG_PATTERN = Regex("<!--\\s*more\\s*-->", RegexOption.IGNORE_CASE)
     }
 
     override suspend fun getAll(): List<Fragment> = withContext(Dispatchers.IO) { loadFragments() }
@@ -342,12 +346,12 @@ class ClasspathFragmentRepository(
     private fun generateSlug(name: String): String =
         name
             .lowercase()
-            .replace(Regex("[^a-z0-9\\s-]"), "")
-            .replace(Regex("\\s+"), "-")
-            .replace(Regex("-+"), "-")
+            .replace(SLUG_NON_ALPHANUMERIC, "")
+            .replace(SLUG_WHITESPACE, "-")
+            .replace(SLUG_CONSECUTIVE_DASHES, "-")
 
     private fun extractPreview(content: String): String {
-        val moreTag = Regex("<!--\\s*more\\s*-->", RegexOption.IGNORE_CASE).find(content)
+        val moreTag = MORE_TAG_PATTERN.find(content)
         return when {
             moreTag != null -> content.substring(0, moreTag.range.first)
             content.length > 200 -> content.substring(0, 200) + "..."

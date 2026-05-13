@@ -75,6 +75,7 @@ class LuceneSearchEngine(
         private const val MAX_TAG_CATEGORY_RESULTS = 100
         private const val MAX_QUERY_LENGTH = 500
         private const val MIN_AUTOCOMPLETE_PREFIX_LENGTH = 2
+        private val WHITESPACE = Regex("\\s+")
         private val logger = LoggerFactory.getLogger(LuceneSearchEngine::class.java)
     }
 
@@ -87,6 +88,8 @@ class LuceneSearchEngine(
             .ByteBuffersDirectory()
 
     @Volatile private var reader: org.apache.lucene.index.DirectoryReader? = null
+
+    @Volatile private var slugToFragment: Map<String, Fragment> = emptyMap()
     private val indexMutex = Mutex()
 
     suspend fun index() =
@@ -130,6 +133,8 @@ class LuceneSearchEngine(
                 }
                     ?: org.apache.lucene.index.DirectoryReader
                         .open(directory)
+
+                slugToFragment = repositories.flatMap { it.getAllVisible() }.associateBy { it.slug }
             }
         }
 
@@ -157,7 +162,7 @@ class LuceneSearchEngine(
 
     suspend fun search(options: SearchOptions): List<SearchResult> =
         withContext(Dispatchers.IO) {
-            val fragmentsBySlug = repositories.flatMap { it.getAllVisible() }.associateBy { it.slug }
+            val fragmentsBySlug = slugToFragment
             val query = buildQuery(options) ?: return@withContext emptyList()
 
             withSearcher { searcher ->
@@ -239,7 +244,7 @@ class LuceneSearchEngine(
     }
 
     private fun buildPhraseQuery(query: String): Query {
-        val terms = query.split("\\s+".toRegex()).filter { it.isNotEmpty() }
+        val terms = query.split(WHITESPACE).filter { it.isNotEmpty() }
 
         // Build a phrase query for each field, combine with SHOULD so either field can satisfy
         val booleanQuery = BooleanQuery.Builder()
@@ -261,7 +266,7 @@ class LuceneSearchEngine(
         query: String,
         threshold: Float,
     ): Query {
-        val terms = query.split("\\s+".toRegex()).filter { it.isNotEmpty() }
+        val terms = query.split(WHITESPACE).filter { it.isNotEmpty() }
         val booleanQuery = BooleanQuery.Builder()
 
         terms.forEach { term ->
@@ -279,7 +284,7 @@ class LuceneSearchEngine(
 
     suspend fun searchByTag(tag: String): List<Fragment> =
         withContext(Dispatchers.IO) {
-            val fragmentsBySlug = repositories.flatMap { it.getAllVisible() }.associateBy { it.slug }
+            val fragmentsBySlug = slugToFragment
 
             withSearcher { searcher ->
                 val query =
@@ -297,7 +302,7 @@ class LuceneSearchEngine(
 
     suspend fun searchByCategory(category: String): List<Fragment> =
         withContext(Dispatchers.IO) {
-            val fragmentsBySlug = repositories.flatMap { it.getAllVisible() }.associateBy { it.slug }
+            val fragmentsBySlug = slugToFragment
 
             withSearcher { searcher ->
                 val query =

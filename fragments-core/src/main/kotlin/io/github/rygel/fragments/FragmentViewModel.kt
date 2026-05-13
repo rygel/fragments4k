@@ -53,8 +53,12 @@ data class FragmentViewModel(
         const val HTMX_REQUEST_HEADER = "HX-Request"
         const val HTMX_CURRENT_URL_HEADER = "HX-Current-URL"
 
-        /** Average adult reading speed used for [FragmentViewModel.readingTime] calculation. */
         const val WORDS_PER_MINUTE = 225
+
+        private val WORDS_REGEX = Regex("\\s+")
+        private val HEADER_PATTERN = Regex("^(#{1,6})\\s+(.+)$", RegexOption.MULTILINE)
+        private val ANCHOR_CLEANUP = Regex("[^a-z0-9\\s-]")
+        private val ANCHOR_WHITESPACE = Regex("\\s+")
     }
 
     /**
@@ -193,7 +197,7 @@ data class FragmentViewModel(
     )
 
     private fun calculateReadingTime(): ReadingTime {
-        val words = content.split(Regex("\\s+")).size
+        val words = content.split(WORDS_REGEX).size
         val totalSeconds = (words.toDouble() / WORDS_PER_MINUTE) * 60
         val minutes = totalSeconds.toInt() / 60
         val seconds = totalSeconds.toInt() % 60
@@ -210,16 +214,15 @@ data class FragmentViewModel(
 
     private fun extractTableOfContents(): List<TableOfContentsItem> {
         val items = mutableListOf<TableOfContentsItem>()
-        val headerPattern = Regex("^(#{1,6})\\s+(.+)$", RegexOption.MULTILINE)
 
-        headerPattern.findAll(content).forEach { match ->
+        HEADER_PATTERN.findAll(content).forEach { match ->
             val level = match.groupValues[1].length
             val title = match.groupValues[2].trim()
             val anchor =
                 title
                     .lowercase()
-                    .replace(Regex("[^a-z0-9\\s-]"), "")
-                    .replace(Regex("\\s+"), "-")
+                    .replace(ANCHOR_CLEANUP, "")
+                    .replace(ANCHOR_WHITESPACE, "-")
 
             items.add(TableOfContentsItem(level, title, anchor))
         }
