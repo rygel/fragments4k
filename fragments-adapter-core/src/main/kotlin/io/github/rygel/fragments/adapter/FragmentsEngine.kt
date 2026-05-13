@@ -74,12 +74,15 @@ class FragmentsEngine(
     /**
      * Content-Security-Policy header value sent with every response.
      *
-     * The default allows `cdnjs.cloudflare.com` (Prism syntax highlighting).
-     * Override this to restrict or allow additional CDNs (e.g. `"default-src 'self'; script-src 'self'; style-src 'self'"`)
-     * if you serve libraries locally or use different CDN hosts.
+     * The default is strict (self-only for scripts, styles, images, and fonts;
+     * no inline scripts; no external hosts). Override this to allow CDNs or
+     * inline styles if your templates require them:
+     * ```
+     * contentSecurityPolicy = "default-src 'self'; script-src 'self' cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'"
+     * ```
      */
     val contentSecurityPolicy: String =
-        "default-src 'self'; script-src 'self' cdnjs.cloudflare.com; style-src 'self' cdnjs.cloudflare.com",
+        "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'",
 ) {
     private val allRepositories: List<FragmentRepository> =
         listOf(staticEngine.getRepository(), blogEngine.getRepository()) + additionalRepositories

@@ -71,6 +71,7 @@ private class NoDateResolver : Resolver() {
  */
 class MarkdownParser(
     extraExtensions: List<Extension> = emptyList(),
+    private val sanitizerProfile: SanitizerProfile = SanitizerProfile.RELAXED_TRUSTED_AUTHOR,
 ) {
     private val logger = LoggerFactory.getLogger(MarkdownParser::class.java)
     private val options =
@@ -126,10 +127,10 @@ class MarkdownParser(
             val frontMatterYaml = match.groupValues[1]
             val rawContent = markdown.substring(match.range.last + 1)
             val frontMatter = parseFrontMatter(frontMatterYaml)
-            val htmlContent = HtmlSanitizer.sanitize(renderer.render(parser.parse(rawContent)))
+            val htmlContent = HtmlSanitizer.sanitize(renderer.render(parser.parse(rawContent)), sanitizerProfile)
             ParsedContent(frontMatter, rawContent, htmlContent)
         } else {
-            ParsedContent(emptyMap(), markdown, HtmlSanitizer.sanitize(renderer.render(parser.parse(markdown))))
+            ParsedContent(emptyMap(), markdown, HtmlSanitizer.sanitize(renderer.render(parser.parse(markdown)), sanitizerProfile))
         }
     }
 

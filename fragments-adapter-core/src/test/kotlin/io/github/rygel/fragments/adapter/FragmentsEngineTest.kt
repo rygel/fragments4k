@@ -14,11 +14,13 @@ import org.junit.jupiter.api.Test
 
 class FragmentsEngineTest {
     private lateinit var engine: FragmentsEngine
+    private lateinit var mockStaticEngine: StaticPageEngine
+    private lateinit var mockBlogEngine: BlogEngine
 
     @BeforeEach
     fun setUp() {
-        val mockStaticEngine = mockk<StaticPageEngine>()
-        val mockBlogEngine = mockk<BlogEngine>()
+        mockStaticEngine = mockk<StaticPageEngine>()
+        mockBlogEngine = mockk<BlogEngine>()
         val mockStaticRepo = mockk<FragmentRepository>()
         val mockBlogRepo = mockk<FragmentRepository>()
         every { mockStaticEngine.getRepository() } returns mockStaticRepo
@@ -56,11 +58,25 @@ class FragmentsEngineTest {
     }
 
     @Test
-    fun testCspHeaderReturnsPolicy() {
+    fun testCspHeaderReturnsStrictDefault() {
         val csp = engine.cspHeader()
         assertNotNull(csp)
         assertTrue(csp.contains("default-src 'self'"))
         assertTrue(csp.contains("script-src 'self'"))
+        assertTrue(csp.contains("object-src 'none'"))
+        assertTrue(csp.contains("frame-ancestors 'none'"))
+        assertFalse(csp.contains("cdnjs.cloudflare.com"), "Default CSP should not allow external CDNs")
+    }
+
+    @Test
+    fun testCspHeaderCanBeOverridden() {
+        val customEngine =
+            FragmentsEngine(
+                staticEngine = mockStaticEngine,
+                blogEngine = mockBlogEngine,
+                contentSecurityPolicy = "default-src 'self'; script-src 'self' cdnjs.cloudflare.com",
+            )
+        assertTrue(customEngine.cspHeader().contains("cdnjs.cloudflare.com"))
     }
 
     @Test

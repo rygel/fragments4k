@@ -52,4 +52,55 @@ class HtmlSanitizerTest {
         val result = HtmlSanitizer.sanitize(input)
         assertFalse(result.contains("javascript:"))
     }
+
+    @Test
+    fun testPreservesMoreTagPlaceholder() {
+        val input = """<p>Preview content</p><!--more--><p>Full content</p>"""
+        val result = HtmlSanitizer.sanitize(input)
+        assertTrue(result.contains("<!--more-->"), "The more-tag marker must survive sanitization")
+    }
+
+    @Test
+    fun testPreservesAllowedAttributes() {
+        val input = """<p class="intro" id="first">Hello</p>"""
+        val result = HtmlSanitizer.sanitize(input)
+        assertTrue(result.contains("class=\"intro\""))
+        assertTrue(result.contains("id=\"first\""))
+    }
+
+    @Test
+    fun testPreservesDetailsSummary() {
+        val input = """<details><summary>Click</summary><p>Content</p></details>"""
+        val result = HtmlSanitizer.sanitize(input)
+        assertTrue(result.contains("<details>"))
+        assertTrue(result.contains("<summary>Click</summary>"))
+    }
+
+    @Test
+    fun testStrictProfileRemovesClassAndId() {
+        val input = """<p class="intro" id="first">Hello</p><script>alert(1)</script>"""
+        val result = HtmlSanitizer.sanitize(input, SanitizerProfile.STRICT)
+        assertFalse(result.contains("class="))
+        assertFalse(result.contains("id="))
+        assertFalse(result.contains("<script"))
+        assertTrue(result.contains("<p>Hello</p>"))
+    }
+
+    @Test
+    fun testStrictProfilePreservesBasicFormatting() {
+        val input = """<p><strong>bold</strong> <em>italic</em> <a href="https://example.com">link</a></p>"""
+        val result = HtmlSanitizer.sanitize(input, SanitizerProfile.STRICT)
+        assertTrue(result.contains("<strong>bold</strong>"))
+        assertTrue(result.contains("<em>italic</em>"))
+        assertTrue(result.contains("<a href="))
+    }
+
+    @Test
+    fun testDefaultProfileIsRelaxedTrusted() {
+        val input = """<p class="intro">Hello</p>"""
+        val defaultResult = HtmlSanitizer.sanitize(input)
+        val explicitResult = HtmlSanitizer.sanitize(input, SanitizerProfile.RELAXED_TRUSTED_AUTHOR)
+        assertTrue(defaultResult.contains("class="))
+        assertTrue(explicitResult.contains("class="))
+    }
 }
