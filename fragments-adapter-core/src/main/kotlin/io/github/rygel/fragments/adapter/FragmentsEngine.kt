@@ -84,6 +84,17 @@ class FragmentsEngine(
     val contentSecurityPolicy: String =
         "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'",
 ) {
+    private val logger = org.slf4j.LoggerFactory.getLogger(FragmentsEngine::class.java)
+
+    init {
+        if (siteUrl == "http://localhost:8080") {
+            logger.warn(
+                "FragmentsEngine is using the default siteUrl 'http://localhost:8080'. " +
+                    "Set siteUrl to your production URL for correct sitemap, RSS, and canonical URLs.",
+            )
+        }
+    }
+
     private val allRepositories: List<FragmentRepository> =
         listOf(staticEngine.getRepository(), blogEngine.getRepository()) + additionalRepositories
 
