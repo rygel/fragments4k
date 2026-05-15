@@ -173,7 +173,7 @@ class SitemapGenerator(
         fragment.frontMatter["og:image"]?.let { return it.toString() }
         fragment.frontMatter["twitter:image"]?.let { return it.toString() }
 
-        val imgTagPattern = Regex("""<img[^>]+src=["']([^"']+)["']""", RegexOption.IGNORE_CASE)
+        val imgTagPattern = IMG_TAG_PATTERN
         imgTagPattern
             .find(fragment.preview)
             ?.groupValues
@@ -187,7 +187,7 @@ class SitemapGenerator(
         private const val SITEMAP_NS = "http://www.sitemaps.org/schemas/sitemap/0.9"
         private const val IMAGE_NS = "http://www.google.com/schemas/sitemap-image/1.1"
 
-        /** W3C Datetime (ISO 8601 date) — required by the sitemap protocol. */
         private val formatter = DateTimeFormatter.ISO_LOCAL_DATE
+        private val IMG_TAG_PATTERN = Regex("""<img[^>]+src=["']([^"']+)["']""", RegexOption.IGNORE_CASE)
     }
 }

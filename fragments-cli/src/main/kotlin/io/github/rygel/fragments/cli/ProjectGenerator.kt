@@ -352,7 +352,7 @@ fun main() {
     val server = CatchAll { e ->
         logger.error("Error handling request", e)
         org.http4k.core.Response(org.http4k.core.Status.INTERNAL_SERVER_ERROR)
-            .body("Internal Server Error: ${'$'}{e.message}")
+            .body("Internal Server Error")
     }.then(adapter.createRoutes()).asServer(Netty(8080))
     
     logger.info("Starting Fragments4k HTTP4k server on port 8080")

@@ -3,7 +3,9 @@ package io.github.rygel.fragments
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
+import org.yaml.snakeyaml.LoaderOptions
 import org.yaml.snakeyaml.Yaml
+import org.yaml.snakeyaml.constructor.SafeConstructor
 import org.yaml.snakeyaml.error.YAMLException
 import java.io.File
 import java.io.IOException
@@ -16,8 +18,12 @@ class FileSystemAuthorRepository(
     private val basePath: Path,
     private val extension: String = ".author.yml",
 ) : AuthorRepository {
+    companion object {
+        private val SLUG_PATTERN = Regex("^[a-z0-9]+(-[a-z0-9]+)*$")
+    }
+
     private val logger = LoggerFactory.getLogger(FileSystemAuthorRepository::class.java)
-    private val yaml = Yaml()
+    private val yaml = Yaml(SafeConstructor(LoaderOptions()))
     private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
     private var cachedAuthors: List<Author> = emptyList()
     private var lastLoaded: LocalDateTime = LocalDateTime.MIN
@@ -49,6 +55,7 @@ class FileSystemAuthorRepository(
 
     override suspend fun register(author: Author) =
         withContext(Dispatchers.IO) {
+            validateSlug(author.slug)
             val file = getAuthorFile(author.slug)
             if (file != null && file.exists()) {
                 val existing = parseAuthorFile(file)
@@ -94,13 +101,16 @@ class FileSystemAuthorRepository(
         withContext(Dispatchers.IO) {
             val authorsDir = File(basePath.toFile(), "authors")
             if (authorsDir.exists()) {
-                authorsDir.listFiles()?.forEach { file ->
-                    try {
-                        Files.delete(file.toPath())
-                    } catch (e: IOException) {
-                        logger.error("Failed to delete author file: ${file.name}", e)
+                authorsDir
+                    .listFiles { file ->
+                        file.name.endsWith(extension)
+                    }?.forEach { file ->
+                        try {
+                            Files.delete(file.toPath())
+                        } catch (e: IOException) {
+                            logger.error("Failed to delete author file: ${file.name}", e)
+                        }
                     }
-                }
             }
 
             invalidateCache()
@@ -124,8 +134,7 @@ class FileSystemAuthorRepository(
 
             val files =
                 authorsDir.listFiles { file ->
-                    file.extension == extension.removePrefix(".").removePrefix("yml") ||
-                        file.extension == extension.removePrefix(".").removePrefix("yaml")
+                    file.name.endsWith(extension)
                 } ?: emptyArray()
 
             cachedAuthors =
@@ -172,6 +181,7 @@ class FileSystemAuthorRepository(
         }
 
     private fun saveAuthor(author: Author) {
+        validateSlug(author.slug)
         val authorsDir = File(basePath.toFile(), "authors")
         if (!authorsDir.exists()) {
             authorsDir.mkdirs()
@@ -203,6 +213,7 @@ class FileSystemAuthorRepository(
     }
 
     private fun getAuthorFile(slug: String): File? {
+        validateSlug(slug)
         val authorsDir = File(basePath.toFile(), "authors")
         if (!authorsDir.exists()) return null
 
@@ -220,6 +231,12 @@ class FileSystemAuthorRepository(
             cachedAuthors = cachedAuthors.toMutableList().apply { this[index] = updatedAuthor }
         } else {
             cachedAuthors = cachedAuthors + updatedAuthor
+        }
+    }
+
+    private fun validateSlug(slug: String) {
+        require(SLUG_PATTERN.matches(slug)) {
+            "Invalid author slug: '$slug'. Only lowercase alphanumeric characters and hyphens are allowed."
         }
     }
 

@@ -69,8 +69,17 @@ class FragmentsHttp4kAdapter(
         }
 
     fun createRoutes(): RoutingHttpHandler {
-        val cspFilter = Filter { next -> { request -> next(request).header("Content-Security-Policy", engine.cspHeader()) } }
-        return errorFilter.then(cspFilter).then(
+        val securityFilter =
+            Filter { next ->
+                { request ->
+                    next(request).also { response ->
+                        engine.securityHeaders().forEach { (name, value) ->
+                            response.header(name, value)
+                        }
+                    }
+                }
+            }
+        return errorFilter.then(securityFilter).then(
             routes(
                 "/" bind GET to { request -> handleHome(request) },
                 "/page/{slug}" bind GET to { request -> handlePage(request) },
