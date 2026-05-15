@@ -92,7 +92,7 @@ fun RoutesConfig.fragmentsRoutes(
                     )
                 render(ctx, fragment.template, viewModel)
             } else {
-                throw NoSuchElementException("Page not found: $slug")
+                ctx.status(404).result("Page not found: $slug")
             }
         }
     }
@@ -164,7 +164,7 @@ fun RoutesConfig.fragmentsRoutes(
                     )
                 render(ctx, fragment.template, viewModel)
             } else {
-                throw NoSuchElementException("Post not found")
+                ctx.status(404).result("Post not found")
             }
         }
     }
