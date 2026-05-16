@@ -750,6 +750,9 @@ class FileSystemFragmentRepository(
         this
             .replace("\\", "\\\\")
             .replace("\"", "\\\"")
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
+            .replace("\t", "\\t")
 
     override suspend fun getRelationships(
         slug: String,

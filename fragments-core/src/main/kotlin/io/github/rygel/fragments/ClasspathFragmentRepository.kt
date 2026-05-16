@@ -67,8 +67,10 @@ class ClasspathFragmentRepository(
 ) : FragmentRepository {
     private val logger = LoggerFactory.getLogger(ClasspathFragmentRepository::class.java)
     private val normalizedBase = basePath.trimEnd('/')
-    private var cachedFragments: List<Fragment> = emptyList()
-    private var loaded = false
+
+    @Volatile private var cachedFragments: List<Fragment> = emptyList()
+
+    @Volatile private var loaded = false
 
     companion object {
         const val INDEX_FILE_NAME = "index.list"

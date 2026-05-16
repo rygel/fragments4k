@@ -43,6 +43,7 @@ class DefaultScheduledPublicationJob(
         val errors = mutableListOf<String>()
 
         val fragmentsToPublish = repository.getScheduledFragmentsDueForPublication(threshold)
+        val slugToFragment = fragmentsToPublish.associateBy { it.slug }
 
         if (fragmentsToPublish.isEmpty()) {
             return ScheduledPublicationResult(
@@ -60,12 +61,14 @@ class DefaultScheduledPublicationJob(
                 publishedCount++
             } else {
                 failedCount++
-                result.exceptionOrNull()?.let { error ->
+                val error = result.exceptionOrNull()
+                if (error != null) {
                     errors.add(error.message ?: "Unknown error")
-                    val fragmentSlug = result.getOrNull()?.slug ?: "unknown"
-                    listeners.forEach { listener ->
-                        result.getOrNull()?.let { fragment ->
-                            listener.onPublicationError(fragment, error)
+                    val failedSlug = result.getOrNull()?.slug ?: "unknown"
+                    val failedFragment = slugToFragment[failedSlug]
+                    if (failedFragment != null) {
+                        listeners.forEach { listener ->
+                            listener.onPublicationError(failedFragment, error)
                         }
                     }
                 }

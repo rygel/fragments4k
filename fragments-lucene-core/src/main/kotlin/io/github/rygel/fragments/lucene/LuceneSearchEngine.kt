@@ -115,10 +115,10 @@ class LuceneSearchEngine(
                             doc.add(TextField("content", fragment.contentTextOnly, Field.Store.NO))
                             doc.add(TextField("preview", fragment.previewTextOnly, Field.Store.NO))
                             fragment.tags.forEach { tag ->
-                                doc.add(StringField("tag", tag, Field.Store.YES))
+                                doc.add(StringField("tag", tag.lowercase(), Field.Store.YES))
                             }
                             fragment.categories.forEach { category ->
-                                doc.add(StringField("category", category, Field.Store.YES))
+                                doc.add(StringField("category", category.lowercase(), Field.Store.YES))
                             }
                             fragment.date?.let { date ->
                                 doc.add(StringField("date", date.toString(), Field.Store.YES))
