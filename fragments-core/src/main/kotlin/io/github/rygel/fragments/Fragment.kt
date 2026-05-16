@@ -226,11 +226,12 @@ data class Fragment(
      */
     val contentTextOnly: String by lazy {
         if (hasMoreTag) {
-            htmlContent
-                .substringBefore("<!--more-->")
-                .substringBefore("<!-- more -->")
-                .replace(HTML_TAG_REGEX, "")
-                .trim()
+            val moreIndex = htmlContent.indexOf("<!--more-->", ignoreCase = true)
+            if (moreIndex >= 0) {
+                htmlContent.substring(0, moreIndex)
+            } else {
+                htmlContent
+            }.replace(HTML_TAG_REGEX, "").trim()
         } else {
             htmlContent.replace(HTML_TAG_REGEX, "").trim()
         }

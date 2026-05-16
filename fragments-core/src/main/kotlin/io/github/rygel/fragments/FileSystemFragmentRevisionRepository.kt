@@ -137,7 +137,7 @@ class FileSystemFragmentRevisionRepository(
                     title = revision.title,
                     slug = slug,
                     status = FragmentStatus.PUBLISHED,
-                    date = LocalDateTime.now(),
+                    date = revision.changedAt,
                     publishDate = null,
                     preview = revision.preview,
                     htmlContent = revision.content,
@@ -317,7 +317,16 @@ class FileSystemFragmentRevisionRepository(
         content.forEach { char ->
             when {
                 escape -> {
-                    current += char
+                    current +=
+                        when (char) {
+                            'n' -> '\n'
+                            'r' -> '\r'
+                            't' -> '\t'
+                            'b' -> '\b'
+                            'f' -> '\u000C'
+                            '/' -> '/'
+                            else -> char
+                        }
                     escape = false
                 }
 

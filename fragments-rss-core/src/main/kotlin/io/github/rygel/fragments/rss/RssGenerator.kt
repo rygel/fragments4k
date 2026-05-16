@@ -119,8 +119,10 @@ class RssGenerator(
     companion object {
         private const val ATOM_NS = "http://www.w3.org/2005/Atom"
         private const val MAX_ITEMS = 20
-        private val formatter = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss", Locale.US)
 
-        private fun formatDate(dateTime: LocalDateTime): String = dateTime.format(formatter)
+        private fun formatDate(dateTime: LocalDateTime): String =
+            dateTime.atZone(java.time.ZoneOffset.UTC).format(
+                DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss Z", Locale.US),
+            )
     }
 }

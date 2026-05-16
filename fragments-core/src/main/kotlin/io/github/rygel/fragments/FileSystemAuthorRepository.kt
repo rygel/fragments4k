@@ -25,8 +25,10 @@ class FileSystemAuthorRepository(
     private val logger = LoggerFactory.getLogger(FileSystemAuthorRepository::class.java)
     private val yaml = Yaml(SafeConstructor(LoaderOptions()))
     private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
-    private var cachedAuthors: List<Author> = emptyList()
-    private var lastLoaded: LocalDateTime = LocalDateTime.MIN
+
+    @Volatile private var cachedAuthors: List<Author> = emptyList()
+
+    @Volatile private var lastLoaded: LocalDateTime = LocalDateTime.MIN
 
     override suspend fun getAll(): List<Author> =
         withContext(Dispatchers.IO) {
