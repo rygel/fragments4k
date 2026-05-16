@@ -2,67 +2,113 @@ package io.github.rygel.fragments.http4k
 
 import io.github.rygel.fragments.ArchiveNavigationLink
 import io.github.rygel.fragments.AuthorViewModel
+import io.github.rygel.fragments.FragmentTemplates
 import io.github.rygel.fragments.FragmentViewModel
 import io.github.rygel.fragments.NavigationLink
+import io.github.rygel.fragments.SocialShareLink
+import io.github.rygel.fragments.adapter.ArchiveViewModel as SharedArchiveViewModel
+import io.github.rygel.fragments.adapter.AuthorPageViewModel as SharedAuthorPageViewModel
+import io.github.rygel.fragments.adapter.BlogOverviewViewModel as SharedBlogOverviewViewModel
+import io.github.rygel.fragments.adapter.CategoryViewModel as SharedCategoryViewModel
+import io.github.rygel.fragments.adapter.ContentViewModel as SharedContentViewModel
+import io.github.rygel.fragments.adapter.ErrorResponse
 import io.github.rygel.fragments.adapter.FooterConfig
 import io.github.rygel.fragments.adapter.FragmentsEngine
+import io.github.rygel.fragments.adapter.HomeViewModel as SharedHomeViewModel
 import io.github.rygel.fragments.adapter.PaginationInfo
 import io.github.rygel.fragments.adapter.SearchFormConfig
+import io.github.rygel.fragments.adapter.SearchViewModel as SharedSearchViewModel
+import io.github.rygel.fragments.adapter.TagViewModel as SharedTagViewModel
 import kotlinx.coroutines.runBlocking
+import org.http4k.core.Filter
 import org.http4k.core.Method.GET
 import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.Status
+import org.http4k.core.then
+import org.http4k.format.Jackson
 import org.http4k.routing.RoutingHttpHandler
 import org.http4k.routing.bind
 import org.http4k.routing.path
 import org.http4k.routing.routes
 import org.http4k.template.TemplateRenderer
 import org.http4k.template.ViewModel
+import org.slf4j.LoggerFactory
 
 class FragmentsHttp4kAdapter(
     private val engine: FragmentsEngine,
     private val renderer: TemplateRenderer,
 ) {
-    fun createRoutes(): RoutingHttpHandler =
-        routes(
-            "/" bind GET to { request -> handleHome(request) },
-            "/page/{slug}" bind GET to { request -> handlePage(request) },
-            "/blog" bind GET to { request -> handleBlogOverview(request) },
-            "/blog/page/{page}" bind GET to { request -> handleBlogOverview(request) },
-            "/blog/{year}/{month}/{slug}" bind GET to { request -> handleBlogPost(request) },
-            "/blog/tag/{tag}" bind GET to { request -> handleByTag(request) },
-            "/blog/category/{category}" bind GET to { request -> handleByCategory(request) },
-            "/blog/author/{slug}" bind GET to { request -> handleByAuthor(request) },
-            "/blog/archive/{year}" bind GET to { request -> handleArchiveYear(request) },
-            "/blog/archive/{year}/{month}" bind GET to { request -> handleArchiveYearMonth(request) },
-            "/search" bind GET to { request -> handleSearch(request) },
-            "/api/autocomplete" bind GET to { request -> handleAutocomplete(request) },
-            "/rss.xml" bind GET to { _ -> handleRss() },
-            "/sitemap.xml" bind GET to { _ -> handleSitemap() },
-            "/robots.txt" bind GET to { _ -> handleRobotsTxt() },
-            "/llms.txt" bind GET to { _ -> handleLlmsTxt() },
+    private val logger = LoggerFactory.getLogger(FragmentsHttp4kAdapter::class.java)
+
+    private val json = Jackson
+
+    @Suppress("TooGenericExceptionCaught")
+    private val errorFilter =
+        Filter { next ->
+            { request ->
+                try {
+                    next(request)
+                } catch (e: IllegalArgumentException) {
+                    logger.warn("Bad request: {}", e.message)
+                    Response(Status.BAD_REQUEST)
+                        .header("Content-Type", "application/json")
+                        .body(json.asFormatString(ErrorResponse.badRequest(e.message ?: "Invalid request")))
+                } catch (e: NoSuchElementException) {
+                    logger.warn("Not found: {}", e.message)
+                    Response(Status.NOT_FOUND)
+                        .header("Content-Type", "application/json")
+                        .body(json.asFormatString(ErrorResponse.notFound(e.message ?: "Resource not found")))
+                } catch (e: Exception) {
+                    logger.error("Unhandled exception", e)
+                    Response(Status.INTERNAL_SERVER_ERROR)
+                        .header("Content-Type", "application/json")
+                        .body(json.asFormatString(ErrorResponse.internalError()))
+                }
+            }
+        }
+
+    fun createRoutes(): RoutingHttpHandler {
+        val securityFilter =
+            Filter { next ->
+                { request ->
+                    next(request).also { response ->
+                        engine.securityHeaders().forEach { (name, value) ->
+                            response.header(name, value)
+                        }
+                    }
+                }
+            }
+        return errorFilter.then(securityFilter).then(
+            routes(
+                "/" bind GET to { request -> handleHome(request) },
+                "/page/{slug}" bind GET to { request -> handlePage(request) },
+                "/blog" bind GET to { request -> handleBlogOverview(request) },
+                "/blog/page/{page}" bind GET to { request -> handleBlogOverview(request) },
+                "/blog/{year}/{month}/{slug}" bind GET to { request -> handleBlogPost(request) },
+                "/blog/tag/{tag}" bind GET to { request -> handleByTag(request) },
+                "/blog/category/{category}" bind GET to { request -> handleByCategory(request) },
+                "/blog/author/{slug}" bind GET to { request -> handleByAuthor(request) },
+                "/blog/archive/{year}" bind GET to { request -> handleArchiveYear(request) },
+                "/blog/archive/{year}/{month}" bind GET to { request -> handleArchiveYearMonth(request) },
+                "/search" bind GET to { request -> handleSearch(request) },
+                "/api/autocomplete" bind GET to { request -> handleAutocomplete(request) },
+                "/rss.xml" bind GET to { _ -> handleRss() },
+                "/feed.xml" bind GET to { _ -> handleRss() },
+                "/sitemap.xml" bind GET to { _ -> handleSitemap() },
+                "/robots.txt" bind GET to { _ -> handleRobotsTxt() },
+                "/llms.txt" bind GET to { _ -> handleLlmsTxt() },
+            ),
         )
+    }
 
     private fun handleHome(request: Request): Response =
         runBlocking {
             val fragments = engine.getHome()
             val viewModel =
-                BlogOverviewViewModel(
-                    fragments = fragments.map { FragmentViewModel(it) },
-                    currentPage = 1,
-                    totalPages = 1,
-                    templateName = "index",
-                    isPartialRender = isHtmxRequest(request),
+                HomeViewModel(
+                    fragments = fragments.map { FragmentViewModel(it, isHtmxRequest(request), siteUrl = engine.siteUrl) },
                     navigationMenu = engine.nav(),
-                    pagination =
-                        PaginationInfo(
-                            currentPage = 1,
-                            totalPages = 1,
-                            hasPrevious = false,
-                            hasNext = false,
-                            text = "",
-                        ),
                     footer = engine.footer(),
                 )
             renderResponse(viewModel)
@@ -73,17 +119,18 @@ class FragmentsHttp4kAdapter(
         return runBlocking {
             val fragment = engine.getPage(slug)
             if (fragment != null) {
-                val fragmentViewModel = FragmentViewModel(fragment, isHtmxRequest(request))
+                val fragmentViewModel = FragmentViewModel(fragment, isHtmxRequest(request), siteUrl = engine.siteUrl)
                 val viewModel =
                     ContentViewModel(
                         viewModel = fragmentViewModel,
                         templateName = fragment.template,
                         navigationMenu = engine.nav(),
                         footer = engine.footer(),
+                        socialShareLinks = engine.socialShareLinks(fragment.title, fragment.url),
                     )
                 renderResponse(viewModel)
             } else {
-                Response(Status.NOT_FOUND).body("Page not found: $slug")
+                throw NoSuchElementException("Page not found: $slug")
             }
         }
     }
@@ -94,12 +141,12 @@ class FragmentsHttp4kAdapter(
             val pageResult = engine.getBlogOverview(page)
             val viewModel =
                 BlogOverviewViewModel(
-                    fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(request)) },
+                    fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(request), siteUrl = engine.siteUrl) },
                     currentPage = pageResult.currentPage,
                     totalPages = pageResult.totalPages,
                     hasNext = pageResult.hasNext,
                     hasPrevious = pageResult.hasPrevious,
-                    templateName = "blog_overview",
+                    templateName = FragmentTemplates.BLOG_OVERVIEW,
                     isPartialRender = isHtmxRequest(request),
                     navigationMenu = engine.nav(),
                     pagination =
@@ -122,17 +169,18 @@ class FragmentsHttp4kAdapter(
         return runBlocking {
             val fragment = engine.getBlogPost(year, month, slug)
             if (fragment != null) {
-                val fragmentViewModel = FragmentViewModel(fragment, isHtmxRequest(request))
+                val fragmentViewModel = FragmentViewModel(fragment, isHtmxRequest(request), siteUrl = engine.siteUrl)
                 val viewModel =
                     ContentViewModel(
                         viewModel = fragmentViewModel,
                         templateName = fragment.template,
                         navigationMenu = engine.nav(),
                         footer = engine.footer(),
+                        socialShareLinks = engine.socialShareLinks(fragment.title, fragment.url),
                     )
                 renderResponse(viewModel)
             } else {
-                Response(Status.NOT_FOUND).body("Post not found")
+                throw NoSuchElementException("Post not found")
             }
         }
     }
@@ -143,21 +191,20 @@ class FragmentsHttp4kAdapter(
         return runBlocking {
             val pageResult = engine.getByTag(tag, page)
             val viewModel =
-                BlogOverviewViewModel(
-                    fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(request)) },
+                TagViewModel(
+                    tag = tag,
+                    fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(request), siteUrl = engine.siteUrl) },
                     currentPage = pageResult.currentPage,
                     totalPages = pageResult.totalPages,
                     hasNext = pageResult.hasNext,
                     hasPrevious = pageResult.hasPrevious,
-                    templateName = "blog_overview",
                     isPartialRender = isHtmxRequest(request),
-                    tag = tag,
                     navigationMenu = engine.nav(),
                     pagination =
                         engine.pagination(
                             currentPage = pageResult.currentPage,
                             totalPages = pageResult.totalPages,
-                            basePath = "/blog",
+                            basePath = "/blog/tag/$tag",
                         ),
                     footer = engine.footer(),
                 )
@@ -167,23 +214,24 @@ class FragmentsHttp4kAdapter(
 
     private fun handleByCategory(request: Request): Response {
         val category = request.path("category") ?: return Response(Status.NOT_FOUND)
+        val page = request.query("page")?.toIntOrNull() ?: 1
         return runBlocking {
-            val pageResult = engine.getByCategory(category, 1)
+            val pageResult = engine.getByCategory(category, page)
             val viewModel =
-                BlogOverviewViewModel(
-                    fragments = pageResult.items.map { FragmentViewModel(it) },
+                CategoryViewModel(
+                    category = category,
+                    fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(request), siteUrl = engine.siteUrl) },
                     currentPage = pageResult.currentPage,
                     totalPages = pageResult.totalPages,
                     hasNext = pageResult.hasNext,
                     hasPrevious = pageResult.hasPrevious,
-                    templateName = "blog_overview",
                     isPartialRender = isHtmxRequest(request),
                     navigationMenu = engine.nav(),
                     pagination =
                         engine.pagination(
                             currentPage = pageResult.currentPage,
                             totalPages = pageResult.totalPages,
-                            basePath = "/blog",
+                            basePath = "/blog/category/$category",
                         ),
                     footer = engine.footer(),
                 )
@@ -202,7 +250,7 @@ class FragmentsHttp4kAdapter(
                     authorSlug = slug,
                     authorName = authorViewModel?.name,
                     author = authorViewModel,
-                    fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(request)) },
+                    fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(request), siteUrl = engine.siteUrl) },
                     currentPage = pageResult.currentPage,
                     totalPages = pageResult.totalPages,
                     hasNext = pageResult.hasNext,
@@ -253,13 +301,13 @@ class FragmentsHttp4kAdapter(
         }
 
     private fun handleSearch(request: Request): Response {
-        val query = request.query("q") ?: return Response(Status.BAD_REQUEST).body("Query parameter 'q' is required")
+        val query = request.query("q") ?: throw IllegalArgumentException("Query parameter 'q' is required")
         return runBlocking {
             val results = engine.search(query)
             val viewModel =
                 SearchViewModel(
                     query = query,
-                    results = results.map { FragmentViewModel(it.fragment) },
+                    results = results.map { FragmentViewModel(it.fragment, isHtmxRequest(request), siteUrl = engine.siteUrl) },
                     siteTitle = engine.siteTitle,
                     navigationMenu = engine.nav(),
                     footer = engine.footer(),
@@ -270,50 +318,26 @@ class FragmentsHttp4kAdapter(
     }
 
     private fun handleAutocomplete(request: Request): Response {
-        val query = request.query("q") ?: return Response(Status.BAD_REQUEST).body("Query parameter 'q' is required")
+        val query = request.query("q") ?: throw IllegalArgumentException("Query parameter 'q' is required")
         val limit = request.query("limit")?.toIntOrNull() ?: 10
         return runBlocking {
             val suggestions = engine.autocomplete(query, limit)
-            val json =
-                buildString {
-                    append("[")
-                    suggestions.forEachIndexed { index, suggestion ->
-                        if (index > 0) append(",")
-                        append(
-                            """{"text":${escapeJson(
-                                suggestion.text,
-                            )},"frequency":${suggestion.frequency},"type":"${suggestion.type.name}"}""",
-                        )
-                    }
-                    append("]")
-                }
             Response(Status.OK)
                 .header("Content-Type", "application/json; charset=utf-8")
-                .body(json)
+                .body(json.asFormatString(suggestions))
         }
-    }
-
-    private fun escapeJson(value: String): String {
-        val escaped =
-            value
-                .replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r")
-                .replace("\t", "\\t")
-        return "\"$escaped\""
     }
 
     private fun handleArchiveYear(request: Request): Response {
         val year = request.path("year") ?: return Response(Status.NOT_FOUND)
         return runBlocking {
-            val yearInt = year.toIntOrNull() ?: return@runBlocking Response(Status.BAD_REQUEST).body("Invalid year")
+            val yearInt = year.toIntOrNull() ?: throw IllegalArgumentException("Invalid year")
             val fragments = engine.getByYear(yearInt)
             val viewModel =
                 ArchiveViewModel(
                     type = "year",
                     year = year,
-                    fragments = fragments.map { FragmentViewModel(it) },
+                    fragments = fragments.map { FragmentViewModel(it, isHtmxRequest(request), siteUrl = engine.siteUrl) },
                     siteTitle = engine.siteTitle,
                     navigationMenu = engine.nav(),
                     footer = engine.footer(),
@@ -328,15 +352,15 @@ class FragmentsHttp4kAdapter(
         val year = request.path("year") ?: return Response(Status.NOT_FOUND)
         val month = request.path("month") ?: return Response(Status.NOT_FOUND)
         return runBlocking {
-            val yearInt = year.toIntOrNull() ?: return@runBlocking Response(Status.BAD_REQUEST).body("Invalid year")
-            val monthInt = month.toIntOrNull() ?: return@runBlocking Response(Status.BAD_REQUEST).body("Invalid month")
+            val yearInt = year.toIntOrNull() ?: throw IllegalArgumentException("Invalid year")
+            val monthInt = month.toIntOrNull() ?: throw IllegalArgumentException("Invalid month")
             val fragments = engine.getByYearMonth(yearInt, monthInt)
             val viewModel =
                 ArchiveViewModel(
                     type = "year-month",
                     year = year,
                     month = month,
-                    fragments = fragments.map { FragmentViewModel(it) },
+                    fragments = fragments.map { FragmentViewModel(it, isHtmxRequest(request), siteUrl = engine.siteUrl) },
                     siteTitle = engine.siteTitle,
                     navigationMenu = engine.nav(),
                     footer = engine.footer(),
@@ -359,7 +383,34 @@ class FragmentsHttp4kAdapter(
         private val templateName: String,
         val navigationMenu: List<NavigationLink>,
         val footer: FooterConfig,
+        val socialShareLinks: List<SocialShareLink> = emptyList(),
     ) : ViewModel {
+        constructor(vm: SharedContentViewModel) : this(
+            viewModel = vm.viewModel,
+            templateName = vm.templateName,
+            navigationMenu = vm.navigationMenu,
+            footer = requireNotNull(vm.footer),
+            socialShareLinks = vm.socialShareLinks,
+        )
+
+        override fun template(): String = templateName
+    }
+
+    data class HomeViewModel(
+        val fragments: List<FragmentViewModel>,
+        val isPartialRender: Boolean = false,
+        private val templateName: String = FragmentTemplates.INDEX,
+        val navigationMenu: List<NavigationLink>,
+        val footer: FooterConfig,
+    ) : ViewModel {
+        constructor(vm: SharedHomeViewModel, templateName: String = FragmentTemplates.INDEX) : this(
+            fragments = vm.fragments,
+            isPartialRender = vm.isPartialRender,
+            templateName = templateName,
+            navigationMenu = vm.navigationMenu,
+            footer = requireNotNull(vm.footer),
+        )
+
         override fun template(): String = templateName
     }
 
@@ -369,14 +420,53 @@ class FragmentsHttp4kAdapter(
         val totalPages: Int,
         val hasNext: Boolean = false,
         val hasPrevious: Boolean = false,
-        private val templateName: String = "blog_overview",
-        val tag: String? = null,
-        val category: String? = null,
+        private val templateName: String = FragmentTemplates.BLOG_OVERVIEW,
         val isPartialRender: Boolean = false,
         val navigationMenu: List<NavigationLink>,
         val pagination: PaginationInfo,
         val footer: FooterConfig,
     ) : ViewModel {
+        constructor(vm: SharedBlogOverviewViewModel) : this(
+            fragments = vm.fragments,
+            currentPage = vm.currentPage,
+            totalPages = vm.totalPages,
+            hasNext = vm.hasNext,
+            hasPrevious = vm.hasPrevious,
+            isPartialRender = vm.isPartialRender,
+            navigationMenu = vm.navigationMenu,
+            pagination = vm.pagination,
+            footer = requireNotNull(vm.footer),
+        )
+
+        override fun template(): String = templateName
+    }
+
+    data class TagViewModel(
+        val tag: String,
+        val fragments: List<FragmentViewModel>,
+        val currentPage: Int,
+        val totalPages: Int,
+        val hasNext: Boolean = false,
+        val hasPrevious: Boolean = false,
+        private val templateName: String = FragmentTemplates.BLOG_OVERVIEW,
+        val isPartialRender: Boolean = false,
+        val navigationMenu: List<NavigationLink>,
+        val pagination: PaginationInfo,
+        val footer: FooterConfig,
+    ) : ViewModel {
+        constructor(vm: SharedTagViewModel) : this(
+            tag = vm.tag,
+            fragments = vm.fragments,
+            currentPage = vm.currentPage,
+            totalPages = vm.totalPages,
+            hasNext = vm.hasNext,
+            hasPrevious = vm.hasPrevious,
+            isPartialRender = vm.isPartialRender,
+            navigationMenu = vm.navigationMenu,
+            pagination = vm.pagination,
+            footer = requireNotNull(vm.footer),
+        )
+
         override fun template(): String = templateName
     }
 
@@ -387,12 +477,25 @@ class FragmentsHttp4kAdapter(
         val totalPages: Int,
         val hasNext: Boolean = false,
         val hasPrevious: Boolean = false,
-        private val templateName: String = "blog_overview",
+        private val templateName: String = FragmentTemplates.BLOG_OVERVIEW,
         val isPartialRender: Boolean = false,
         val navigationMenu: List<NavigationLink>,
         val pagination: PaginationInfo,
         val footer: FooterConfig,
     ) : ViewModel {
+        constructor(vm: SharedCategoryViewModel) : this(
+            category = vm.category,
+            fragments = vm.fragments,
+            currentPage = vm.currentPage,
+            totalPages = vm.totalPages,
+            hasNext = vm.hasNext,
+            hasPrevious = vm.hasPrevious,
+            isPartialRender = vm.isPartialRender,
+            navigationMenu = vm.navigationMenu,
+            pagination = vm.pagination,
+            footer = requireNotNull(vm.footer),
+        )
+
         override fun template(): String = templateName
     }
 
@@ -400,11 +503,20 @@ class FragmentsHttp4kAdapter(
         val query: String,
         val results: List<FragmentViewModel>,
         val siteTitle: String,
-        private val templateName: String = "search",
+        private val templateName: String = FragmentTemplates.SEARCH,
         val navigationMenu: List<NavigationLink>,
         val footer: FooterConfig,
         val searchForm: SearchFormConfig,
     ) : ViewModel {
+        constructor(vm: SharedSearchViewModel) : this(
+            query = vm.query,
+            results = vm.results,
+            siteTitle = vm.siteTitle,
+            navigationMenu = vm.navigationMenu,
+            footer = requireNotNull(vm.footer),
+            searchForm = requireNotNull(vm.searchForm),
+        )
+
         override fun template(): String = templateName
     }
 
@@ -417,12 +529,27 @@ class FragmentsHttp4kAdapter(
         val totalPages: Int,
         val hasNext: Boolean = false,
         val hasPrevious: Boolean = false,
-        private val templateName: String = "blog_overview",
+        private val templateName: String = FragmentTemplates.BLOG_OVERVIEW,
         val isPartialRender: Boolean = false,
         val navigationMenu: List<NavigationLink>,
         val pagination: PaginationInfo,
         val footer: FooterConfig,
     ) : ViewModel {
+        constructor(vm: SharedAuthorPageViewModel) : this(
+            authorSlug = vm.authorSlug,
+            authorName = vm.authorName,
+            author = vm.author,
+            fragments = vm.fragments,
+            currentPage = vm.currentPage,
+            totalPages = vm.totalPages,
+            hasNext = vm.hasNext,
+            hasPrevious = vm.hasPrevious,
+            isPartialRender = vm.isPartialRender,
+            navigationMenu = vm.navigationMenu,
+            pagination = vm.pagination,
+            footer = requireNotNull(vm.footer),
+        )
+
         override fun template(): String = templateName
     }
 
@@ -432,13 +559,26 @@ class FragmentsHttp4kAdapter(
         val month: String? = null,
         val fragments: List<FragmentViewModel>,
         val siteTitle: String,
-        private val templateName: String = "archive",
+        private val templateName: String = FragmentTemplates.ARCHIVE,
         val navigationMenu: List<NavigationLink>,
         val footer: FooterConfig,
         val archiveYearLinks: List<ArchiveNavigationLink>? = null,
         val archiveMonthLinks: List<ArchiveNavigationLink>? = null,
         val archiveBreadcrumbs: List<ArchiveNavigationLink>? = null,
     ) : ViewModel {
+        constructor(vm: SharedArchiveViewModel) : this(
+            type = vm.type,
+            year = vm.year,
+            month = vm.month,
+            fragments = vm.fragments,
+            siteTitle = vm.siteTitle,
+            navigationMenu = vm.navigationMenu,
+            footer = requireNotNull(vm.footer),
+            archiveYearLinks = vm.archiveYearLinks,
+            archiveMonthLinks = vm.archiveMonthLinks,
+            archiveBreadcrumbs = vm.archiveBreadcrumbs,
+        )
+
         override fun template(): String = templateName
     }
 }

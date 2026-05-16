@@ -157,7 +157,9 @@ enum class FragmentStatus {
  * @property statusChangeHistory Ordered audit trail of [StatusChangeHistory] entries.
  * @property url Canonical URL for this fragment as assigned by the repository
  *   (e.g. `/projects/ai-usage-tracker`, `/blog/2026/03/hello-world`).
- *   Defaults to `/slug` when the repository has no [FileSystemFragmentRepository.urlBuilder].
+ *   Defaults to `baseUrl/slug`, or `/slug` when [baseUrl] is empty. This value is used
+ *   by the sitemap, RSS, and llms.txt generators — configure the repository's `urlBuilder`
+ *   to ensure it matches your actual HTTP routes.
  * @property faq List of [FaqEntry] question/answer pairs parsed from front matter.
  *   Used to generate FAQPage JSON-LD schema for search engine rich results.
  * @property seriesSlug Slug of the [ContentSeries] this fragment belongs to, if any.
@@ -198,35 +200,41 @@ data class Fragment(
      * Returns [resolvedUrl] when set — populated by the repository's `urlBuilder`,
      * which allows date-based paths like `/blog/2026/03/hello-world`.
      * Falls back to `[baseUrl]/[slug]`, or `/[slug]` when [baseUrl] is empty.
+     *
+     * This value is concatenated with the site URL by
+     * [io.github.rygel.fragments.sitemap.SitemapGenerator],
+     * [io.github.rygel.fragments.LlmsTxtGenerator], and
+     * [io.github.rygel.fragments.rss.RssGenerator] to produce absolute URLs.
+     * Ensure it matches your actual HTTP routes by configuring a `urlBuilder`
+     * on the repository when the default `baseUrl/slug` pattern does not apply.
      */
     val url: String
         get() = resolvedUrl ?: if (baseUrl.isNotEmpty()) "$baseUrl/$slug" else "/$slug"
 
     /** `true` if the content contains a `<!--more-->` read-more split marker. */
-    val hasMoreTag: Boolean
-        get() =
-            htmlContent.contains("<!--more-->", ignoreCase = true) ||
-                htmlContent.contains("<!-- more -->", ignoreCase = true)
+    val hasMoreTag: Boolean by lazy {
+        htmlContent.contains("<!--more-->", ignoreCase = true) ||
+            htmlContent.contains("<!-- more -->", ignoreCase = true)
+    }
 
     /** Plain-text version of [preview] with all HTML tags stripped. */
-    val previewTextOnly: String
-        get() = preview.replace(HTML_TAG_REGEX, "").trim()
+    val previewTextOnly: String by lazy { preview.replace(HTML_TAG_REGEX, "").trim() }
 
     /**
      * Plain-text content up to the `<!--more-->` marker (or the full body
      * when no marker is present), with all HTML tags stripped.
      */
-    val contentTextOnly: String
-        get() =
-            if (hasMoreTag) {
-                htmlContent
-                    .substringBefore("<!--more-->")
-                    .substringBefore("<!-- more -->")
-                    .replace(HTML_TAG_REGEX, "")
-                    .trim()
-            } else {
-                htmlContent.replace(HTML_TAG_REGEX, "").trim()
-            }
+    val contentTextOnly: String by lazy {
+        if (hasMoreTag) {
+            htmlContent
+                .substringBefore("<!--more-->")
+                .substringBefore("<!-- more -->")
+                .replace(HTML_TAG_REGEX, "")
+                .trim()
+        } else {
+            htmlContent.replace(HTML_TAG_REGEX, "").trim()
+        }
+    }
 
     /**
      * The first entry in [authorIds], or [author] when [authorIds] is empty.

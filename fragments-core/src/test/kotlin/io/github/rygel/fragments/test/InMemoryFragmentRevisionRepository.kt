@@ -198,8 +198,14 @@ class InMemoryFragmentRevisionRepository : FragmentRevisionRepository {
                 val modifiedLine = modifiedLines.getOrNull(i)
 
                 when {
-                    originalLine == null && modifiedLine != null -> appendLine("+ $modifiedLine")
-                    originalLine != null && modifiedLine == null -> appendLine("- $originalLine")
+                    originalLine == null && modifiedLine != null -> {
+                        appendLine("+ $modifiedLine")
+                    }
+
+                    originalLine != null && modifiedLine == null -> {
+                        appendLine("- $originalLine")
+                    }
+
                     originalLine != modifiedLine -> {
                         appendLine("- $originalLine")
                         appendLine("+ $modifiedLine")

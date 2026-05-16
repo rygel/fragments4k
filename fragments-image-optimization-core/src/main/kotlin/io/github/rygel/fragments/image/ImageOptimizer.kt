@@ -46,7 +46,21 @@ data class ImageResizeOptions(
     val quality: Float = 0.85f,
     val format: String = "jpg",
 ) {
+    init {
+        require(quality == quality.coerceIn(0.0f, 1.0f)) {
+            "Quality must be between 0.0 and 1.0, got $quality"
+        }
+        require(maxWidth == null || maxWidth > 0) {
+            "maxWidth must be positive, got $maxWidth"
+        }
+        require(maxHeight == null || maxHeight > 0) {
+            "maxHeight must be positive, got $maxHeight"
+        }
+    }
+
     companion object {
+        const val MAX_DIMENSION = 20000
+
         val THUMBNAIL = ImageResizeOptions(maxWidth = 200, maxHeight = 200, quality = 0.7f)
         val MEDIUM = ImageResizeOptions(maxWidth = 800, maxHeight = 800, quality = 0.8f)
         val LARGE = ImageResizeOptions(maxWidth = 1920, maxHeight = 1080, quality = 0.85f)

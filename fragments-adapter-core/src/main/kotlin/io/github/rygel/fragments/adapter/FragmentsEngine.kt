@@ -10,6 +10,8 @@ import io.github.rygel.fragments.FragmentRepository
 import io.github.rygel.fragments.LlmsTxtGenerator
 import io.github.rygel.fragments.NavigationLink
 import io.github.rygel.fragments.NavigationMenuGenerator
+import io.github.rygel.fragments.SocialShareGenerator
+import io.github.rygel.fragments.SocialShareLink
 import io.github.rygel.fragments.blog.BlogEngine
 import io.github.rygel.fragments.blog.Page
 import io.github.rygel.fragments.lucene.LuceneSearchEngine
@@ -25,20 +27,74 @@ import io.github.rygel.fragments.static.StaticPageEngine
  * Each web framework adapter (http4k, Javalin, Spring, Quarkus, Micronaut) delegates
  * to this engine for business logic, then maps the results to framework-specific
  * HTTP responses. This eliminates duplicated logic across adapters.
+ *
+ * ## Design: Facade Pattern
+ *
+ * This class intentionally uses the Facade pattern — it aggregates blog, static page,
+ * RSS, sitemap, search, and navigation logic behind a single entry point. While the
+ * method count is large, each method is a thin delegation to a specialised component
+ * (BlogEngine, StaticPageEngine, RssGenerator, etc.). Splitting into smaller facades
+ * would increase coupling complexity without reducing actual code — the adapters still
+ * need all these capabilities together.
  */
 class FragmentsEngine(
     val staticEngine: StaticPageEngine,
     val blogEngine: BlogEngine,
-    val searchEngine: LuceneSearchEngine,
+    val searchEngine: LuceneSearchEngine? = null,
     val siteTitle: String = "My Blog",
     val siteDescription: String = "My Awesome Blog",
     val siteUrl: String = "http://localhost:8080",
     val feedUrl: String = "$siteUrl/rss.xml",
     val authorRepository: AuthorRepository? = null,
-    additionalRepositories: List<FragmentRepository> = emptyList(),
+    /**
+     * Extra repositories whose visible fragments are included in sitemap, RSS, and llms.txt.
+     *
+     * Fragments from these repositories are included **without URL resolution** — their
+     * [Fragment.url] falls back to `baseUrl/slug`. For fragments that require date-based
+     * or prefix-based URLs (e.g. `/projects/my-app`), use [additionalFragmentProviders]
+     * instead and supply a suspend function that returns pre-resolved fragments.
+     */
+    private val additionalRepositories: List<FragmentRepository> = emptyList(),
+    /**
+     * Extra suspend functions that supply pre-resolved fragments for sitemap, RSS, and llms.txt.
+     *
+     * Use this when an additional content source needs custom URL resolution that goes
+     * beyond `baseUrl/slug`. Each provider is called lazily at feed-generation time.
+     *
+     * Example — a projects repository where URLs follow `/projects/{slug}`:
+     * ```kotlin
+     * additionalFragmentProviders = listOf {
+     *     projectsRepo.getAllVisible().map { it.copy(resolvedUrl = "/projects/${it.slug}") }
+     * }
+     * ```
+     */
+    val additionalFragmentProviders: List<suspend () -> List<Fragment>> = emptyList(),
     val navigationMenu: List<NavigationLink>? = null,
     val footer: FooterConfig? = null,
+    /**
+     * Content-Security-Policy header value sent with every response.
+     *
+     * The default is strict (self-only for scripts, styles, images, and fonts;
+     * no inline scripts; no external hosts). Override this to allow CDNs or
+     * inline styles if your templates require them:
+     * ```
+     * contentSecurityPolicy = "default-src 'self'; script-src 'self' cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'"
+     * ```
+     */
+    val contentSecurityPolicy: String =
+        "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'",
 ) {
+    private val logger = org.slf4j.LoggerFactory.getLogger(FragmentsEngine::class.java)
+
+    init {
+        if (siteUrl == "http://localhost:8080") {
+            logger.warn(
+                "FragmentsEngine is using the default siteUrl 'http://localhost:8080'. " +
+                    "Set siteUrl to your production URL for correct sitemap, RSS, and canonical URLs.",
+            )
+        }
+    }
+
     private val allRepositories: List<FragmentRepository> =
         listOf(staticEngine.getRepository(), blogEngine.getRepository()) + additionalRepositories
 
@@ -53,54 +109,90 @@ class FragmentsEngine(
 
     suspend fun getHome(): List<Fragment> = staticEngine.getAllStaticPages()
 
-    suspend fun getPage(slug: String): Fragment? = staticEngine.getPage(slug)
+    suspend fun getPage(slug: String): Fragment? {
+        val validation = RequestValidation.validateSlug(slug)
+        if (!validation.isValid) throw IllegalArgumentException(validation.errorMessage)
+        return staticEngine.getPage(validation.value)
+    }
 
     // -- Blog -----------------------------------------------------------------
 
     suspend fun getBlogOverview(
         page: Int = 1,
         includeDrafts: Boolean = false,
-    ): Page<Fragment> = blogEngine.getOverview(includeDrafts, page)
+    ): Page<Fragment> = blogEngine.getOverview(includeDrafts, RequestValidation.validatePage(page).value)
 
     suspend fun getBlogPost(
         year: String,
         month: String,
         slug: String,
-    ): Fragment? = blogEngine.getPost(year, month, slug)
+    ): Fragment? {
+        val validatedSlug = RequestValidation.validateSlug(slug)
+        if (!validatedSlug.isValid) throw IllegalArgumentException(validatedSlug.errorMessage)
+        return blogEngine.getPost(year, month, validatedSlug.value)
+    }
 
     suspend fun getBlogPostWithRelationships(
         year: String,
         month: String,
         slug: String,
-    ): Pair<Fragment?, ContentRelationships?> = blogEngine.getPostWithRelationships(year, month, slug)
+    ): Pair<Fragment?, ContentRelationships?> {
+        val validatedSlug = RequestValidation.validateSlug(slug)
+        if (!validatedSlug.isValid) throw IllegalArgumentException(validatedSlug.errorMessage)
+        return blogEngine.getPostWithRelationships(year, month, validatedSlug.value)
+    }
 
     suspend fun getByTag(
         tag: String,
         page: Int = 1,
-    ): Page<Fragment> = blogEngine.getByTag(tag, page)
+    ): Page<Fragment> {
+        val validatedTag = RequestValidation.validateTag(tag)
+        if (!validatedTag.isValid) throw IllegalArgumentException(validatedTag.errorMessage)
+        return blogEngine.getByTag(validatedTag.value, RequestValidation.validatePage(page).value)
+    }
 
     suspend fun getByCategory(
         category: String,
         page: Int = 1,
-    ): Page<Fragment> = blogEngine.getByCategory(category, page)
+    ): Page<Fragment> {
+        val validatedCategory = RequestValidation.validateCategory(category)
+        if (!validatedCategory.isValid) throw IllegalArgumentException(validatedCategory.errorMessage)
+        return blogEngine.getByCategory(validatedCategory.value, RequestValidation.validatePage(page).value)
+    }
 
     suspend fun getByAuthor(
         authorId: String,
         page: Int = 1,
-    ): Page<Fragment> = blogEngine.getByAuthor(authorId, page)
+    ): Page<Fragment> {
+        val validatedAuthor = RequestValidation.validateAuthorId(authorId)
+        if (!validatedAuthor.isValid) throw IllegalArgumentException(validatedAuthor.errorMessage)
+        return blogEngine.getByAuthor(validatedAuthor.value, RequestValidation.validatePage(page).value)
+    }
 
     suspend fun getAuthor(slugOrId: String): AuthorViewModel? {
-        val author = authorRepository?.getBySlugOrId(slugOrId) ?: return null
-        val postCount = blogEngine.getByAuthor(slugOrId, 1).totalItems
+        val validation = RequestValidation.validateAuthorId(slugOrId)
+        if (!validation.isValid) return null
+        val author = authorRepository?.getBySlugOrId(validation.value) ?: return null
+        val postCount = blogEngine.getByAuthor(validation.value, 1).totalItems
         return AuthorViewModel(author, postCount = postCount)
     }
 
-    suspend fun getByYear(year: Int): List<Fragment> = blogEngine.getByYear(year)
+    suspend fun getByYear(year: Int): List<Fragment> {
+        val validation = RequestValidation.validateYear(year)
+        if (!validation.isValid) throw IllegalArgumentException(validation.errorMessage)
+        return blogEngine.getByYear(validation.value)
+    }
 
     suspend fun getByYearMonth(
         year: Int,
         month: Int,
-    ): List<Fragment> = blogEngine.getByYearMonth(year, month)
+    ): List<Fragment> {
+        val validatedYear = RequestValidation.validateYear(year)
+        val validatedMonth = RequestValidation.validateMonth(month)
+        if (!validatedYear.isValid) throw IllegalArgumentException(validatedYear.errorMessage)
+        if (!validatedMonth.isValid) throw IllegalArgumentException(validatedMonth.errorMessage)
+        return blogEngine.getByYearMonth(validatedYear.value, validatedMonth.value)
+    }
 
     suspend fun getAllTags(): Map<String, Int> = blogEngine.getAllTags()
 
@@ -111,14 +203,45 @@ class FragmentsEngine(
     suspend fun search(
         query: String,
         maxResults: Int = 50,
-    ): List<SearchResult> = searchEngine.search(query, maxResults)
+    ): List<SearchResult> {
+        val validatedQuery = RequestValidation.validateSearchQuery(query)
+        if (!validatedQuery.isValid) throw IllegalArgumentException(validatedQuery.errorMessage)
+        return searchEngine?.search(validatedQuery.value, RequestValidation.validateMaxResults(maxResults).value) ?: emptyList()
+    }
 
     suspend fun autocomplete(
         query: String,
         limit: Int = 10,
-    ): List<SearchSuggestion> = searchEngine.autocomplete(query, limit)
+    ): List<SearchSuggestion> {
+        val validatedQuery = RequestValidation.validateSearchQuery(query)
+        if (!validatedQuery.isValid) throw IllegalArgumentException(validatedQuery.errorMessage)
+        return searchEngine?.autocomplete(validatedQuery.value, RequestValidation.validateAutocompleteLimit(limit).value) ?: emptyList()
+    }
 
     // -- Feed generation ------------------------------------------------------
+
+    /**
+     * Collects all visible fragments with their URLs fully resolved
+     * (date-based blog paths, page prefixes, etc.) so that sitemap/RSS/llms
+     * generators emit correct absolute URLs rather than raw slug paths.
+     *
+     * Exposed as `public` for static-site generation scenarios where you need to
+     * call multiple feed generators in sequence and want to avoid redundant
+     * repository reads — collect once and pass the result to each generator directly:
+     *
+     * ```kotlin
+     * val fragments = engine.collectResolvedFragments()
+     * val sitemap = sitemapGenerator.generateSitemap(fragments)
+     * val rss = rssGenerator.generateFeed(..., resolvedFragments = fragments)
+     * ```
+     */
+    suspend fun collectResolvedFragments(): List<Fragment> {
+        val staticPages = staticEngine.getAllStaticPages()
+        val blogPosts = blogEngine.getAllPosts()
+        val additional = additionalRepositories.flatMap { it.getAllVisible() }
+        val providerFragments = additionalFragmentProviders.flatMap { it() }
+        return (staticPages + blogPosts + additional + providerFragments).distinctBy { it.slug }
+    }
 
     suspend fun generateRssFeed(): String =
         rssGenerator.generateFeed(
@@ -126,9 +249,10 @@ class FragmentsEngine(
             siteDescription = siteDescription,
             siteUrl = siteUrl,
             feedUrl = feedUrl,
+            resolvedFragments = collectResolvedFragments(),
         )
 
-    suspend fun generateSitemap(): String = sitemapGenerator.generateSitemap()
+    suspend fun generateSitemap(): String = sitemapGenerator.generateSitemap(collectResolvedFragments())
 
     fun generateRobotsTxt(): String =
         buildString {
@@ -144,6 +268,7 @@ class FragmentsEngine(
             siteDescription = siteDescription,
             siteUrl = siteUrl,
             repositories = allRepositories,
+            resolvedFragments = collectResolvedFragments(),
         )
 
     // -- Archive navigation ---------------------------------------------------
@@ -176,6 +301,13 @@ class FragmentsEngine(
             currentMonth = currentMonth,
         )
 
+    // -- Social sharing -------------------------------------------------------
+
+    fun socialShareLinks(
+        title: String,
+        url: String,
+    ): List<SocialShareLink> = SocialShareGenerator.generateShareLinks(title = title, url = url)
+
     // -- Utilities ------------------------------------------------------------
 
     fun isHtmxRequest(header: String?): Boolean = header?.lowercase() == "true"
@@ -192,4 +324,18 @@ class FragmentsEngine(
         )
 
     fun searchForm(): SearchFormConfig = SearchFormGenerator.generate()
+
+    fun cspHeader(): String = contentSecurityPolicy
+
+    fun securityHeaders(): Map<String, String> =
+        mapOf(
+            "Content-Security-Policy" to contentSecurityPolicy,
+            "X-Content-Type-Options" to "nosniff",
+            "X-Frame-Options" to "DENY",
+            "Referrer-Policy" to "strict-origin-when-cross-origin",
+        )
+
+    fun close() {
+        searchEngine?.close()
+    }
 }

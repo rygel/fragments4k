@@ -71,6 +71,7 @@ private class NoDateResolver : Resolver() {
  */
 class MarkdownParser(
     extraExtensions: List<Extension> = emptyList(),
+    private val sanitizerProfile: SanitizerProfile = SanitizerProfile.RELAXED_TRUSTED_AUTHOR,
 ) {
     private val logger = LoggerFactory.getLogger(MarkdownParser::class.java)
     private val options =
@@ -126,10 +127,10 @@ class MarkdownParser(
             val frontMatterYaml = match.groupValues[1]
             val rawContent = markdown.substring(match.range.last + 1)
             val frontMatter = parseFrontMatter(frontMatterYaml)
-            val htmlContent = renderer.render(parser.parse(rawContent))
+            val htmlContent = HtmlSanitizer.sanitize(renderer.render(parser.parse(rawContent)), sanitizerProfile)
             ParsedContent(frontMatter, rawContent, htmlContent)
         } else {
-            ParsedContent(emptyMap(), markdown, renderer.render(parser.parse(markdown)))
+            ParsedContent(emptyMap(), markdown, HtmlSanitizer.sanitize(renderer.render(parser.parse(markdown)), sanitizerProfile))
         }
     }
 
@@ -178,17 +179,21 @@ class MarkdownParser(
          */
         fun parseDate(dateValue: Any?): LocalDateTime? =
             when (dateValue) {
-                is java.time.LocalDateTime -> dateValue
+                is java.time.LocalDateTime -> {
+                    dateValue
+                }
+
                 is java.time.LocalDate -> {
-                    logger.warn(
+                    logger.debug(
                         "Date '{}' has no time or timezone — treating as UTC midnight. " +
                             "Use 'yyyy-MM-dd''T''HH:mm' to suppress this warning.",
                         dateValue,
                     )
                     dateValue.atStartOfDay()
                 }
+
                 is java.util.Date -> {
-                    logger.warn(
+                    logger.debug(
                         "Date '{}' (java.util.Date from SnakeYAML) has no explicit timezone — " +
                             "treating as UTC. Use 'yyyy-MM-dd''T''HH:mm' format in your front matter " +
                             "to suppress this warning.",
@@ -196,8 +201,14 @@ class MarkdownParser(
                     )
                     dateValue.toInstant().atZone(ZoneOffset.UTC).toLocalDateTime()
                 }
-                is String -> parseDateString(dateValue)
-                else -> null
+
+                is String -> {
+                    parseDateString(dateValue)
+                }
+
+                else -> {
+                    null
+                }
             }
 
         private fun parseDateString(dateString: String?): LocalDateTime? {

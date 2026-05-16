@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.github.rygel</groupId>
         <artifactId>fragments-parent</artifactId>
-        <version>0.6.5</version>
+        <version>0.6.6</version>
     </parent>
 
     <artifactId>fragments-http4k</artifactId>
@@ -14,7 +14,7 @@
     <description>HTTP4k web framework adapter</description>
 
     <properties>
-        <http4k.version>6.40.0.0</http4k.version>
+        <http4k.version>6.46.1.0</http4k.version>
     </properties>
 
     <dependencyManagement>
@@ -37,6 +37,10 @@
         <dependency>
             <groupId>org.http4k</groupId>
             <artifactId>http4k-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.http4k</groupId>
+            <artifactId>http4k-format-jackson</artifactId>
         </dependency>
         <dependency>
             <groupId>org.http4k</groupId>

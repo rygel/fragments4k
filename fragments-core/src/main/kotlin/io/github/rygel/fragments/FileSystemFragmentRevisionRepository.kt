@@ -17,9 +17,9 @@ class FileSystemFragmentRevisionRepository(
     private val fragmentsIndexFile = File(revisionsDir, "index.json")
     private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 
-    init {
-        if (!revisionsDir.exists()) {
-            revisionsDir.mkdirs()
+    private fun ensureRevisionsDir() {
+        if (!revisionsDir.exists() && !revisionsDir.mkdirs()) {
+            throw IllegalStateException("Failed to create revisions directory: ${revisionsDir.absolutePath}")
         }
     }
 
@@ -48,6 +48,7 @@ class FileSystemFragmentRevisionRepository(
                     diff = null,
                 )
 
+            ensureRevisionsDir()
             val revisionFile = File(revisionsDir, "${revision.id}.json")
             revisionFile.writeText(serializeRevision(revision))
 
@@ -228,16 +229,16 @@ class FileSystemFragmentRevisionRepository(
     private fun serializeRevision(revision: FragmentRevision): String =
         """
             |{
-            |  "id": "${revision.id}",
-            |  "fragmentSlug": "${revision.fragmentSlug}",
+            |  "id": "${TextEscapeUtils.escapeJson(revision.id)}",
+            |  "fragmentSlug": "${TextEscapeUtils.escapeJson(revision.fragmentSlug)}",
             |  "version": ${revision.version},
-            |  "title": "${escapeJson(revision.title)}",
-            |  "content": "${escapeJson(revision.content)}",
-            |  "preview": "${escapeJson(revision.preview)}",
-            |  "changedBy": ${revision.changedBy?.let { "\"$it\"" } ?: "null"},
+            |  "title": "${TextEscapeUtils.escapeJson(revision.title)}",
+            |  "content": "${TextEscapeUtils.escapeJson(revision.content)}",
+            |  "preview": "${TextEscapeUtils.escapeJson(revision.preview)}",
+            |  "changedBy": ${revision.changedBy?.let { "\"${TextEscapeUtils.escapeJson(it)}\"" } ?: "null"},
             |  "changedAt": "${revision.changedAt.format(formatter)}",
-            |  "changeReason": ${revision.changeReason?.let { "\"$it\"" } ?: "null"},
-            |  "previousRevisionId": ${revision.previousRevisionId?.let { "\"$it\"" } ?: "null"}
+            |  "changeReason": ${revision.changeReason?.let { "\"${TextEscapeUtils.escapeJson(it)}\"" } ?: "null"},
+            |  "previousRevisionId": ${revision.previousRevisionId?.let { "\"${TextEscapeUtils.escapeJson(it)}\"" } ?: "null"}
             |}
         """.trimMargin().trim()
 
@@ -296,9 +297,10 @@ class FileSystemFragmentRevisionRepository(
     }
 
     private fun saveIndex(index: MutableMap<String, MutableList<String>>) {
+        ensureRevisionsDir()
         val json =
             index.entries.joinToString(",\n  ") { (key, value) ->
-                "\"$key\": [${value.joinToString(", ") { "\"$it\"" }}]"
+                "\"${TextEscapeUtils.escapeJson(key)}\": [${value.joinToString(", ") { "\"${TextEscapeUtils.escapeJson(it)}\"" }}]"
             }
         fragmentsIndexFile.writeText("{\n  $json\n}")
     }
@@ -318,16 +320,20 @@ class FileSystemFragmentRevisionRepository(
                     current += char
                     escape = false
                 }
+
                 char == '\\' -> {
                     escape = true
                 }
+
                 char == '"' && !inArray -> {
                     inString = !inString
                 }
+
                 char == ':' && !inString && !inObject -> {
                     currentKey = current.trim().removeSurrounding("\"")
                     current = ""
                 }
+
                 char == ',' && !inString && !inObject && !inArray -> {
                     if (currentKey.isNotEmpty()) {
                         result[currentKey] = parseJsonValue(current.trim())
@@ -335,9 +341,11 @@ class FileSystemFragmentRevisionRepository(
                     current = ""
                     currentKey = ""
                 }
+
                 char == '{' && !inString && !inArray -> {
                     inObject = true
                 }
+
                 char == '}' && !inString && !inArray -> {
                     inObject = false
                     if (currentKey.isNotEmpty()) {
@@ -346,12 +354,15 @@ class FileSystemFragmentRevisionRepository(
                     current = ""
                     currentKey = ""
                 }
+
                 char == '[' && !inString && !inObject -> {
                     inArray = true
                 }
+
                 char == ']' && !inString -> {
                     inArray = false
                 }
+
                 else -> {
                     current += char
                 }
@@ -375,14 +386,6 @@ class FileSystemFragmentRevisionRepository(
             value.toDoubleOrNull() != null -> value.toDouble() as Any
             else -> value as Any
         }
-
-    private fun escapeJson(text: String): String =
-        text
-            .replace("\\", "\\\\")
-            .replace("\"", "\\\"")
-            .replace("\n", "\\n")
-            .replace("\r", "\\r")
-            .replace("\t", "\\t")
 
     private fun generateDiff(
         from: FragmentRevision,
@@ -413,8 +416,14 @@ class FileSystemFragmentRevisionRepository(
                 val modifiedLine = modifiedLines.getOrNull(i)
 
                 when {
-                    originalLine == null && modifiedLine != null -> appendLine("+ $modifiedLine")
-                    originalLine != null && modifiedLine == null -> appendLine("- $originalLine")
+                    originalLine == null && modifiedLine != null -> {
+                        appendLine("+ $modifiedLine")
+                    }
+
+                    originalLine != null && modifiedLine == null -> {
+                        appendLine("- $originalLine")
+                    }
+
                     originalLine != modifiedLine -> {
                         appendLine("- $originalLine")
                         appendLine("+ $modifiedLine")

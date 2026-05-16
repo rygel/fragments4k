@@ -3,6 +3,7 @@ package io.github.rygel.fragments
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 
 /**
  * A single heading entry extracted from a fragment's content for building a
@@ -35,6 +36,8 @@ data class TableOfContentsItem(
  * @property relationships Pre-loaded relationship data; `null` means not loaded yet.
  * @property siteUrl Base URL of the site (e.g. `"https://example.com"`); used to
  *   compute [canonicalUrl]. Defaults to empty string (canonical URL unavailable).
+ * @property dateFormat Pattern passed to [DateTimeFormatter.ofPattern] for the
+ *   [formattedDate] property. Defaults to `"MMMM d, yyyy"` (e.g. "January 15, 2026").
  */
 data class FragmentViewModel(
     val fragment: Fragment,
@@ -44,13 +47,18 @@ data class FragmentViewModel(
     private val allFragments: List<Fragment> = emptyList(),
     val relationships: ContentRelationships? = null,
     val siteUrl: String = "",
+    val dateFormat: String = "MMMM d, yyyy",
 ) {
     companion object {
         const val HTMX_REQUEST_HEADER = "HX-Request"
         const val HTMX_CURRENT_URL_HEADER = "HX-Current-URL"
 
-        /** Average adult reading speed used for [FragmentViewModel.readingTime] calculation. */
         const val WORDS_PER_MINUTE = 225
+
+        private val WORDS_REGEX = Regex("\\s+")
+        private val HEADER_PATTERN = Regex("^(#{1,6})\\s+(.+)$", RegexOption.MULTILINE)
+        private val ANCHOR_CLEANUP = Regex("[^a-z0-9\\s-]")
+        private val ANCHOR_WHITESPACE = Regex("\\s+")
     }
 
     /**
@@ -124,6 +132,24 @@ data class FragmentViewModel(
     val author: String?
         get() = fragment.author
 
+    val formattedDate: String
+        get() = fragment.date?.format(DateTimeFormatter.ofPattern(dateFormat)) ?: ""
+
+    val contentPreview: String
+        get() = fragment.preview
+
+    val year: Int?
+        get() = fragment.date?.year
+
+    val month: Int?
+        get() = fragment.date?.monthValue
+
+    val tableOfContents: List<TableOfContentsItem> by lazy { extractTableOfContents() }
+
+    val relatedPosts: List<FragmentViewModel> by lazy {
+        findRelatedPosts().map { FragmentViewModel(fragment = it, dateFormat = dateFormat, siteUrl = siteUrl) }
+    }
+
     /**
      * Converts the fragment's authoring [Fragment.date] (UTC) to the given [zoneId].
      *
@@ -171,7 +197,7 @@ data class FragmentViewModel(
     )
 
     private fun calculateReadingTime(): ReadingTime {
-        val words = content.split(Regex("\\s+")).size
+        val words = content.split(WORDS_REGEX).size
         val totalSeconds = (words.toDouble() / WORDS_PER_MINUTE) * 60
         val minutes = totalSeconds.toInt() / 60
         val seconds = totalSeconds.toInt() % 60
@@ -188,16 +214,15 @@ data class FragmentViewModel(
 
     private fun extractTableOfContents(): List<TableOfContentsItem> {
         val items = mutableListOf<TableOfContentsItem>()
-        val headerPattern = Regex("^(#{1,6})\\s+(.+)$", RegexOption.MULTILINE)
 
-        headerPattern.findAll(content).forEach { match ->
+        HEADER_PATTERN.findAll(content).forEach { match ->
             val level = match.groupValues[1].length
             val title = match.groupValues[2].trim()
             val anchor =
                 title
                     .lowercase()
-                    .replace(Regex("[^a-z0-9\\s-]"), "")
-                    .replace(Regex("\\s+"), "-")
+                    .replace(ANCHOR_CLEANUP, "")
+                    .replace(ANCHOR_WHITESPACE, "-")
 
             items.add(TableOfContentsItem(level, title, anchor))
         }
@@ -222,7 +247,7 @@ data class FragmentViewModel(
                         if (other.categories.contains(category)) score += 1.5
                     }
 
-                    if (fragment.template == "blog" && other.template == "blog") {
+                    if (fragment.template == FragmentTemplates.BLOG && other.template == FragmentTemplates.BLOG) {
                         score += 0.5
                     }
 

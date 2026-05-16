@@ -76,6 +76,9 @@ class BasicImageOptimizer : ImageOptimizer {
                 } catch (e: IOException) {
                     logger.error("Failed to optimize image", e)
                     return@withContext Result.failure(e)
+                } catch (e: IllegalArgumentException) {
+                    logger.error("Failed to optimize image", e)
+                    return@withContext Result.failure(e)
                 }
             }
         }
@@ -85,61 +88,70 @@ class BasicImageOptimizer : ImageOptimizer {
         options: ImageResizeOptions,
     ): Result<OptimizedImage> =
         withContext(Dispatchers.IO) {
-            val file = File(filePath)
-            if (!file.exists()) {
-                return@withContext Result.failure(IllegalArgumentException("File not found: $filePath"))
-            }
-
-            val fileName = getOptimizedFileName(filePath, options.format)
-            val outputPath = file.parent + File.separator + fileName
-
-            file.inputStream().use { inputStream ->
-                val image = ImageIO.read(inputStream) ?: return@withContext Result.failure(IllegalArgumentException("Could not read image"))
-                val originalSize = file.length()
-
-                val resizedImage = resizeImage(image, options)
-
-                val format = options.format.lowercase()
-                val outputFormat = getOutputFormat(format)
-
-                val quality = options.quality
-                val outputFile = File(outputPath)
-                outputFile.parentFile?.mkdirs()
-
-                writeImageWithQuality(resizedImage, outputFormat, quality, outputFile)
-
-                val optimizedSize = outputFile.length()
-                var sizeReduction = 0.0f
-                if (originalSize > 0) {
-                    sizeReduction = ((originalSize - optimizedSize).toFloat() / originalSize) * 100f
+            try {
+                val file = File(filePath)
+                if (!file.exists()) {
+                    return@withContext Result.failure(IllegalArgumentException("File not found: $filePath"))
                 }
 
-                val metadata =
-                    ImageMetadata(
-                        width = resizedImage.width,
-                        height = resizedImage.height,
-                        format = format,
-                        sizeBytes = optimizedSize,
-                        mimeType = "image/$outputFormat",
-                        hasAlpha = false,
-                        colorDepth = 24,
-                    )
+                val fileName = getOptimizedFileName(filePath, options.format)
+                val outputPath = file.parent + File.separator + fileName
 
-                val optimizedImage =
-                    OptimizedImage(
-                        originalPath = filePath,
-                        optimizedPath = outputPath,
-                        originalSize = originalSize,
-                        optimizedSize = optimizedSize,
-                        sizeReduction = sizeReduction,
-                        width = resizedImage.width,
-                        height = resizedImage.height,
-                        format = format,
-                        quality = quality,
-                        metadata = metadata,
-                    )
+                file.inputStream().use { inputStream ->
+                    val image =
+                        ImageIO.read(inputStream) ?: return@withContext Result.failure(IllegalArgumentException("Could not read image"))
+                    val originalSize = file.length()
 
-                return@withContext Result.success(optimizedImage)
+                    val resizedImage = resizeImage(image, options)
+
+                    val format = options.format.lowercase()
+                    val outputFormat = getOutputFormat(format)
+
+                    val quality = options.quality
+                    val outputFile = File(outputPath)
+                    outputFile.parentFile?.mkdirs()
+
+                    writeImageWithQuality(resizedImage, outputFormat, quality, outputFile)
+
+                    val optimizedSize = outputFile.length()
+                    var sizeReduction = 0.0f
+                    if (originalSize > 0) {
+                        sizeReduction = ((originalSize - optimizedSize).toFloat() / originalSize) * 100f
+                    }
+
+                    val metadata =
+                        ImageMetadata(
+                            width = resizedImage.width,
+                            height = resizedImage.height,
+                            format = format,
+                            sizeBytes = optimizedSize,
+                            mimeType = "image/$outputFormat",
+                            hasAlpha = false,
+                            colorDepth = 24,
+                        )
+
+                    val optimizedImage =
+                        OptimizedImage(
+                            originalPath = filePath,
+                            optimizedPath = outputPath,
+                            originalSize = originalSize,
+                            optimizedSize = optimizedSize,
+                            sizeReduction = sizeReduction,
+                            width = resizedImage.width,
+                            height = resizedImage.height,
+                            format = format,
+                            quality = quality,
+                            metadata = metadata,
+                        )
+
+                    return@withContext Result.success(optimizedImage)
+                }
+            } catch (e: IOException) {
+                logger.error("Failed to optimize image", e)
+                return@withContext Result.failure(e)
+            } catch (e: IllegalArgumentException) {
+                logger.error("Failed to optimize image", e)
+                return@withContext Result.failure(e)
             }
         }
 
@@ -253,6 +265,12 @@ class BasicImageOptimizer : ImageOptimizer {
         image: BufferedImage,
         options: ImageResizeOptions,
     ): BufferedImage {
+        if (image.width > ImageResizeOptions.MAX_DIMENSION || image.height > ImageResizeOptions.MAX_DIMENSION) {
+            throw IllegalArgumentException(
+                "Image dimensions ${image.width}x${image.height} exceed maximum ${ImageResizeOptions.MAX_DIMENSION}x${ImageResizeOptions.MAX_DIMENSION}",
+            )
+        }
+
         val originalWidth = image.width
         val originalHeight = image.height
 
@@ -303,14 +321,18 @@ class BasicImageOptimizer : ImageOptimizer {
         return "$baseName-optimized.$format"
     }
 
-    private fun getOutputFormat(format: String): String =
-        when (format.lowercase()) {
-            "jpg", "jpeg" -> "jpg"
-            "png" -> "png"
-            "webp" -> "png"
-            "gif" -> "gif"
-            else -> "jpg"
+    private val supportedFormats = setOf("jpg", "jpeg", "png", "gif")
+
+    private fun getOutputFormat(format: String): String {
+        val lower = format.lowercase()
+        if (!supportedFormats.contains(lower)) {
+            throw IllegalArgumentException("Unsupported image format: $format. Supported: ${supportedFormats.sorted().joinToString()}")
         }
+        return when (lower) {
+            "jpeg" -> "jpg"
+            else -> lower
+        }
+    }
 
     private fun generateMediaQuery(width: Int): String =
         when {

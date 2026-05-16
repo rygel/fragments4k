@@ -1,27 +1,62 @@
 # Changelog
 
-## v0.2.0 — 2026-05-11
+## [0.6.6] - 2026-05-16
 
-- 41498d8 Merge pull request #93 from rygel/fix/changelog-v2
-- be1707b docs: add v0.6.6 fixes to changelog
-- b0cd105 Merge pull request #90 from rygel/fix/url-resolution-and-naming
-- 19092f5 docs: improve urlBuilder documentation across modules
-- 25a5dfe fix: address ktlint formatting issues in adapter configurations
-- 8579602 test: add sitemap tests for date-based and static page URLs
-- f903967 fix: wire urlBuilder into adapter configurations for correct URL resolution
-- f2d4a5c fix: use fragment.url for SEO canonical URL instead of hardcoded /page/{slug}
-- c391c0a refactor: rename Fragment.content to Fragment.htmlContent with deprecated alias
-- 1e1d968 Merge pull request #87 from rygel/chore/publish-central-workflow
-- 115ec96 ci: add Maven Central publish workflow
+### Added
 
-## [Unreleased]
+- **`/api/autocomplete` endpoint** — now available in Spring Boot, Quarkus, Micronaut, and Javalin adapters (was http4k-only).
+- **CSP headers** — configurable `Content-Security-Policy` in `FragmentsEngine`, wired in Spring Boot and http4k adapters.
+- **Social share links** — `SocialShareGenerator` integrated into `FragmentsEngine.socialShareLinks()`.
+- **Security headers** — `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` added to all 5 adapters via `FragmentsEngine.securityHeaders()`.
+- **Input validation** — centralized in `RequestValidation` and `FragmentsEngine`; slug validation uses `[a-z0-9]+(-[a-z0-9]+)*` pattern.
+- **Autocomplete prefix guard** — Lucene search engine enforces minimum prefix length.
+- **Sanitizer profiles** — configurable HTML sanitization profiles for different content contexts.
+- **Architecture tests** — expanded coverage for feature module boundaries.
+
+### Changed
+
+- **`Fragment.content` renamed to `Fragment.htmlContent`** — the field held HTML-rendered Markdown content. A deprecated extension property preserves binary compatibility.
+- **View models deduplicated** — 28 duplicated data class definitions consolidated into 7 shared classes in `fragments-adapter-core`.
+- **Date WARN logs demoted to DEBUG** — standard `yyyy-MM-dd` dates no longer produce noisy warnings.
+- **Dependency updates**: kotlinx-coroutines 1.10.2 → 1.11.0.
+- **Regex constants extracted** — `WORDS_REGEX`, `HEADER_PATTERN`, `IMG_TAG_PATTERN` etc. moved to companion objects to avoid recompilation on hot paths.
+- **Slug-to-fragment map cached** in `LuceneSearchEngine` — rebuilt only during `index()`, not per-query.
+- **YAML parsing** — uses `SafeConstructor` to prevent deserialization attacks.
+- **Default `siteUrl` warning** — `FragmentsEngine` logs a warning when using the default `siteUrl`.
 
 ### Fixed
 
-- **`Fragment.content` renamed to `Fragment.htmlContent`** — the field held HTML-rendered Markdown content, not raw content. The old name was misleading. A deprecated extension property preserves binary compatibility.
-- **`SeoMetadata.fromFragment` canonical URL fixed** — was using hardcoded `/page/{slug}` path, now uses the actual `fragment.url` configured via `urlBuilder`.
-- **`urlBuilder` wired into all adapter configurations** — `FileSystemFragmentRepository` now correctly propagates `baseUrl` to `Fragment` so sitemap, RSS, and llms.txt generators produce correct absolute URLs. Previously `baseUrl` was silently ignored.
-- **`FileSystemFragmentRepository` passes `baseUrl` to `Fragment` constructor** — `baseUrl` parameter was accepted but never forwarded, causing all generated URLs to be relative.
+- **Javalin 404 timeout** — replaced `throw NoSuchElementException` with direct `ctx.status(404).result(...)` in async handlers to avoid 120s timeouts.
+- **Consistent JSON error responses** — all adapters now return structured JSON for 400/404/500 errors via shared `ErrorResponse` factory methods.
+- **Path traversal** — `isWithinBasePath` now checks canonical paths with separator to prevent directory prefix attacks (e.g., `/data-evil` matching `/data`).
+- **`FileSystemAuthorRepository` extension filter** — was comparing `file.extension` (returns `"yml"`) against `".author.yml"`, never matching. Fixed to use `file.name.endsWith(extension)`.
+- **`FileSystemAuthorRepository.clear()`** — now clears slug-indexed map instead of incorrect ID-indexed map.
+- **`SeoMetadata.fromFragment` canonical URL** — now uses `fragment.url` instead of hardcoded `/page/{slug}`.
+- **`urlBuilder` wired into all adapter configurations** — sitemap, RSS, and llms.txt generators now produce correct absolute URLs. Previously `baseUrl` was silently ignored.
+- **Fragment computed properties cached** — `hasMoreTag`, `previewTextOnly`, `contentTextOnly` changed from recomputed getters to `by lazy` vals.
+- **Cache eviction performance** — single-pass O(n) instead of O(n²) two-pass scan.
+- **`CachedFragmentRepository.getAll()`** — now properly cached (was bypassing cache entirely).
+- **Lucene `DirectoryReader` reuse** — search queries reuse the cached reader instead of opening a fresh one per request.
+- **Lucene `QueryParser`** — catches `ParseException` from malformed search queries instead of crashing.
+- **Error message leaks** — demos and CLI error template no longer expose exception messages to clients.
+- **Dependency check suppressions** — removed blanket CVE suppressions; added targeted suppressions for Spring Boot transitive Tomcat CVEs.
+- **`LiveReloadManager`** — calls `repository.reload()` on file changes (was reading stale cache).
+- **Content relationship indexes cached** — rebuilt only on `reload()`, not on every lookup. Keyed by slug to prevent stale cross-slug results.
+- **Slug validation** — slugs validated against `[a-z0-9]+(-[a-z0-9]+)*` pattern; generated slugs trimmed.
+- **JSON escaping in revision repository** — `id`, `fragmentSlug`, `changedBy`, `changeReason` now escaped.
+- **CLI `ProjectGenerator`** — generated projects now use correct `FragmentsEngine` API (was generating uncompilable code).
+- **CLI version** — corrected from 1.0.0-SNAPSHOT to 0.6.6.
+- **Demo content** — all five demo apps now include sample content (javalin, spring-boot, quarkus, micronaut were blank).
+- **Build** — child POM parent versions synced to 0.6.6-SNAPSHOT.
+- **ktlint** — when-entry formatting fixed across all adapter configurations and demo apps.
+- **CI Dep Scan** — added `mvn install` step before `dependency-check:check` to resolve SNAPSHOT inter-module dependencies.
+
+### Removed
+
+- **Dead `FooterConfig`** — unused `FooterConfig`/`FooterGenerator`/`PoweredByLink` removed from `fragments-core`.
+- **Unused `JavalinPebble` import** in demo-javalin.
+
+---
 
 ## [0.6.5] - 2026-05-03
 

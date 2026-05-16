@@ -1,5 +1,6 @@
 package io.github.rygel.fragments.adapter
 
+/** Generates default [FooterConfig] instances with sensible defaults. */
 object FooterGenerator {
     fun generate(
         copyrightText: String = "\u00a9",

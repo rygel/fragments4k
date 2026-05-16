@@ -1,5 +1,6 @@
 package io.github.rygel.fragments.adapter
 
+/** Configuration for the site footer, including copyright notice, social links, and powered-by credit. */
 data class FooterConfig(
     val copyrightText: String,
     val year: Int,
@@ -9,4 +10,10 @@ data class FooterConfig(
     val discordUrl: String = "",
     val twitterUrl: String = "",
     val substackUrl: String = "",
-)
+) {
+    val fullCopyrightText: String
+        get() = "\u00a9 $year $copyrightText"
+
+    val poweredByText: String
+        get() = "Powered by $poweredByName"
+}

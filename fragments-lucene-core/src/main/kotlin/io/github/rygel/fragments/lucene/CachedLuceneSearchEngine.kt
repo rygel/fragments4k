@@ -17,14 +17,21 @@ class CachedLuceneSearchEngine(
 ) : SearchEngine {
     private val logger = LoggerFactory.getLogger(CachedLuceneSearchEngine::class.java)
 
+    private companion object {
+        private val SUGGESTION_CACHE_TTL = Duration.ofMinutes(10)
+        private const val SUGGESTION_CACHE_MAX_SIZE = 300L
+        private val SEARCH_RESULT_CACHE_TTL = Duration.ofMinutes(5)
+        private const val SEARCH_RESULT_CACHE_MAX_SIZE = 500L
+    }
+
     private val suggestionCache =
         InMemoryCache<String, List<SearchSuggestion>>(
-            CacheConfiguration(ttl = Duration.ofMinutes(10), maxSize = 300, recordStats = true),
+            CacheConfiguration(ttl = SUGGESTION_CACHE_TTL, maxSize = SUGGESTION_CACHE_MAX_SIZE, recordStats = true),
         )
 
     private val searchResultCache =
         InMemoryCache<String, List<Fragment>>(
-            CacheConfiguration(ttl = Duration.ofMinutes(5), maxSize = 500, recordStats = true),
+            CacheConfiguration(ttl = SEARCH_RESULT_CACHE_TTL, maxSize = SEARCH_RESULT_CACHE_MAX_SIZE, recordStats = true),
         )
 
     override suspend fun search(

@@ -276,7 +276,7 @@
 
     <footer>
         <p><a href="/blog">&larr; Back to blog</a></p>
-        <p>{{ footer.fullCopyrightText }}</p>
+        <p>{{ viewModel.footer.fullCopyrightText }}</p>
     </footer>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>

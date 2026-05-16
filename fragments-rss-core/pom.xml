@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.github.rygel</groupId>
         <artifactId>fragments-parent</artifactId>
-        <version>0.6.5</version>
+        <version>0.6.6</version>
     </parent>
 
     <artifactId>fragments-rss-core</artifactId>
@@ -26,6 +26,10 @@
         <dependency>
             <groupId>org.jetbrains.kotlinx</groupId>
             <artifactId>kotlinx-coroutines-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

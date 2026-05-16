@@ -497,6 +497,55 @@ class FileSystemFragmentRepositoryTest {
         assertFalse(FragmentStatus.canTransition(FragmentStatus.SCHEDULED, FragmentStatus.EXPIRED))
     }
 
+    @Test
+    fun missingDirectoryReturnsEmptyList() =
+        runBlocking {
+            val missingRepo = FileSystemFragmentRepository("/nonexistent/path/that/does/not/exist")
+            val result = missingRepo.getAll()
+            assertTrue(result.isEmpty())
+        }
+
+    @Test
+    fun doesNotLoadFragmentsFromSiblingWithMatchingPrefix() =
+        runBlocking {
+            val baseDir = tempDir.toFile()
+            val contentDir = File(baseDir, "content")
+            contentDir.mkdirs()
+            val siblingDir = File(baseDir, "content-hack")
+            siblingDir.mkdirs()
+
+            val legitFile = File(contentDir, "legit.md")
+            legitFile.writeText(
+                """
+                ---
+                title: Legit
+                slug: legit
+                visible: true
+                ---
+                Content
+                """.trimIndent(),
+            )
+
+            val hackFile = File(siblingDir, "hack.md")
+            hackFile.writeText(
+                """
+                ---
+                title: Hack
+                slug: hack
+                visible: true
+                ---
+                Hacked
+                """.trimIndent(),
+            )
+
+            val repo = FileSystemFragmentRepository(contentDir.absolutePath)
+            repo.reload()
+
+            val fragments = repo.getAll()
+            assertEquals(1, fragments.size)
+            assertEquals("legit", fragments[0].slug)
+        }
+
     private fun createTestFile(
         filename: String,
         content: String,

@@ -1,20 +1,42 @@
 package io.github.rygel.fragments.spring
 
 import io.github.rygel.fragments.AuthorViewModel
+import io.github.rygel.fragments.FragmentTemplates
 import io.github.rygel.fragments.FragmentViewModel
+import io.github.rygel.fragments.adapter.ArchiveViewModel
+import io.github.rygel.fragments.adapter.AuthorPageViewModel
+import io.github.rygel.fragments.adapter.BlogOverviewViewModel
+import io.github.rygel.fragments.adapter.CategoryViewModel
+import io.github.rygel.fragments.adapter.ContentViewModel
 import io.github.rygel.fragments.adapter.FragmentsEngine
+import io.github.rygel.fragments.adapter.HomeViewModel
+import io.github.rygel.fragments.adapter.SearchViewModel
+import io.github.rygel.fragments.adapter.TagViewModel
+import io.github.rygel.fragments.lucene.SearchSuggestion
+import jakarta.servlet.http.HttpServletResponse
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.ModelAttribute
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.ResponseBody
+import org.springframework.web.server.ResponseStatusException
 
 @Controller
 class FragmentsSpringController(
     private val engine: FragmentsEngine,
 ) {
+    @ModelAttribute
+    fun setSecurityHeaders(response: HttpServletResponse) {
+        engine.securityHeaders().forEach { (name, value) ->
+            response.setHeader(name, value)
+        }
+    }
+
     @GetMapping("/")
     suspend fun home(
         @RequestHeader(value = FragmentViewModel.HTMX_REQUEST_HEADER, required = false) htmxRequest: String?,
@@ -25,11 +47,13 @@ class FragmentsSpringController(
         model.addAttribute(
             "viewModel",
             HomeViewModel(
-                fragments = fragments.map { FragmentViewModel(it, isPartial) },
+                fragments = fragments.map { FragmentViewModel(it, isPartial, siteUrl = engine.siteUrl) },
                 isPartialRender = isPartial,
+                navigationMenu = engine.nav(),
+                footer = engine.footer(),
             ),
         )
-        return if (isPartial) "index" else "index"
+        return FragmentTemplates.INDEX
     }
 
     @GetMapping("/page/{slug}")
@@ -41,7 +65,16 @@ class FragmentsSpringController(
         val fragment = engine.getPage(slug)
         val isPartial = engine.isHtmxRequest(htmxRequest)
         return if (fragment != null) {
-            model.addAttribute("viewModel", FragmentViewModel(fragment, isPartial))
+            model.addAttribute(
+                "viewModel",
+                ContentViewModel(
+                    viewModel = FragmentViewModel(fragment, isPartial, siteUrl = engine.siteUrl),
+                    templateName = fragment.template,
+                    navigationMenu = engine.nav(),
+                    footer = engine.footer(),
+                    socialShareLinks = engine.socialShareLinks(fragment.title, fragment.url),
+                ),
+            )
             fragment.template
         } else {
             "error/404"
@@ -59,15 +92,18 @@ class FragmentsSpringController(
         model.addAttribute(
             "viewModel",
             BlogOverviewViewModel(
-                fragments = pageResult.items.map { FragmentViewModel(it, isPartial) },
+                fragments = pageResult.items.map { FragmentViewModel(it, isPartial, siteUrl = engine.siteUrl) },
                 currentPage = pageResult.currentPage,
                 totalPages = pageResult.totalPages,
                 hasNext = pageResult.hasNext,
                 hasPrevious = pageResult.hasPrevious,
                 isPartialRender = isPartial,
+                navigationMenu = engine.nav(),
+                pagination = engine.pagination(pageResult.currentPage, pageResult.totalPages, "/blog"),
+                footer = engine.footer(),
             ),
         )
-        return "blog_overview"
+        return FragmentTemplates.BLOG_OVERVIEW
     }
 
     @GetMapping("/blog/page/{page}")
@@ -88,7 +124,16 @@ class FragmentsSpringController(
         val fragment = engine.getBlogPost(year, month, slug)
         val isPartial = engine.isHtmxRequest(htmxRequest)
         return if (fragment != null) {
-            model.addAttribute("viewModel", FragmentViewModel(fragment, isPartial))
+            model.addAttribute(
+                "viewModel",
+                ContentViewModel(
+                    viewModel = FragmentViewModel(fragment, isPartial, siteUrl = engine.siteUrl),
+                    templateName = fragment.template,
+                    navigationMenu = engine.nav(),
+                    footer = engine.footer(),
+                    socialShareLinks = engine.socialShareLinks(fragment.title, fragment.url),
+                ),
+            )
             fragment.template
         } else {
             "error/404"
@@ -108,15 +153,18 @@ class FragmentsSpringController(
             "viewModel",
             TagViewModel(
                 tag = tag,
-                fragments = pageResult.items.map { FragmentViewModel(it, isPartial) },
+                fragments = pageResult.items.map { FragmentViewModel(it, isPartial, siteUrl = engine.siteUrl) },
                 currentPage = pageResult.currentPage,
                 totalPages = pageResult.totalPages,
                 hasNext = pageResult.hasNext,
                 hasPrevious = pageResult.hasPrevious,
                 isPartialRender = isPartial,
+                navigationMenu = engine.nav(),
+                pagination = engine.pagination(pageResult.currentPage, pageResult.totalPages, "/blog/tag/$tag"),
+                footer = engine.footer(),
             ),
         )
-        return "blog_overview"
+        return FragmentTemplates.BLOG_OVERVIEW
     }
 
     @GetMapping("/blog/category/{category}")
@@ -132,15 +180,18 @@ class FragmentsSpringController(
             "viewModel",
             CategoryViewModel(
                 category = category,
-                fragments = pageResult.items.map { FragmentViewModel(it, isPartial) },
+                fragments = pageResult.items.map { FragmentViewModel(it, isPartial, siteUrl = engine.siteUrl) },
                 currentPage = pageResult.currentPage,
                 totalPages = pageResult.totalPages,
                 hasNext = pageResult.hasNext,
                 hasPrevious = pageResult.hasPrevious,
                 isPartialRender = isPartial,
+                navigationMenu = engine.nav(),
+                pagination = engine.pagination(pageResult.currentPage, pageResult.totalPages, "/blog/category/$category"),
+                footer = engine.footer(),
             ),
         )
-        return "blog_overview"
+        return FragmentTemplates.BLOG_OVERVIEW
     }
 
     @GetMapping("/blog/author/{slug}")
@@ -157,20 +208,23 @@ class FragmentsSpringController(
             "viewModel",
             AuthorPageViewModel(
                 authorSlug = slug,
-                authorName = author?.author?.name,
+                authorName = author?.name,
                 author = author,
-                fragments = pageResult.items.map { FragmentViewModel(it, isPartial) },
+                fragments = pageResult.items.map { FragmentViewModel(it, isPartial, siteUrl = engine.siteUrl) },
                 currentPage = pageResult.currentPage,
                 totalPages = pageResult.totalPages,
                 hasNext = pageResult.hasNext,
                 hasPrevious = pageResult.hasPrevious,
                 isPartialRender = isPartial,
+                navigationMenu = engine.nav(),
+                pagination = engine.pagination(pageResult.currentPage, pageResult.totalPages, "/blog/author/$slug"),
+                footer = engine.footer(),
             ),
         )
-        return "blog_overview"
+        return FragmentTemplates.BLOG_OVERVIEW
     }
 
-    @GetMapping(value = ["/rss.xml", "/feed.xml"], produces = [MediaType.APPLICATION_ATOM_XML_VALUE, MediaType.APPLICATION_XML_VALUE])
+    @GetMapping(value = ["/rss.xml", "/feed.xml"], produces = ["application/rss+xml;charset=utf-8", MediaType.APPLICATION_XML_VALUE])
     suspend fun rss(): String = engine.generateRssFeed()
 
     @GetMapping("/blog/archive/{year}")
@@ -179,7 +233,7 @@ class FragmentsSpringController(
         @RequestHeader(value = FragmentViewModel.HTMX_REQUEST_HEADER, required = false) htmxRequest: String?,
         model: Model,
     ): String {
-        val yearInt = year.toIntOrNull() ?: return "error/404"
+        val yearInt = year.toIntOrNull() ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid year")
         val fragments = engine.getByYear(yearInt)
         val isPartial = engine.isHtmxRequest(htmxRequest)
         model.addAttribute(
@@ -187,11 +241,15 @@ class FragmentsSpringController(
             ArchiveViewModel(
                 type = "year",
                 year = year,
-                fragments = fragments.map { FragmentViewModel(it, isPartial) },
+                fragments = fragments.map { FragmentViewModel(it, isPartial, siteUrl = engine.siteUrl) },
                 siteTitle = engine.siteTitle,
+                navigationMenu = engine.nav(),
+                footer = engine.footer(),
+                archiveYearLinks = engine.generateArchiveYearLinks(currentYear = yearInt),
+                archiveBreadcrumbs = engine.generateArchiveBreadcrumbs(currentYear = yearInt),
             ),
         )
-        return "archive"
+        return FragmentTemplates.ARCHIVE
     }
 
     @GetMapping("/blog/archive/{year}/{month}")
@@ -201,8 +259,8 @@ class FragmentsSpringController(
         @RequestHeader(value = FragmentViewModel.HTMX_REQUEST_HEADER, required = false) htmxRequest: String?,
         model: Model,
     ): String {
-        val yearInt = year.toIntOrNull() ?: return "error/404"
-        val monthInt = month.toIntOrNull() ?: return "error/404"
+        val yearInt = year.toIntOrNull() ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid year")
+        val monthInt = month.toIntOrNull() ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid month")
         val fragments = engine.getByYearMonth(yearInt, monthInt)
         val isPartial = engine.isHtmxRequest(htmxRequest)
         model.addAttribute(
@@ -211,11 +269,15 @@ class FragmentsSpringController(
                 type = "year-month",
                 year = year,
                 month = month,
-                fragments = fragments.map { FragmentViewModel(it, isPartial) },
+                fragments = fragments.map { FragmentViewModel(it, isPartial, siteUrl = engine.siteUrl) },
                 siteTitle = engine.siteTitle,
+                navigationMenu = engine.nav(),
+                footer = engine.footer(),
+                archiveMonthLinks = engine.generateArchiveMonthLinks(year = yearInt, currentMonth = monthInt),
+                archiveBreadcrumbs = engine.generateArchiveBreadcrumbs(currentYear = yearInt, currentMonth = monthInt),
             ),
         )
-        return "archive"
+        return FragmentTemplates.ARCHIVE
     }
 
     @GetMapping("/search")
@@ -230,12 +292,22 @@ class FragmentsSpringController(
             "viewModel",
             SearchViewModel(
                 query = query,
-                results = results.map { FragmentViewModel(it.fragment, isPartial) },
+                results = results.map { FragmentViewModel(it.fragment, isPartial, siteUrl = engine.siteUrl) },
                 siteTitle = engine.siteTitle,
+                navigationMenu = engine.nav(),
+                footer = engine.footer(),
+                searchForm = engine.searchForm(),
             ),
         )
-        return "search"
+        return FragmentTemplates.SEARCH
     }
+
+    @GetMapping("/api/autocomplete")
+    @ResponseBody
+    suspend fun autocomplete(
+        @RequestParam("q") query: String,
+        @RequestParam("limit", defaultValue = "10") limit: Int,
+    ): List<SearchSuggestion> = engine.autocomplete(query, limit)
 
     @GetMapping(value = ["/sitemap.xml"], produces = [MediaType.APPLICATION_XML_VALUE])
     suspend fun sitemap(): String = engine.generateSitemap()
@@ -245,64 +317,4 @@ class FragmentsSpringController(
 
     @GetMapping(value = ["/llms.txt"], produces = [MediaType.TEXT_PLAIN_VALUE])
     suspend fun llmsTxt(): String = engine.generateLlmsTxt()
-
-    data class HomeViewModel(
-        val fragments: List<FragmentViewModel>,
-        val isPartialRender: Boolean = false,
-    )
-
-    data class BlogOverviewViewModel(
-        val fragments: List<FragmentViewModel>,
-        val currentPage: Int,
-        val totalPages: Int,
-        val hasNext: Boolean = false,
-        val hasPrevious: Boolean = false,
-        val isPartialRender: Boolean = false,
-    )
-
-    data class TagViewModel(
-        val tag: String,
-        val fragments: List<FragmentViewModel>,
-        val currentPage: Int,
-        val totalPages: Int,
-        val hasNext: Boolean = false,
-        val hasPrevious: Boolean = false,
-        val isPartialRender: Boolean = false,
-    )
-
-    data class AuthorPageViewModel(
-        val authorSlug: String,
-        val authorName: String? = null,
-        val author: AuthorViewModel? = null,
-        val fragments: List<FragmentViewModel>,
-        val currentPage: Int,
-        val totalPages: Int,
-        val hasNext: Boolean = false,
-        val hasPrevious: Boolean = false,
-        val isPartialRender: Boolean = false,
-    )
-
-    data class CategoryViewModel(
-        val category: String,
-        val fragments: List<FragmentViewModel>,
-        val currentPage: Int,
-        val totalPages: Int,
-        val hasNext: Boolean = false,
-        val hasPrevious: Boolean = false,
-        val isPartialRender: Boolean = false,
-    )
-
-    data class ArchiveViewModel(
-        val type: String,
-        val year: String,
-        val month: String? = null,
-        val fragments: List<FragmentViewModel>,
-        val siteTitle: String,
-    )
-
-    data class SearchViewModel(
-        val query: String,
-        val results: List<FragmentViewModel>,
-        val siteTitle: String,
-    )
 }

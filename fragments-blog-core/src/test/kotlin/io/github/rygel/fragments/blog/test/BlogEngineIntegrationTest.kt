@@ -117,6 +117,83 @@ class BlogEngineIntegrationTest {
         }
 
     @Test
+    fun testGetAllPostsReturnsAllWithResolvedDateBasedUrls() =
+        runBlocking {
+            val repository = InMemoryFragmentRepository()
+            repository.addFragment(
+                Fragment(
+                    slug = "post-with-date",
+                    title = "Post With Date",
+                    htmlContent = "Content",
+                    preview = "Preview",
+                    date = LocalDateTime.of(2024, 3, 10, 10, 0),
+                    publishDate = null,
+                    frontMatter = emptyMap(),
+                    visible = true,
+                    template = "blog",
+                ),
+            )
+            repository.addFragment(
+                Fragment(
+                    slug = "static-page",
+                    title = "Static Page",
+                    htmlContent = "Content",
+                    preview = "Preview",
+                    date = LocalDateTime.of(2024, 3, 11, 10, 0),
+                    publishDate = null,
+                    frontMatter = emptyMap(),
+                    visible = true,
+                    template = "static",
+                ),
+            )
+
+            val blogEngine = BlogEngine(repository, blogUrlPrefix = "/blog")
+            val posts = blogEngine.getAllPosts()
+
+            assertEquals(1, posts.size, "should only include blog-template fragments")
+            assertEquals("post-with-date", posts[0].slug)
+            assertEquals("/blog/2024/03/post-with-date", posts[0].resolvedUrl, "URL should use date-based prefix")
+        }
+
+    @Test
+    fun testGetAllPostsExcludesDraftsByDefault() =
+        runBlocking {
+            val repository = InMemoryFragmentRepository()
+            repository.addFragment(
+                Fragment(
+                    slug = "published-post",
+                    title = "Published",
+                    htmlContent = "",
+                    preview = "",
+                    date = LocalDateTime.of(2024, 1, 1, 0, 0),
+                    publishDate = null,
+                    frontMatter = emptyMap(),
+                    visible = true,
+                    template = "blog",
+                    status = io.github.rygel.fragments.FragmentStatus.PUBLISHED,
+                ),
+            )
+            repository.addFragment(
+                Fragment(
+                    slug = "draft-post",
+                    title = "Draft",
+                    htmlContent = "",
+                    preview = "",
+                    date = LocalDateTime.of(2024, 1, 2, 0, 0),
+                    publishDate = null,
+                    frontMatter = emptyMap(),
+                    visible = false,
+                    template = "blog",
+                    status = io.github.rygel.fragments.FragmentStatus.DRAFT,
+                ),
+            )
+
+            val blogEngine = BlogEngine(repository)
+            assertEquals(1, blogEngine.getAllPosts().size, "drafts excluded by default")
+            assertEquals(2, blogEngine.getAllPosts(includeDrafts = true).size, "drafts included when requested")
+        }
+
+    @Test
     fun blogEngineFiltersByCategoryCorrectly() =
         runBlocking {
             val repository = InMemoryFragmentRepository()

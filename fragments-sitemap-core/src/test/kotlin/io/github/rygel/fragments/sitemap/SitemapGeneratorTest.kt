@@ -6,196 +6,281 @@ import io.github.rygel.fragments.FragmentStatus
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.w3c.dom.Document
+import org.w3c.dom.NodeList
 import java.time.LocalDateTime
+import javax.xml.XMLConstants
+import javax.xml.namespace.NamespaceContext
 import javax.xml.parsers.DocumentBuilderFactory
+import javax.xml.xpath.XPathConstants
+import javax.xml.xpath.XPathFactory
 
+/**
+ * Validates SitemapGenerator output against the sitemap protocol:
+ * https://www.sitemaps.org/protocol.html
+ */
 class SitemapGeneratorTest {
     private val repository = mockk<FragmentRepository>()
 
+    // -------------------------------------------------------------------------
+    // XML structure
+    // -------------------------------------------------------------------------
+
     @Test
-    fun `generated sitemap is valid XML`() =
+    fun testGeneratedSitemapIsValidXml() =
         runBlocking {
             coEvery { repository.getAllVisible() } returns listOf(fragment("hello-world", "Hello World"))
-            val generator = SitemapGenerator(repository, "https://example.com")
-
-            val xml = generator.generateSitemap()
+            val xml = SitemapGenerator(repository, "https://example.com").generateSitemap()
             assertValidXml(xml)
         }
 
     @Test
-    fun `sitemap contains root url and fragment urls`() =
-        runBlocking {
-            coEvery { repository.getAllVisible() } returns
-                listOf(
-                    fragment("post-one", "Post One"),
-                    fragment("post-two", "Post Two"),
-                )
-            val generator = SitemapGenerator(repository, "https://example.com")
-
-            val xml = generator.generateSitemap()
-            assertValidXml(xml)
-
-            assertTrue(xml.contains("https://example.com"), "should contain root URL")
-            assertTrue(xml.contains("/post-one"), "should contain post-one URL")
-            assertTrue(xml.contains("/post-two"), "should contain post-two URL")
-        }
-
-    @Test
-    fun `sitemap properly escapes XML special characters in titles`() =
-        runBlocking {
-            coEvery { repository.getAllVisible() } returns
-                listOf(
-                    fragment(
-                        slug = "tom-and-jerry",
-                        title = "Tom & Jerry <Adventures> \"Fun\"",
-                        imageUrl = "https://example.com/img/tom&jerry.jpg",
-                    ),
-                )
-            val generator = SitemapGenerator(repository, "https://example.com")
-
-            val xml = generator.generateSitemap()
-            assertValidXml(xml)
-
-            assertFalse(xml.contains("Tom & Jerry"), "raw & must be escaped")
-            assertFalse(xml.contains("<Adventures>"), "raw < > must be escaped")
-            assertTrue(xml.contains("Tom &amp; Jerry"), "& should be escaped to &amp;")
-        }
-
-    @Test
-    fun `sitemap properly escapes ampersands in URLs`() =
-        runBlocking {
-            coEvery { repository.getAllVisible() } returns
-                listOf(
-                    fragment(
-                        slug = "search",
-                        title = "Search",
-                        url = "/search?q=test&page=1",
-                    ),
-                )
-            val generator = SitemapGenerator(repository, "https://example.com")
-
-            val xml = generator.generateSitemap()
-            assertValidXml(xml)
-
-            assertTrue(
-                xml.contains("https://example.com/search?q=test&amp;page=1"),
-                "& in URLs must be escaped to &amp;",
-            )
-        }
-
-    @Test
-    fun `sitemap with no fragments produces valid XML with only root url`() =
+    fun testSitemapRootElementIsUrlset() =
         runBlocking {
             coEvery { repository.getAllVisible() } returns emptyList()
-            val generator = SitemapGenerator(repository, "https://example.com")
-
-            val xml = generator.generateSitemap()
-            assertValidXml(xml)
-
-            assertTrue(xml.contains("https://example.com"), "should contain root URL")
+            val doc = parseXml(SitemapGenerator(repository, "https://example.com").generateSitemap())
+            assertEquals("urlset", doc.documentElement.localName, "root element must be 'urlset'")
         }
 
     @Test
-    fun `sitemap includes image elements when fragment has image`() =
-        runBlocking {
-            coEvery { repository.getAllVisible() } returns
-                listOf(
-                    fragment("with-image", "Post With Image", imageUrl = "https://example.com/img/photo.jpg"),
-                )
-            val generator = SitemapGenerator(repository, "https://example.com")
-
-            val xml = generator.generateSitemap()
-            assertValidXml(xml)
-
-            assertTrue(xml.contains("https://example.com/img/photo.jpg"), "should contain image URL")
-        }
-
-    @Test
-    fun `sitemap declares correct namespaces`() =
+    fun testSitemapDeclaresSitemapNamespace() =
         runBlocking {
             coEvery { repository.getAllVisible() } returns emptyList()
-            val generator = SitemapGenerator(repository, "https://example.com")
-
-            val xml = generator.generateSitemap()
-            assertValidXml(xml)
-
-            assertTrue(xml.contains("http://www.sitemaps.org/schemas/sitemap/0.9"), "should declare sitemap namespace")
-            assertTrue(xml.contains("http://www.google.com/schemas/sitemap-image/1.1"), "should declare image namespace")
+            val xml = SitemapGenerator(repository, "https://example.com").generateSitemap()
+            assertTrue(xml.contains("http://www.sitemaps.org/schemas/sitemap/0.9"), "must declare sitemap namespace")
         }
 
     @Test
-    fun `sitemap contains valid priority values`() =
+    fun testSitemapDeclaresImageNamespace() =
         runBlocking {
-            coEvery { repository.getAllVisible() } returns listOf(fragment("post", "A Post"))
-            val generator = SitemapGenerator(repository, "https://example.com")
+            coEvery { repository.getAllVisible() } returns emptyList()
+            val xml = SitemapGenerator(repository, "https://example.com").generateSitemap()
+            assertTrue(xml.contains("http://www.google.com/schemas/sitemap-image/1.1"), "must declare image namespace")
+        }
 
-            val xml = generator.generateSitemap()
-            assertValidXml(xml)
+    // -------------------------------------------------------------------------
+    // Root URL
+    // -------------------------------------------------------------------------
 
-            val priorityPattern = Regex("<priority>(\\d\\.\\d)</priority>")
-            val priorities = priorityPattern.findAll(xml).map { it.groupValues[1].toDouble() }.toList()
-            assertTrue(priorities.isNotEmpty(), "should contain priority elements")
-            priorities.forEach { priority ->
-                assertTrue(priority in 0.0..1.0, "priority $priority must be between 0.0 and 1.0")
+    @Test
+    fun testRootUrlIsAlwaysPresent() =
+        runBlocking {
+            coEvery { repository.getAllVisible() } returns emptyList()
+            val xml = SitemapGenerator(repository, "https://example.com").generateSitemap()
+            assertTrue(xml.contains("<loc>https://example.com</loc>"), "root URL must always be present")
+        }
+
+    @Test
+    fun testRootUrlHasPriority10() =
+        runBlocking {
+            coEvery { repository.getAllVisible() } returns emptyList()
+            val doc = parseXml(SitemapGenerator(repository, "https://example.com").generateSitemap())
+            val priorities = xpath(doc, "//sm:url[sm:loc='https://example.com']/sm:priority")
+            assertEquals(1, priorities.length, "root URL must have a priority element")
+            assertEquals("1.0", priorities.item(0).textContent)
+        }
+
+    @Test
+    fun testEmptySitemapProducesValidXmlWithOnlyRootUrl() =
+        runBlocking {
+            coEvery { repository.getAllVisible() } returns emptyList()
+            val doc = parseXml(SitemapGenerator(repository, "https://example.com").generateSitemap())
+            val urls = xpath(doc, "//sm:url")
+            assertEquals(1, urls.length, "empty sitemap should have exactly one url (root)")
+        }
+
+    // -------------------------------------------------------------------------
+    // W3C Datetime format (sitemap protocol requirement)
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun testLastmodDatesUseW3cDatetimeFormat() =
+        runBlocking {
+            coEvery { repository.getAllVisible() } returns
+                listOf(fragment("post", "Post", date = LocalDateTime.of(2026, 3, 15, 10, 30)))
+            val doc = parseXml(SitemapGenerator(repository, "https://example.com").generateSitemap())
+            val lastmods = xpath(doc, "//sm:url/sm:lastmod")
+            assertTrue(lastmods.length > 0, "must contain lastmod elements")
+            lastmods.forEachText { value ->
+                assertTrue(
+                    value.matches(Regex("\\d{4}-\\d{2}-\\d{2}(T\\d{2}:\\d{2}(:\\d{2})?([+-]\\d{2}:\\d{2}|Z))?")),
+                    "lastmod '$value' must be W3C Datetime (ISO 8601)",
+                )
             }
         }
 
     @Test
-    fun `sitemap includes fragments from multiple repositories`() =
+    fun testLastmodDateForKnownFragmentIsCorrect() =
         runBlocking {
-            val staticRepo = mockk<FragmentRepository>()
-            val blogRepo = mockk<FragmentRepository>()
-            coEvery { staticRepo.getAllVisible() } returns listOf(fragment("about", "About Us"))
-            coEvery { blogRepo.getAllVisible() } returns
-                listOf(
-                    fragment("hello-world", "Hello World", url = "/blog/hello-world"),
-                    fragment("second-post", "Second Post", url = "/blog/second-post"),
-                )
-
-            val generator =
-                SitemapGenerator(
-                    repositories = listOf(staticRepo, blogRepo),
-                    siteUrl = "https://example.com",
-                )
-
-            val xml = generator.generateSitemap()
-            assertValidXml(xml)
-
-            assertTrue(xml.contains("/about"), "should contain static page")
-            assertTrue(xml.contains("/blog/hello-world"), "should contain blog post")
-            assertTrue(xml.contains("/blog/second-post"), "should contain second blog post")
+            coEvery { repository.getAllVisible() } returns
+                listOf(fragment("post", "Post", date = LocalDateTime.of(2026, 3, 15, 10, 30)))
+            val doc = parseXml(SitemapGenerator(repository, "https://example.com").generateSitemap())
+            val lastmods = xpath(doc, "//sm:url[contains(sm:loc,'post')]/sm:lastmod")
+            assertEquals(1, lastmods.length)
+            assertEquals("2026-03-15", lastmods.item(0).textContent)
         }
 
     @Test
-    fun `sitemap deduplicates fragments across repositories by slug`() =
+    fun testLastmodDoesNotContainBareTimeWithoutTimezone() =
         runBlocking {
-            val repo1 = mockk<FragmentRepository>()
-            val repo2 = mockk<FragmentRepository>()
-            coEvery { repo1.getAllVisible() } returns listOf(fragment("about", "About Us"))
-            coEvery { repo2.getAllVisible() } returns listOf(fragment("about", "About Us Duplicate"))
-
-            val generator =
-                SitemapGenerator(
-                    repositories = listOf(repo1, repo2),
-                    siteUrl = "https://example.com",
-                )
-
-            val xml = generator.generateSitemap()
-            assertValidXml(xml)
-
-            val aboutCount = Regex("/about</loc>").findAll(xml).count()
-            assertTrue(aboutCount == 1, "duplicate slug should appear only once, found $aboutCount")
+            // ISO_LOCAL_DATE_TIME produces "2026-03-15T10:30:00" — no timezone, invalid per protocol
+            coEvery { repository.getAllVisible() } returns
+                listOf(fragment("post", "Post", date = LocalDateTime.of(2026, 3, 15, 10, 30)))
+            val xml = SitemapGenerator(repository, "https://example.com").generateSitemap()
+            assertFalse(
+                Regex("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}").containsMatchIn(xml),
+                "lastmod must not contain a time without timezone — use date-only or include offset",
+            )
         }
 
+    // -------------------------------------------------------------------------
+    // Priority (must be between 0.0 and 1.0, one decimal place)
+    // -------------------------------------------------------------------------
+
     @Test
-    fun `sitemap contains date-based blog post URLs when resolvedUrl is set`() =
+    fun testAllPriorityValuesInRange00To10() =
         runBlocking {
             coEvery { repository.getAllVisible() } returns
                 listOf(
-                    fragment("hello-world", "Hello World", url = "/blog/2026/03/hello-world"),
+                    fragment("post-a", "Post A"),
+                    fragment("post-b", "Post B"),
+                )
+            val doc = parseXml(SitemapGenerator(repository, "https://example.com").generateSitemap())
+            val priorities = xpath(doc, "//sm:url/sm:priority")
+            assertTrue(priorities.length > 0)
+            priorities.forEachText { value ->
+                val p = value.toDouble()
+                assertTrue(p in 0.0..1.0, "priority $p must be between 0.0 and 1.0")
+            }
+        }
+
+    @Test
+    fun testPriorityValuesUseLocaleIndependentDecimalFormatting() =
+        runBlocking {
+            coEvery { repository.getAllVisible() } returns listOf(fragment("post", "Post"))
+            val xml = SitemapGenerator(repository, "https://example.com").generateSitemap()
+            assertFalse(xml.contains(","), "priority must use '.' as decimal separator, not ','")
+        }
+
+    // -------------------------------------------------------------------------
+    // changefreq valid values
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun testAllChangefreqValuesAreValidProtocolValues() =
+        runBlocking {
+            val valid = setOf("always", "hourly", "daily", "weekly", "monthly", "yearly", "never")
+            coEvery { repository.getAllVisible() } returns listOf(fragment("post", "Post"))
+            val doc = parseXml(SitemapGenerator(repository, "https://example.com").generateSitemap())
+            val freqs = xpath(doc, "//sm:url/sm:changefreq")
+            freqs.forEachText { value ->
+                assertTrue(value in valid, "changefreq '$value' is not a valid protocol value")
+            }
+        }
+
+    // -------------------------------------------------------------------------
+    // URL content
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun testFragmentResolvedUrlUsedForLoc() =
+        runBlocking {
+            coEvery { repository.getAllVisible() } returns
+                listOf(fragment("hello-world", "Hello World", resolvedUrl = "/blog/2026/03/hello-world"))
+            val xml = SitemapGenerator(repository, "https://example.com").generateSitemap()
+            assertTrue(xml.contains("https://example.com/blog/2026/03/hello-world"), "resolved URL must be used")
+            assertFalse(
+                xml.contains("<loc>https://example.com/hello-world</loc>"),
+                "bare slug URL must not appear when resolvedUrl is set",
+            )
+        }
+
+    @Test
+    fun testXmlSpecialCharactersInUrlsAreEscaped() =
+        runBlocking {
+            coEvery { repository.getAllVisible() } returns
+                listOf(fragment("search", "Search", resolvedUrl = "/search?q=test&page=1"))
+            val xml = SitemapGenerator(repository, "https://example.com").generateSitemap()
+            assertValidXml(xml)
+            assertTrue(xml.contains("&amp;"), "& in URLs must be escaped to &amp;")
+            assertFalse(xml.contains("q=test&page"), "raw & must not appear in XML")
+        }
+
+    @Test
+    fun testXmlSpecialCharactersInTitlesAreEscaped() =
+        runBlocking {
+            coEvery { repository.getAllVisible() } returns
+                listOf(
+                    fragment("tom-jerry", "Tom & Jerry <Adventures>", imageUrl = "https://example.com/img/photo.jpg"),
+                )
+            val xml = SitemapGenerator(repository, "https://example.com").generateSitemap()
+            assertValidXml(xml)
+            assertTrue(xml.contains("Tom &amp; Jerry"), "& must be escaped in image caption")
+        }
+
+    // -------------------------------------------------------------------------
+    // Image sitemap extension
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun testImageExtensionElementIncludedWhenFragmentHasImage() =
+        runBlocking {
+            coEvery { repository.getAllVisible() } returns
+                listOf(fragment("post", "Post", imageUrl = "https://example.com/img/photo.jpg"))
+            val xml = SitemapGenerator(repository, "https://example.com").generateSitemap()
+            assertValidXml(xml)
+            assertTrue(xml.contains("https://example.com/img/photo.jpg"), "image URL must appear")
+        }
+
+    @Test
+    fun testImageElementOmittedWhenFragmentHasNoImage() =
+        runBlocking {
+            coEvery { repository.getAllVisible() } returns listOf(fragment("post", "Post"))
+            val xml = SitemapGenerator(repository, "https://example.com").generateSitemap()
+            assertValidXml(xml)
+            assertFalse(xml.contains("image:image"), "no image element when fragment has no image")
+        }
+
+    // -------------------------------------------------------------------------
+    // Multiple repositories and deduplication
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun testFragmentsFromMultipleRepositoriesAllIncluded() =
+        runBlocking {
+            val repo1 = mockk<FragmentRepository>()
+            val repo2 = mockk<FragmentRepository>()
+            coEvery { repo1.getAllVisible() } returns listOf(fragment("about", "About"))
+            coEvery { repo2.getAllVisible() } returns
+                listOf(fragment("post", "Post", resolvedUrl = "/blog/2026/03/post"))
+            val xml = SitemapGenerator(listOf(repo1, repo2), "https://example.com").generateSitemap()
+            assertValidXml(xml)
+            assertTrue(xml.contains("/about"))
+            assertTrue(xml.contains("/blog/2026/03/post"))
+        }
+
+    @Test
+    fun testDuplicateSlugsAcrossRepositoriesAppearOnlyOnce() =
+        runBlocking {
+            val repo1 = mockk<FragmentRepository>()
+            val repo2 = mockk<FragmentRepository>()
+            coEvery { repo1.getAllVisible() } returns listOf(fragment("about", "About"))
+            coEvery { repo2.getAllVisible() } returns listOf(fragment("about", "About Duplicate"))
+            val doc = parseXml(SitemapGenerator(listOf(repo1, repo2), "https://example.com").generateSitemap())
+            val aboutLocs = xpath(doc, "//sm:url[contains(sm:loc,'/about')]")
+            assertEquals(1, aboutLocs.length, "duplicate slug must appear only once")
+        }
+
+    @Test
+    fun testSitemapContainsDateBasedBlogPostUrlsWhenResolvedUrlSet() =
+        runBlocking {
+            coEvery { repository.getAllVisible() } returns
+                listOf(
+                    fragment("hello-world", "Hello World", resolvedUrl = "/blog/2026/03/hello-world"),
                 )
             val generator = SitemapGenerator(repository, "https://example.com")
 
@@ -209,11 +294,11 @@ class SitemapGeneratorTest {
         }
 
     @Test
-    fun `sitemap contains static page URLs when resolvedUrl is set`() =
+    fun testSitemapContainsStaticPageUrlsWhenResolvedUrlSet() =
         runBlocking {
             coEvery { repository.getAllVisible() } returns
                 listOf(
-                    fragment("about", "About Us", url = "/page/about"),
+                    fragment("about", "About Us", resolvedUrl = "/page/about"),
                 )
             val generator = SitemapGenerator(repository, "https://example.com")
 
@@ -226,25 +311,130 @@ class SitemapGeneratorTest {
             )
         }
 
+    // -------------------------------------------------------------------------
+    // Template exclusion
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun testFragmentsWithExcludedTemplatesNotIncluded() =
+        runBlocking {
+            coEvery { repository.getAllVisible() } returns
+                listOf(
+                    fragment("public-page", "Public"),
+                    fragment("email-tpl", "Email").copy(template = "email"),
+                )
+            val xml =
+                SitemapGenerator(
+                    repository,
+                    "https://example.com",
+                    excludedTemplates = setOf("email"),
+                ).generateSitemap()
+            assertValidXml(xml)
+            assertTrue(xml.contains("/public-page"))
+            assertFalse(xml.contains("/email-tpl"))
+        }
+
+    // -------------------------------------------------------------------------
+    // resolvedUrl filter
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun testFragmentsWithoutResolvedUrlExcludedFromSitemap() =
+        runBlocking {
+            coEvery { repository.getAllVisible() } returns
+                listOf(
+                    fragment("resolved-post", "Resolved Post", resolvedUrl = "/blog/2026/03/resolved-post"),
+                    Fragment(
+                        title = "Unresolved Page",
+                        slug = "unresolved-page",
+                        htmlContent = "Content",
+                        preview = "Preview",
+                        publishDate = null,
+                        frontMatter = emptyMap(),
+                        date = LocalDateTime.of(2026, 1, 15, 10, 0),
+                        status = FragmentStatus.PUBLISHED,
+                        visible = true,
+                        template = "default",
+                    ),
+                )
+            val xml = SitemapGenerator(repository, "https://example.com").generateSitemap()
+            assertTrue(xml.contains("/blog/2026/03/resolved-post"), "resolved fragment must be present")
+            assertFalse(xml.contains("unresolved-page"), "unresolved fragment must be excluded")
+        }
+
+    // -------------------------------------------------------------------------
+    // Pre-resolved fragments override
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun testResolvedFragmentsParameterBypassesRepositoryCall() =
+        runBlocking {
+            val preResolved = listOf(fragment("resolved-post", "Resolved", resolvedUrl = "/blog/2026/03/resolved-post"))
+            // repository should not be called — we pass fragments directly
+            val xml = SitemapGenerator(repository, "https://example.com").generateSitemap(preResolved)
+            assertValidXml(xml)
+            assertTrue(xml.contains("/blog/2026/03/resolved-post"))
+        }
+
+    // -------------------------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------------------------
+
     private fun assertValidXml(xml: String) {
-        val factory =
-            DocumentBuilderFactory.newInstance().apply {
-                isNamespaceAware = true
+        DocumentBuilderFactory
+            .newInstance()
+            .apply { isNamespaceAware = true }
+            .newDocumentBuilder()
+            .parse(xml.byteInputStream())
+    }
+
+    private fun parseXml(xml: String): Document =
+        DocumentBuilderFactory
+            .newInstance()
+            .apply { isNamespaceAware = true }
+            .newDocumentBuilder()
+            .parse(xml.byteInputStream())
+
+    /**
+     * Evaluates an XPath expression against a namespace-aware sitemap document.
+     * Use prefix `sm:` for sitemap elements and `image:` for image extension elements.
+     * Example: `//sm:url/sm:priority`, `//sm:url[sm:loc='https://example.com']/sm:priority`
+     */
+    private fun xpath(
+        doc: Document,
+        expression: String,
+    ): NodeList {
+        val xp = XPathFactory.newInstance().newXPath()
+        xp.namespaceContext =
+            object : NamespaceContext {
+                override fun getNamespaceURI(prefix: String): String =
+                    when (prefix) {
+                        "sm" -> "http://www.sitemaps.org/schemas/sitemap/0.9"
+                        "image" -> "http://www.google.com/schemas/sitemap-image/1.1"
+                        else -> XMLConstants.NULL_NS_URI
+                    }
+
+                override fun getPrefix(namespaceURI: String): String? = null
+
+                override fun getPrefixes(namespaceURI: String): Iterator<String> = emptyList<String>().iterator()
             }
-        val builder = factory.newDocumentBuilder()
-        builder.parse(xml.byteInputStream())
+        return xp.evaluate(expression, doc, XPathConstants.NODESET) as NodeList
+    }
+
+    private fun NodeList.forEachText(block: (String) -> Unit) {
+        for (i in 0 until length) block(item(i).textContent)
     }
 
     private fun fragment(
         slug: String,
         title: String,
-        url: String = "/$slug",
+        resolvedUrl: String = "/$slug",
         imageUrl: String? = null,
+        date: LocalDateTime = LocalDateTime.of(2026, 1, 15, 10, 0),
+        template: String = "default",
     ): Fragment {
         val frontMatter = mutableMapOf<String, Any>("title" to title, "slug" to slug)
-        if (imageUrl != null) {
-            frontMatter["image"] = imageUrl
-        }
+        if (imageUrl != null) frontMatter["image"] = imageUrl
         return Fragment(
             title = title,
             slug = slug,
@@ -252,10 +442,11 @@ class SitemapGeneratorTest {
             preview = "Test preview",
             publishDate = null,
             frontMatter = frontMatter,
-            date = LocalDateTime.of(2026, 1, 15, 10, 0),
+            date = date,
             status = FragmentStatus.PUBLISHED,
             visible = true,
-            resolvedUrl = url,
+            resolvedUrl = resolvedUrl,
+            template = template,
         )
     }
 }

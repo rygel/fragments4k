@@ -22,6 +22,13 @@ import java.nio.file.WatchKey
 import java.nio.file.WatchService
 import java.util.concurrent.TimeUnit
 
+/**
+ * Watches the content directory for changes and notifies connected browsers via LiveReload protocol.
+ *
+ * **This is a development-only feature.** The WebSocket endpoint is unauthenticated by design
+ * (standard LiveReload protocol). Do not expose in production — restrict to development environments
+ * or localhost-only binding.
+ */
 class LiveReloadManager(
     private val repository: FragmentRepository,
     private val contentDir: Path,
@@ -149,6 +156,7 @@ class LiveReloadManager(
         try {
             // Reload fragments from repository
             // This will trigger repository to re-read content from disk
+            repository.reload()
             val count = repository.getAllVisible().size
             logger.info("Reloaded $count fragments")
 

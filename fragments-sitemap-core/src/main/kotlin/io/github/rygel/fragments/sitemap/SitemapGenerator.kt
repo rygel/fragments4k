@@ -4,6 +4,7 @@ import io.github.rygel.fragments.Fragment
 import io.github.rygel.fragments.FragmentRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.slf4j.LoggerFactory
 import java.io.StringWriter
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -31,19 +32,43 @@ class SitemapGenerator(
     private val repositories: List<FragmentRepository>,
     private val siteUrl: String,
     private val lastModified: LocalDateTime? = null,
+    /**
+     * Template names to exclude from the sitemap entirely.
+     *
+     * By default all visible fragments are included. Pass template names
+     * (e.g. `setOf("email", "draft-preview")`) to suppress fragments that
+     * should never appear in public sitemaps.
+     */
+    private val excludedTemplates: Set<String> = emptySet(),
 ) {
     constructor(
         repository: FragmentRepository,
         siteUrl: String,
         lastModified: LocalDateTime? = null,
-    ) : this(listOf(repository), siteUrl, lastModified)
+        excludedTemplates: Set<String> = emptySet(),
+    ) : this(listOf(repository), siteUrl, lastModified, excludedTemplates)
 
-    suspend fun generateSitemap(): String =
+    private val logger = LoggerFactory.getLogger(SitemapGenerator::class.java)
+
+    suspend fun generateSitemap(resolvedFragments: List<Fragment>? = null): String =
         withContext(Dispatchers.IO) {
-            val fragments =
-                repositories
-                    .flatMap { it.getAllVisible() }
+            val allCandidates =
+                (resolvedFragments ?: repositories.flatMap { it.getAllVisible() })
                     .distinctBy { it.slug }
+                    .filter { it.template !in excludedTemplates }
+
+            // Exclude fragments whose URL was not explicitly resolved by a urlBuilder.
+            // The Fragment.url fallback (baseUrl/slug) may not match the actual HTTP
+            // route, producing 404 URLs in the published sitemap. See #65 / #77.
+            val skipped = allCandidates.filter { it.resolvedUrl == null }
+            if (skipped.isNotEmpty()) {
+                logger.warn(
+                    "Skipping {} fragment(s) without resolvedUrl in sitemap (configure urlBuilder on the repository): {}",
+                    skipped.size,
+                    skipped.joinToString { it.slug },
+                )
+            }
+            val fragments = allCandidates.filter { it.resolvedUrl != null }
             val lastModDate = lastModified ?: fragments.mapNotNull { it.date }.maxOrNull() ?: LocalDateTime.now()
             val lastModDateFormatted = lastModDate.format(formatter)
 
@@ -148,7 +173,7 @@ class SitemapGenerator(
         fragment.frontMatter["og:image"]?.let { return it.toString() }
         fragment.frontMatter["twitter:image"]?.let { return it.toString() }
 
-        val imgTagPattern = Regex("""<img[^>]+src=["']([^"']+)["']""", RegexOption.IGNORE_CASE)
+        val imgTagPattern = IMG_TAG_PATTERN
         imgTagPattern
             .find(fragment.preview)
             ?.groupValues
@@ -161,6 +186,8 @@ class SitemapGenerator(
     companion object {
         private const val SITEMAP_NS = "http://www.sitemaps.org/schemas/sitemap/0.9"
         private const val IMAGE_NS = "http://www.google.com/schemas/sitemap-image/1.1"
-        private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+
+        private val formatter = DateTimeFormatter.ISO_LOCAL_DATE
+        private val IMG_TAG_PATTERN = Regex("""<img[^>]+src=["']([^"']+)["']""", RegexOption.IGNORE_CASE)
     }
 }

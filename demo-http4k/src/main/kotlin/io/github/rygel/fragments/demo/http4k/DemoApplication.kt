@@ -1,6 +1,7 @@
 package io.github.rygel.fragments.demo.http4k
 
 import io.github.rygel.fragments.FileSystemFragmentRepository
+import io.github.rygel.fragments.FragmentTemplates
 import io.github.rygel.fragments.adapter.FragmentsEngine
 import io.github.rygel.fragments.blog.BlogEngine
 import io.github.rygel.fragments.http4k.FragmentsHttp4kAdapter
@@ -33,11 +34,14 @@ fun main() {
             basePath = fragmentsPath,
             urlBuilder = { fragment ->
                 when (fragment.template) {
-                    "blog", "blog_post" -> {
+                    FragmentTemplates.BLOG, FragmentTemplates.BLOG_POST -> {
                         val date = fragment.date ?: return@FileSystemFragmentRepository "/${fragment.slug}"
                         "/blog/${date.year}/${"%02d".format(date.monthValue)}/${fragment.slug}"
                     }
-                    else -> "/page/${fragment.slug}"
+
+                    else -> {
+                        "/page/${fragment.slug}"
+                    }
                 }
             },
         )
@@ -58,13 +62,15 @@ fun main() {
                 siteUrl = "http://localhost:8080",
             )
 
+        Runtime.getRuntime().addShutdownHook(Thread({ engine.close() }, "fragments-shutdown"))
+
         val renderer = PebbleTemplates().HotReload("src/main/resources/templates")
         val adapter = FragmentsHttp4kAdapter(engine, renderer)
 
         val errorHandler: Filter =
             CatchAll { e ->
-                logger.error("Error handling request", e)
-                Response(Status.INTERNAL_SERVER_ERROR).body("Internal Server Error: ${e.message}")
+                logger.error("Unhandled exception", e)
+                Response(Status.INTERNAL_SERVER_ERROR).body("Internal Server Error")
             }
 
         val app: HttpHandler = errorHandler.then(adapter.createRoutes())

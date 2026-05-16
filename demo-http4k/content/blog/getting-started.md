@@ -21,9 +21,9 @@ Add the dependency for your chosen framework:
 
 ```xml
 <dependency>
-    <groupId>io.andromeda</groupId>
+    <groupId>io.github.rygel</groupId>
     <artifactId>fragments-http4k</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>0.6.6-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -46,9 +46,7 @@ This is my first blog post!
 ## Running the Demo
 
 ```bash
-./mvnw spring-boot:run
-# or for other frameworks
-./mvnw compile exec:java -Dexec.mainClass="your.MainClass"
+./mvnw compile exec:java -Dexec.mainClass="io.github.rygel.fragments.demo.http4k.MainKt"
 ```
 
 ## Next Steps

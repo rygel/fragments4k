@@ -159,6 +159,31 @@
         </p>
     </div>
 
+    <div th:if="${archiveBreadcrumbs != null and !archiveBreadcrumbs.empty}" class="archive-breadcrumbs">
+        <a th:each="crumb : ${archiveBreadcrumbs}"
+           th:href="${crumb.url}"
+           th:text="${crumb.label}"
+           th:classappend="${crumb.isActive} ? 'active'">Breadcrumb</a>
+    </div>
+
+    <div th:if="${archiveYearLinks != null and !archiveYearLinks.empty}" class="archive-years">
+        <h3>Years</h3>
+        <ul class="archive-year-list">
+            <li th:each="yearLink : ${archiveYearLinks}">
+                <a th:href="${yearLink.url}" th:text="${yearLink.label}" th:classappend="${yearLink.isActive} ? 'active'">2024</a>
+            </li>
+        </ul>
+    </div>
+
+    <div th:if="${archiveMonthLinks != null and !archiveMonthLinks.empty}" class="archive-months">
+        <h3>Months</h3>
+        <ul class="archive-month-list">
+            <li th:each="monthLink : ${archiveMonthLinks}">
+                <a th:href="${monthLink.url}" th:text="${monthLink.label}" th:classappend="${monthLink.isActive} ? 'active'">January</a>
+            </li>
+        </ul>
+    </div>
+
     <div th:if="${fragments != null and !fragments.empty}">
     <article class="archive-item" th:each="fragment : ${fragments}">
         <h2 class="archive-title">

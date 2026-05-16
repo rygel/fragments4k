@@ -20,7 +20,7 @@ class CodingRulesTest {
     // -- Modern API usage -----------------------------------------------------
 
     @Test
-    fun `must not use java util Date — use java time instead`() {
+    fun testMustNotUseJavaUtilDateUseJavaTimeInstead() {
         noClasses()
             .that()
             .resideInAPackage("io.github.rygel.fragments..")
@@ -38,7 +38,7 @@ class CodingRulesTest {
     }
 
     @Test
-    fun `must not use java util Calendar`() {
+    fun testMustNotUseJavaUtilCalendar() {
         noClasses()
             .that()
             .resideInAPackage("io.github.rygel.fragments..")
@@ -50,7 +50,7 @@ class CodingRulesTest {
     }
 
     @Test
-    fun `must not use java util Hashtable`() {
+    fun testMustNotUseJavaUtilHashtable() {
         noClasses()
             .that()
             .resideInAPackage("io.github.rygel.fragments..")
@@ -62,7 +62,7 @@ class CodingRulesTest {
     }
 
     @Test
-    fun `must not use java util Vector`() {
+    fun testMustNotUseJavaUtilVector() {
         noClasses()
             .that()
             .resideInAPackage("io.github.rygel.fragments..")
@@ -76,7 +76,7 @@ class CodingRulesTest {
     // -- Logging discipline ---------------------------------------------------
 
     @Test
-    fun `core and feature modules must not use System out or System err`() {
+    fun testCoreAndFeatureModulesMustNotUseSystemOutOrSystemErr() {
         noClasses()
             .that()
             .resideInAPackage("io.github.rygel.fragments..")
@@ -94,7 +94,7 @@ class CodingRulesTest {
     // -- No JUnit in production code ------------------------------------------
 
     @Test
-    fun `production code must not depend on JUnit`() {
+    fun testProductionCodeMustNotDependOnJUnit() {
         noClasses()
             .that()
             .resideInAPackage("io.github.rygel.fragments..")
@@ -108,7 +108,7 @@ class CodingRulesTest {
     }
 
     @Test
-    fun `production code must not depend on MockK`() {
+    fun testProductionCodeMustNotDependOnMockK() {
         noClasses()
             .that()
             .resideInAPackage("io.github.rygel.fragments..")
@@ -122,7 +122,7 @@ class CodingRulesTest {
     // -- Framework isolation in core ------------------------------------------
 
     @Test
-    fun `core must not depend on Spring`() {
+    fun testCoreMustNotDependOnSpring() {
         noClasses()
             .that()
             .resideInAPackage("io.github.rygel.fragments")
@@ -135,7 +135,7 @@ class CodingRulesTest {
     }
 
     @Test
-    fun `core must not depend on Jakarta EE`() {
+    fun testCoreMustNotDependOnJakartaEE() {
         noClasses()
             .that()
             .resideInAPackage("io.github.rygel.fragments")
@@ -148,7 +148,7 @@ class CodingRulesTest {
     }
 
     @Test
-    fun `core must not depend on Micronaut`() {
+    fun testCoreMustNotDependOnMicronaut() {
         noClasses()
             .that()
             .resideInAPackage("io.github.rygel.fragments")
@@ -161,7 +161,7 @@ class CodingRulesTest {
     }
 
     @Test
-    fun `core must not depend on http4k`() {
+    fun testCoreMustNotDependOnHttp4k() {
         noClasses()
             .that()
             .resideInAPackage("io.github.rygel.fragments")
@@ -174,7 +174,7 @@ class CodingRulesTest {
     }
 
     @Test
-    fun `core must not depend on Javalin`() {
+    fun testCoreMustNotDependOnJavalin() {
         noClasses()
             .that()
             .resideInAPackage("io.github.rygel.fragments")

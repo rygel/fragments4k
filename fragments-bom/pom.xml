@@ -7,7 +7,7 @@
     <parent>
         <groupId>io.github.rygel</groupId>
         <artifactId>fragments-parent</artifactId>
-        <version>0.6.5</version>
+        <version>0.6.6</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -106,11 +106,6 @@
             <dependency>
                 <groupId>io.github.rygel</groupId>
                 <artifactId>fragments-micronaut</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.github.rygel</groupId>
-                <artifactId>fragments-cli</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <!-- Test utilities — use with scope=test -->

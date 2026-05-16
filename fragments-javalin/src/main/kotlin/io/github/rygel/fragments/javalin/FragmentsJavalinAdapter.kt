@@ -1,13 +1,17 @@
 package io.github.rygel.fragments.javalin
 
-import io.github.rygel.fragments.ArchiveNavigationLink
-import io.github.rygel.fragments.AuthorViewModel
+import io.github.rygel.fragments.FragmentTemplates
 import io.github.rygel.fragments.FragmentViewModel
-import io.github.rygel.fragments.NavigationLink
-import io.github.rygel.fragments.adapter.FooterConfig
+import io.github.rygel.fragments.adapter.ArchiveViewModel
+import io.github.rygel.fragments.adapter.AuthorPageViewModel
+import io.github.rygel.fragments.adapter.BlogOverviewViewModel
+import io.github.rygel.fragments.adapter.CategoryViewModel
+import io.github.rygel.fragments.adapter.ContentViewModel
+import io.github.rygel.fragments.adapter.ErrorResponse
 import io.github.rygel.fragments.adapter.FragmentsEngine
-import io.github.rygel.fragments.adapter.PaginationInfo
-import io.github.rygel.fragments.adapter.SearchFormConfig
+import io.github.rygel.fragments.adapter.HomeViewModel
+import io.github.rygel.fragments.adapter.SearchViewModel
+import io.github.rygel.fragments.adapter.TagViewModel
 import io.javalin.config.RoutesConfig
 import io.javalin.http.Context
 import kotlinx.coroutines.CoroutineScope
@@ -38,6 +42,20 @@ fun RoutesConfig.fragmentsRoutes(
         }
     }
 
+    before("*") { ctx ->
+        engine.securityHeaders().forEach { (name, value) ->
+            ctx.header(name, value)
+        }
+    }
+
+    exception(IllegalArgumentException::class.java) { e, ctx ->
+        ctx.status(400).json(ErrorResponse.badRequest(e.message ?: "Invalid request"))
+    }
+
+    exception(NoSuchElementException::class.java) { e, ctx ->
+        ctx.status(404).json(ErrorResponse.notFound(e.message ?: "Resource not found"))
+    }
+
     val render: (Context, String, Any) -> Unit = { ctx, template, viewModel ->
         val html = renderer?.render(template, viewModel) ?: ""
         ctx.html(html)
@@ -52,12 +70,11 @@ fun RoutesConfig.fragmentsRoutes(
             val fragments = engine.getHome()
             val viewModel =
                 HomeViewModel(
-                    fragments = fragments.map { FragmentViewModel(it) },
-                    isPartialRender = isHtmxRequest(ctx),
+                    fragments = fragments.map { FragmentViewModel(it, isHtmxRequest(ctx), siteUrl = engine.siteUrl) },
                     navigationMenu = engine.nav(),
                     footer = engine.footer(),
                 )
-            render(ctx, "index", viewModel)
+            render(ctx, FragmentTemplates.INDEX, viewModel)
         }
     }
 
@@ -66,13 +83,14 @@ fun RoutesConfig.fragmentsRoutes(
         ctx.handleAsync {
             val fragment = engine.getPage(slug)
             if (fragment != null) {
-                val fragmentViewModel = FragmentViewModel(fragment, isHtmxRequest(ctx))
+                val fragmentViewModel = FragmentViewModel(fragment, isHtmxRequest(ctx), siteUrl = engine.siteUrl)
                 val viewModel =
                     ContentViewModel(
                         viewModel = fragmentViewModel,
                         templateName = fragment.template,
                         navigationMenu = engine.nav(),
                         footer = engine.footer(),
+                        socialShareLinks = engine.socialShareLinks(fragment.title, fragment.url),
                     )
                 render(ctx, fragment.template, viewModel)
             } else {
@@ -86,7 +104,7 @@ fun RoutesConfig.fragmentsRoutes(
             val pageResult = engine.getBlogOverview(page = 1)
             val viewModel =
                 BlogOverviewViewModel(
-                    fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(ctx)) },
+                    fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(ctx), siteUrl = engine.siteUrl) },
                     currentPage = pageResult.currentPage,
                     totalPages = pageResult.totalPages,
                     hasNext = pageResult.hasNext,
@@ -101,7 +119,7 @@ fun RoutesConfig.fragmentsRoutes(
                         ),
                     footer = engine.footer(),
                 )
-            render(ctx, "blog_overview", viewModel)
+            render(ctx, FragmentTemplates.BLOG_OVERVIEW, viewModel)
         }
     }
 
@@ -111,7 +129,7 @@ fun RoutesConfig.fragmentsRoutes(
             val pageResult = engine.getBlogOverview(page = page)
             val viewModel =
                 BlogOverviewViewModel(
-                    fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(ctx)) },
+                    fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(ctx), siteUrl = engine.siteUrl) },
                     currentPage = pageResult.currentPage,
                     totalPages = pageResult.totalPages,
                     hasNext = pageResult.hasNext,
@@ -126,7 +144,7 @@ fun RoutesConfig.fragmentsRoutes(
                         ),
                     footer = engine.footer(),
                 )
-            render(ctx, "blog_overview", viewModel)
+            render(ctx, FragmentTemplates.BLOG_OVERVIEW, viewModel)
         }
     }
 
@@ -137,13 +155,14 @@ fun RoutesConfig.fragmentsRoutes(
         ctx.handleAsync {
             val fragment = engine.getBlogPost(year, month, slug)
             if (fragment != null) {
-                val fragmentViewModel = FragmentViewModel(fragment, isHtmxRequest(ctx))
+                val fragmentViewModel = FragmentViewModel(fragment, isHtmxRequest(ctx), siteUrl = engine.siteUrl)
                 val viewModel =
                     ContentViewModel(
                         viewModel = fragmentViewModel,
                         templateName = fragment.template,
                         navigationMenu = engine.nav(),
                         footer = engine.footer(),
+                        socialShareLinks = engine.socialShareLinks(fragment.title, fragment.url),
                     )
                 render(ctx, fragment.template, viewModel)
             } else {
@@ -158,24 +177,24 @@ fun RoutesConfig.fragmentsRoutes(
         ctx.handleAsync {
             val pageResult = engine.getByTag(tag, page)
             val viewModel =
-                BlogOverviewViewModel(
-                    fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(ctx)) },
+                TagViewModel(
+                    tag = tag,
+                    fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(ctx), siteUrl = engine.siteUrl) },
                     currentPage = pageResult.currentPage,
                     totalPages = pageResult.totalPages,
                     hasNext = pageResult.hasNext,
                     hasPrevious = pageResult.hasPrevious,
-                    tag = tag,
                     isPartialRender = isHtmxRequest(ctx),
                     navigationMenu = engine.nav(),
                     pagination =
                         engine.pagination(
                             currentPage = pageResult.currentPage,
                             totalPages = pageResult.totalPages,
-                            basePath = "/blog",
+                            basePath = "/blog/tag/$tag",
                         ),
                     footer = engine.footer(),
                 )
-            render(ctx, "blog_overview", viewModel)
+            render(ctx, FragmentTemplates.BLOG_OVERVIEW, viewModel)
         }
     }
 
@@ -187,7 +206,7 @@ fun RoutesConfig.fragmentsRoutes(
             val viewModel =
                 CategoryViewModel(
                     category = category,
-                    fragments = pageResult.items.map { FragmentViewModel(it) },
+                    fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(ctx), siteUrl = engine.siteUrl) },
                     currentPage = pageResult.currentPage,
                     totalPages = pageResult.totalPages,
                     hasNext = pageResult.hasNext,
@@ -198,11 +217,11 @@ fun RoutesConfig.fragmentsRoutes(
                         engine.pagination(
                             currentPage = pageResult.currentPage,
                             totalPages = pageResult.totalPages,
-                            basePath = "/blog",
+                            basePath = "/blog/category/$category",
                         ),
                     footer = engine.footer(),
                 )
-            render(ctx, "blog_overview", viewModel)
+            render(ctx, FragmentTemplates.BLOG_OVERVIEW, viewModel)
         }
     }
 
@@ -217,7 +236,7 @@ fun RoutesConfig.fragmentsRoutes(
                     authorSlug = slug,
                     authorName = authorViewModel?.name,
                     author = authorViewModel,
-                    fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(ctx)) },
+                    fragments = pageResult.items.map { FragmentViewModel(it, isHtmxRequest(ctx), siteUrl = engine.siteUrl) },
                     currentPage = pageResult.currentPage,
                     totalPages = pageResult.totalPages,
                     hasNext = pageResult.hasNext,
@@ -232,24 +251,20 @@ fun RoutesConfig.fragmentsRoutes(
                         ),
                     footer = engine.footer(),
                 )
-            render(ctx, "blog_overview", viewModel)
+            render(ctx, FragmentTemplates.BLOG_OVERVIEW, viewModel)
         }
     }
 
     get("/blog/archive/{year}") { ctx ->
         val year = ctx.pathParam("year")
-        val yearInt = year.toIntOrNull()
-        if (yearInt == null) {
-            ctx.status(400).result("Invalid year")
-            return@get
-        }
+        val yearInt = year.toIntOrNull() ?: throw IllegalArgumentException("Invalid year")
         ctx.handleAsync {
             val fragments = engine.getByYear(yearInt)
             val viewModel =
                 ArchiveViewModel(
                     type = "year",
                     year = year,
-                    fragments = fragments.map { FragmentViewModel(it) },
+                    fragments = fragments.map { FragmentViewModel(it, isHtmxRequest(ctx), siteUrl = engine.siteUrl) },
                     siteTitle = engine.siteTitle,
                     navigationMenu = engine.nav(),
                     footer = engine.footer(),
@@ -262,24 +277,15 @@ fun RoutesConfig.fragmentsRoutes(
                             currentYear = yearInt,
                         ),
                 )
-            render(ctx, "archive", viewModel)
+            render(ctx, FragmentTemplates.ARCHIVE, viewModel)
         }
     }
 
     get("/blog/archive/{year}/{month}") { ctx ->
         val year = ctx.pathParam("year")
         val month = ctx.pathParam("month")
-        val yearInt = year.toIntOrNull()
-        val monthInt = month.toIntOrNull()
-
-        if (yearInt == null) {
-            ctx.status(400).result("Invalid year")
-            return@get
-        }
-        if (monthInt == null) {
-            ctx.status(400).result("Invalid month")
-            return@get
-        }
+        val yearInt = year.toIntOrNull() ?: throw IllegalArgumentException("Invalid year")
+        val monthInt = month.toIntOrNull() ?: throw IllegalArgumentException("Invalid month")
 
         ctx.handleAsync {
             val fragments = engine.getByYearMonth(yearInt, monthInt)
@@ -288,7 +294,7 @@ fun RoutesConfig.fragmentsRoutes(
                     type = "year-month",
                     year = year,
                     month = month,
-                    fragments = fragments.map { FragmentViewModel(it) },
+                    fragments = fragments.map { FragmentViewModel(it, isHtmxRequest(ctx), siteUrl = engine.siteUrl) },
                     siteTitle = engine.siteTitle,
                     navigationMenu = engine.nav(),
                     footer = engine.footer(),
@@ -303,17 +309,20 @@ fun RoutesConfig.fragmentsRoutes(
                             currentMonth = monthInt,
                         ),
                 )
-            render(ctx, "archive", viewModel)
+            render(ctx, FragmentTemplates.ARCHIVE, viewModel)
         }
     }
 
-    get("/rss.xml") { ctx ->
+    val rssHandler: (Context) -> Unit = { ctx ->
         ctx.handleAsync {
             val rssXml = engine.generateRssFeed()
             ctx.contentType("application/rss+xml")
             ctx.result(rssXml)
         }
     }
+
+    get("/rss.xml", rssHandler)
+    get("/feed.xml", rssHandler)
 
     get("/sitemap.xml") { ctx ->
         ctx.handleAsync {
@@ -338,114 +347,31 @@ fun RoutesConfig.fragmentsRoutes(
     }
 
     get("/search") { ctx ->
-        val query = ctx.queryParam("q")
-        if (query == null) {
-            ctx.status(400).result("Query parameter 'q' is required")
-            return@get
-        }
+        val query = ctx.queryParam("q") ?: throw IllegalArgumentException("Query parameter 'q' is required")
         ctx.handleAsync {
             val results = engine.search(query)
             val viewModel =
                 SearchViewModel(
                     query = query,
-                    results = results.map { FragmentViewModel(it.fragment) },
+                    results = results.map { FragmentViewModel(it.fragment, isHtmxRequest(ctx), siteUrl = engine.siteUrl) },
                     siteTitle = engine.siteTitle,
                     navigationMenu = engine.nav(),
                     footer = engine.footer(),
                     searchForm = engine.searchForm(),
                 )
-            render(ctx, "search", viewModel)
+            render(ctx, FragmentTemplates.SEARCH, viewModel)
+        }
+    }
+
+    get("/api/autocomplete") { ctx ->
+        val query = ctx.queryParam("q") ?: throw IllegalArgumentException("Query parameter 'q' is required")
+        val limit = ctx.queryParam("limit")?.toIntOrNull() ?: 10
+        ctx.handleAsync {
+            val suggestions = engine.autocomplete(query, limit)
+            ctx.json(suggestions)
         }
     }
 }
-
-data class ContentViewModel(
-    val viewModel: FragmentViewModel,
-    val templateName: String,
-    val navigationMenu: List<NavigationLink>,
-    val footer: FooterConfig,
-)
-
-data class SearchViewModel(
-    val query: String,
-    val results: List<FragmentViewModel>,
-    val siteTitle: String,
-    val navigationMenu: List<NavigationLink>,
-    val footer: FooterConfig,
-    val searchForm: SearchFormConfig,
-)
-
-data class ArchiveViewModel(
-    val type: String,
-    val year: String,
-    val month: String? = null,
-    val fragments: List<FragmentViewModel>,
-    val siteTitle: String,
-    val navigationMenu: List<NavigationLink>,
-    val footer: FooterConfig,
-    val archiveYearLinks: List<ArchiveNavigationLink>? = null,
-    val archiveMonthLinks: List<ArchiveNavigationLink>? = null,
-    val archiveBreadcrumbs: List<ArchiveNavigationLink>? = null,
-)
-
-data class HomeViewModel(
-    val fragments: List<FragmentViewModel>,
-    val isPartialRender: Boolean = false,
-    val navigationMenu: List<NavigationLink>,
-    val footer: FooterConfig,
-)
-
-data class BlogOverviewViewModel(
-    val fragments: List<FragmentViewModel>,
-    val currentPage: Int,
-    val totalPages: Int,
-    val hasNext: Boolean = false,
-    val hasPrevious: Boolean = false,
-    val tag: String? = null,
-    val category: String? = null,
-    val isPartialRender: Boolean = false,
-    val navigationMenu: List<NavigationLink>,
-    val pagination: PaginationInfo,
-    val footer: FooterConfig,
-)
-
-data class TagViewModel(
-    val tag: String,
-    val fragments: List<FragmentViewModel>,
-    val currentPage: Int,
-    val totalPages: Int,
-    val hasNext: Boolean = false,
-    val hasPrevious: Boolean = false,
-    val isPartialRender: Boolean = false,
-)
-
-data class AuthorPageViewModel(
-    val authorSlug: String,
-    val authorName: String? = null,
-    val author: AuthorViewModel? = null,
-    val fragments: List<FragmentViewModel>,
-    val currentPage: Int,
-    val totalPages: Int,
-    val hasNext: Boolean = false,
-    val hasPrevious: Boolean = false,
-    val isPartialRender: Boolean = false,
-    val navigationMenu: List<NavigationLink>,
-    val pagination: PaginationInfo,
-    val footer: FooterConfig,
-)
-
-data class CategoryViewModel(
-    val category: String,
-    val fragments: List<FragmentViewModel>,
-    val currentPage: Int,
-    val totalPages: Int,
-    val hasNext: Boolean = false,
-    val hasPrevious: Boolean = false,
-    val isPartialRender: Boolean = false,
-    val navigationMenu: List<NavigationLink>,
-    val pagination: PaginationInfo,
-    val footer: FooterConfig,
-)
 
 interface TemplateRenderer {
     fun render(

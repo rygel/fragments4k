@@ -35,6 +35,7 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
+      security-events: write
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -48,4 +49,43 @@ jobs:
       - name: Run Semgrep
         run: |
           pip install semgrep
-          semgrep --config p/default --config p/kotlin --config p/java --error || true
+          semgrep --config p/default --config p/kotlin --config p/java --sarif --output semgrep.sarif
+
+      - name: Upload Semgrep SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@fca7ace96b7d713c7035871441bd52efbe39e27e # v3.28.19
+        with:
+          sarif_file: semgrep.sarif
+          category: semgrep
+
+  dependency-check:
+    name: Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Install modules
+        run: mvn install -DskipTests -T 4
+
+      - name: Run OWASP Dependency Check
+        run: mvn org.owasp:dependency-check-maven:check -DfailBuildOnCVSS=7 -DsuppressionFile=dependency-check-suppressions.xml
+
+      - name: Upload Dependency Check Reports
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dependency-check-reports
+          path: '**/target/dependency-check-report.html'
+          retention-days: 14

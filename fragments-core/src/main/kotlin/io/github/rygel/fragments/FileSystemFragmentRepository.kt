@@ -34,6 +34,16 @@ import java.time.format.DateTimeParseException
  *   you need date-based or hierarchical paths. Return a **relative path starting with
  *   `/`** — the result is stored in [Fragment.resolvedUrl] and returned by
  *   [Fragment.url]. When non-null, `urlBuilder` takes precedence over `baseUrl`.
+ *
+ *   **Important:** The URL returned by [Fragment.url] is used by
+ *   [io.github.rygel.fragments.sitemap.SitemapGenerator],
+ *   [io.github.rygel.fragments.LlmsTxtGenerator], and
+ *   [io.github.rygel.fragments.rss.RssGenerator] to build the absolute URLs in their
+ *   output. If your HTTP routes differ from the default `baseUrl/slug` pattern (e.g.
+ *   `/blog/{year}/{month}/{slug}` for blog posts, or `/about` instead of `/page/about`
+ *   for static pages), you **must** provide a `urlBuilder` — otherwise generated
+ *   sitemaps, RSS feeds, and llms.txt will contain URLs that don't match your routes.
+ *
  *   Example — date-based blog URLs:
  *   ```kotlin
  *   FileSystemFragmentRepository(
@@ -47,6 +57,13 @@ import java.time.format.DateTimeParseException
  *           else -> "/page/${fragment.slug}"
  *       }
  *   },
+ *   )
+ *   ```
+ *   Example — static pages at custom routes:
+ *   ```kotlin
+ *   FileSystemFragmentRepository(
+ *       basePath = "/content/pages",
+ *       urlBuilder = { fragment -> "/${fragment.slug}" },
  *   )
  *   ```
  * @param extension File extension to scan for; defaults to `.md`.
@@ -71,8 +88,16 @@ class FileSystemFragmentRepository(
     private val parser: MarkdownParser = MarkdownParser(),
 ) : FragmentRepository {
     private val logger = LoggerFactory.getLogger(FileSystemFragmentRepository::class.java)
-    private var cachedFragments: List<Fragment> = emptyList()
-    private var lastLoaded: LocalDateTime = LocalDateTime.MIN
+
+    private val canonicalBasePath: String by lazy {
+        File(basePath).canonicalPath
+    }
+
+    @Volatile private var cachedFragments: List<Fragment> = emptyList()
+
+    @Volatile private var lastLoaded: LocalDateTime = LocalDateTime.MIN
+
+    @Volatile private var cachedRelationships: MutableMap<String, ContentRelationships> = mutableMapOf()
 
     override suspend fun getAll(): List<Fragment> =
         withContext(Dispatchers.IO) {
@@ -89,17 +114,21 @@ class FileSystemFragmentRepository(
                             FragmentStatus.PUBLISHED -> {
                                 fragment.expiryDate == null || !fragment.expiryDate.isBefore(now)
                             }
+
                             FragmentStatus.SCHEDULED -> {
                                 fragment.publishDate != null &&
                                     !fragment.publishDate.isAfter(now) &&
                                     (fragment.expiryDate == null || !fragment.expiryDate.isBefore(now))
                             }
+
                             FragmentStatus.DRAFT,
                             FragmentStatus.REVIEW,
                             FragmentStatus.APPROVED,
                             FragmentStatus.ARCHIVED,
                             FragmentStatus.EXPIRED,
-                            -> false
+                            -> {
+                                false
+                            }
                         }
                 }.sortedByDescending { it.date }
         }
@@ -209,7 +238,7 @@ class FileSystemFragmentRepository(
                 Result.success(updatedFragment)
             } catch (e: IOException) {
                 logger.error("Failed to update fragment status: $slug", e)
-                Result.failure(e)
+                Result.failure(IOException("Failed to update status of fragment '$slug' to $status: ${e.message}", e))
             }
         }
     }
@@ -230,18 +259,16 @@ class FileSystemFragmentRepository(
             )
         }
 
-    @Suppress("INVISIBLE_MEMBER")
     override suspend fun reload() {
         withContext(Dispatchers.IO) {
             cachedFragments = loadFragmentsFromDisk()
+            cachedRelationships.clear()
             lastLoaded = LocalDateTime.now(ZoneOffset.UTC)
         }
     }
 
     private fun getFragmentFile(slug: String): File? =
-        File(basePath)
-            .walkTopDown()
-            .filter { it.isFile && it.extension == extension.removePrefix(".") }
+        safeWalk()
             .find { it.nameWithoutExtension == slug }
 
     private fun cacheUpdatedFragment(fragment: Fragment) {
@@ -250,6 +277,18 @@ class FileSystemFragmentRepository(
             cachedFragments = cachedFragments.toMutableList().apply { this[index] = fragment }
         }
     }
+
+    private fun isWithinBasePath(file: File): Boolean {
+        val canonical = file.canonicalPath
+        return canonical == canonicalBasePath || canonical.startsWith(canonicalBasePath + File.separatorChar)
+    }
+
+    private fun safeWalk(): Sequence<File> =
+        File(canonicalBasePath)
+            .walkTopDown()
+            .filter { it.isFile }
+            .filter { it.extension == extension.removePrefix(".") }
+            .filter { isWithinBasePath(it) }
 
     private fun loadFragments(): List<Fragment> =
         if (cachedFragments.isEmpty() || lastLoaded.isEqual(LocalDateTime.MIN)) {
@@ -265,11 +304,7 @@ class FileSystemFragmentRepository(
             return emptyList()
         }
 
-        val files =
-            directory
-                .walkTopDown()
-                .filter { it.isFile && it.extension == extension.removePrefix(".") }
-                .toList()
+        val files = safeWalk().toList()
 
         return files
             .mapNotNull { file ->
@@ -283,12 +318,21 @@ class FileSystemFragmentRepository(
     }
 
     private fun parseFragmentFile(file: File): Fragment {
+        if (file.length() > MAX_FILE_SIZE) {
+            throw IOException("Fragment file exceeds ${MAX_FILE_SIZE / (1024 * 1024)}MB limit: ${file.absolutePath}")
+        }
         val content = file.readText()
         val parsed = parser.parse(content)
         val frontMatter = parsed.frontMatter
 
         val title = frontMatter["title"]?.toString() ?: file.nameWithoutExtension
-        val slug = frontMatter["slug"]?.toString() ?: generateSlug(file.nameWithoutExtension)
+        val slug =
+            (frontMatter["slug"]?.toString() ?: generateSlug(file.nameWithoutExtension))
+                .also { raw ->
+                    if (!SLUG_PATTERN.matches(raw)) {
+                        logger.warn("Invalid slug '{}' in file '{}' — slugs must match pattern [a-z0-9]+(-[a-z0-9]+)*", raw, file.name)
+                    }
+                }
         val date = MarkdownParser.parseDate(frontMatter["date"])
 
         val statusString = frontMatter["status"]?.toString()
@@ -357,6 +401,7 @@ class FileSystemFragmentRepository(
             .replace(SLUG_NON_ALPHANUMERIC, "")
             .replace(SLUG_WHITESPACE, "-")
             .replace(SLUG_CONSECUTIVE_DASHES, "-")
+            .trim('-')
 
     private fun extractPreview(content: String): String {
         val moreTagIndex = MORE_TAG_PATTERN.find(content)
@@ -368,6 +413,8 @@ class FileSystemFragmentRepository(
     }
 
     companion object {
+        private const val MAX_FILE_SIZE = 10L * 1024 * 1024
+        private val SLUG_PATTERN = Regex("^[a-z0-9]+(-[a-z0-9]+)*$")
         private val SLUG_NON_ALPHANUMERIC = Regex("[^a-z0-9\\s-]")
         private val SLUG_WHITESPACE = Regex("\\s+")
         private val SLUG_CONSECUTIVE_DASHES = Regex("-+")
@@ -385,7 +432,7 @@ class FileSystemFragmentRepository(
     private fun parseFaqEntries(frontMatter: Map<String, Any>): List<FaqEntry> {
         val faqField = frontMatter["faq"] ?: return emptyList()
         return when (faqField) {
-            is List<*> ->
+            is List<*> -> {
                 faqField.mapNotNull { item ->
                     if (item is Map<*, *>) {
                         val question = item["q"]?.toString()
@@ -395,7 +442,11 @@ class FileSystemFragmentRepository(
                         null
                     }
                 }
-            else -> emptyList()
+            }
+
+            else -> {
+                emptyList()
+            }
         }
     }
 
@@ -403,19 +454,23 @@ class FileSystemFragmentRepository(
     private fun parseLanguagesMap(frontMatter: Map<String, Any>): Map<String, String> {
         val languagesField = frontMatter["languages"]
         return when (languagesField) {
-            is Map<*, *> ->
+            is Map<*, *> -> {
                 languagesField
                     .mapNotNull { (k, v) ->
                         k?.toString()?.let { key -> v?.toString()?.let { value -> key to value } }
                     }.toMap()
-            else -> emptyMap()
+            }
+
+            else -> {
+                emptyMap()
+            }
         }
     }
 
     private fun parseStatusChangeHistory(frontMatter: Map<String, Any>): List<StatusChangeHistory> {
         val historyField = frontMatter["statusChangeHistory"] ?: return emptyList()
         return when (historyField) {
-            is List<*> ->
+            is List<*> -> {
                 historyField.mapNotNull { item ->
                     if (item is Map<*, *>) {
                         try {
@@ -437,7 +492,11 @@ class FileSystemFragmentRepository(
                         null
                     }
                 }
-            else -> emptyList()
+            }
+
+            else -> {
+                emptyList()
+            }
         }
     }
 
@@ -566,7 +625,7 @@ class FileSystemFragmentRepository(
                     Result.success(updatedFragment)
                 } catch (e: IOException) {
                     logger.error("Failed to schedule fragment: $slug", e)
-                    Result.failure(e)
+                    Result.failure(IOException("Failed to schedule fragment '$slug' for $publishDate: ${e.message}", e))
                 }
             }
         }
@@ -586,8 +645,8 @@ class FileSystemFragmentRepository(
             val expiredFragments =
                 loadFragments().filter { fragment ->
                     fragment.status == FragmentStatus.PUBLISHED &&
-                        fragment.publishDate != null &&
-                        fragment.publishDate.isBefore(threshold)
+                        fragment.expiryDate != null &&
+                        fragment.expiryDate.isBefore(threshold)
                 }
 
             expiredFragments.map { fragment ->
@@ -606,18 +665,79 @@ class FileSystemFragmentRepository(
         output: StringBuilder,
     ) {
         frontMatter.forEach { (key, value) ->
-            when (value) {
-                is String -> output.append("$key: \"${value.yamlEscape()}\"\n")
-                is Boolean -> output.append("$key: $value\n")
-                is Number -> output.append("$key: $value\n")
-                is List<*> -> {
-                    output.append("$key:\n")
-                    value.forEach { item ->
-                        output.append("  - \"${item?.toString().orEmpty().yamlEscape()}\"\n")
+            dumpValue(key, value, output, indent = "")
+        }
+    }
+
+    private fun dumpValue(
+        key: String,
+        value: Any?,
+        output: StringBuilder,
+        indent: String,
+    ) {
+        when (value) {
+            null -> {
+                output.append("$indent$key: null\n")
+            }
+
+            is String -> {
+                output.append("$indent$key: \"${value.yamlEscape()}\"\n")
+            }
+
+            is Boolean -> {
+                output.append("$indent$key: $value\n")
+            }
+
+            is Number -> {
+                output.append("$indent$key: $value\n")
+            }
+
+            is LocalDateTime -> {
+                output.append("$indent$key: \"$value\"\n")
+            }
+
+            is Map<*, *> -> {
+                output.append("$indent$key:\n")
+                value.forEach { (k, v) -> dumpValue(k.toString(), v, output, "$indent  ") }
+            }
+
+            is List<*> -> {
+                output.append("$indent$key:\n")
+                value.forEach { item -> dumpListItem(item, output, "$indent  ") }
+            }
+
+            else -> {
+                output.append("$indent$key: \"${value.toString().yamlEscape()}\"\n")
+            }
+        }
+    }
+
+    private fun dumpListItem(
+        item: Any?,
+        output: StringBuilder,
+        indent: String,
+    ) {
+        when (item) {
+            is Map<*, *> -> {
+                val entries = item.entries.toList()
+                if (entries.isEmpty()) {
+                    output.append("$indent- {}\n")
+                    return
+                }
+                // First key uses block sequence indicator `- `; subsequent keys align under it.
+                val innerIndent = "$indent  "
+                entries.forEachIndexed { index, (k, v) ->
+                    if (index == 0) {
+                        output.append("$indent- ")
+                        dumpValue(k.toString(), v, output, "")
+                    } else {
+                        dumpValue(k.toString(), v, output, innerIndent)
                     }
                 }
-                is LocalDateTime -> output.append("$key: \"$value\"\n")
-                else -> output.append("$key: \"${value.toString().yamlEscape()}\"\n")
+            }
+
+            else -> {
+                output.append("$indent- \"${item?.toString().orEmpty().yamlEscape()}\"\n")
             }
         }
     }
@@ -633,16 +753,21 @@ class FileSystemFragmentRepository(
         config: io.github.rygel.fragments.RelationshipConfig,
     ): ContentRelationships? {
         return withContext(Dispatchers.IO) {
-            val currentFragment = getBySlug(slug) ?: return@withContext null
-            val allFragments =
-                getAllVisible()
-                    .filter { it.slug != currentFragment.slug }
+            cachedRelationships[slug] ?: run {
+                val currentFragment = getBySlug(slug) ?: return@withContext null
+                val allFragments =
+                    getAllVisible()
+                        .filter { it.slug != currentFragment.slug }
 
-            ContentRelationshipGenerator.generateRelationships(
-                currentFragment = currentFragment,
-                allFragments = allFragments,
-                config = config,
-            )
+                val relationships =
+                    ContentRelationshipGenerator.generateRelationships(
+                        currentFragment = currentFragment,
+                        allFragments = allFragments,
+                        config = config,
+                    )
+                cachedRelationships[slug] = relationships
+                relationships
+            }
         }
     }
 
@@ -661,7 +786,7 @@ class FileSystemFragmentRepository(
                 Result.success(revision)
             } catch (e: IOException) {
                 logger.error("Failed to create revision for fragment: $slug", e)
-                Result.failure(e)
+                Result.failure(IOException("Failed to create revision for fragment '$slug': ${e.message}", e))
             }
         }
 
@@ -684,10 +809,17 @@ class FileSystemFragmentRepository(
 
             val revertedFragment = revisionRepository.revertToRevision(slug, revisionId, changedBy, reason)
             if (revertedFragment.isFailure) {
-                return@withContext Result.failure(revertedFragment.exceptionOrNull() ?: Exception("Revert failed"))
+                return@withContext Result.failure(
+                    revertedFragment.exceptionOrNull()
+                        ?: IllegalStateException("Revert failed for '$slug' to revision $revisionId"),
+                )
             }
 
-            val result = revertedFragment.getOrNull() ?: return@withContext Result.failure(Exception("Revert failed"))
+            val result =
+                revertedFragment.getOrNull()
+                    ?: return@withContext Result.failure(
+                        IllegalStateException("Revert produced null result for '$slug' revision $revisionId"),
+                    )
             try {
                 val file =
                     getFragmentFile(slug) ?: return@withContext Result.failure(IllegalArgumentException("Fragment file not found: $slug"))
@@ -713,7 +845,7 @@ class FileSystemFragmentRepository(
                 Result.success(updatedFragment)
             } catch (e: IOException) {
                 logger.error("Failed to revert fragment: $slug", e)
-                Result.failure(e)
+                Result.failure(IOException("Failed to write reverted fragment '$slug' (revision $revisionId): ${e.message}", e))
             }
         }
 }

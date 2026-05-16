@@ -1,5 +1,7 @@
 package io.github.rygel.fragments
 
+import org.slf4j.LoggerFactory
+
 /**
  * Generates an [llms.txt](https://llmstxt.org/) file for AI crawler discoverability.
  *
@@ -13,11 +15,9 @@ package io.github.rygel.fragments
  * that matches your adapter routes.
  */
 object LlmsTxtGenerator {
-    /**
-     * Template values that identify a fragment as a blog post.
-     * Kept in sync with `BlogEngine.BLOG_TEMPLATES`.
-     */
-    private val BLOG_TEMPLATES: Set<String> = setOf("blog", "blog_post")
+    private const val PREVIEW_LENGTH = 160
+    private val BLOG_TEMPLATES: Set<String> = FragmentTemplates.BLOG_TEMPLATES
+    private val logger = LoggerFactory.getLogger(LlmsTxtGenerator::class.java)
 
     /**
      * Generates the llms.txt content.
@@ -27,17 +27,33 @@ object LlmsTxtGenerator {
      * @param siteUrl       Absolute base URL (no trailing slash) for building links.
      * @param repositories  One or more [FragmentRepository] instances whose visible
      *                      fragments should appear in the output.
+     * @param resolvedFragments When provided, used instead of loading from [repositories].
+     *                      Pass pre-resolved fragments (with [Fragment.resolvedUrl] set)
+     *                      to ensure correct date-based blog URLs appear in the output.
      */
     suspend fun generate(
         siteTitle: String,
         siteDescription: String,
         siteUrl: String,
         repositories: List<FragmentRepository>,
+        resolvedFragments: List<Fragment>? = null,
     ): String {
-        val allFragments =
-            repositories
-                .flatMap { it.getAllVisible() }
+        val allCandidates =
+            (resolvedFragments ?: repositories.flatMap { it.getAllVisible() })
                 .distinctBy { it.slug }
+
+        // Exclude fragments whose URL was not explicitly resolved by a urlBuilder.
+        // The Fragment.url fallback (baseUrl/slug) may not match the actual HTTP
+        // route, producing incorrect URLs in the published llms.txt. See #65 / #77.
+        val skipped = allCandidates.filter { it.resolvedUrl == null }
+        if (skipped.isNotEmpty()) {
+            logger.warn(
+                "Skipping {} fragment(s) without resolvedUrl in llms.txt (configure urlBuilder on the repository): {}",
+                skipped.size,
+                skipped.joinToString { it.slug },
+            )
+        }
+        val allFragments = allCandidates.filter { it.resolvedUrl != null }
 
         val blogPosts =
             allFragments
@@ -59,7 +75,7 @@ object LlmsTxtGenerator {
                 appendLine("## Blog Posts")
                 appendLine()
                 for (post in blogPosts) {
-                    val description = post.previewTextOnly.take(160)
+                    val description = post.previewTextOnly.take(PREVIEW_LENGTH)
                     val absoluteUrl = siteUrl.trimEnd('/') + post.url
                     appendLine("- [${post.title}]($absoluteUrl): $description")
                 }
@@ -70,7 +86,7 @@ object LlmsTxtGenerator {
                 appendLine("## Pages")
                 appendLine()
                 for (page in pages) {
-                    val description = page.previewTextOnly.take(160)
+                    val description = page.previewTextOnly.take(PREVIEW_LENGTH)
                     val absoluteUrl = siteUrl.trimEnd('/') + page.url
                     appendLine("- [${page.title}]($absoluteUrl): $description")
                 }

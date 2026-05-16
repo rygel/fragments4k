@@ -47,6 +47,11 @@ import java.time.LocalDateTime
  * @param baseUrl URL prefix for all fragments (e.g. `/blog`).
  * @param urlBuilder Optional factory that computes the canonical URL for each fragment,
  *   stored in [Fragment.resolvedUrl]. Takes precedence over [baseUrl].
+ *   The resolved URL is used by [io.github.rygel.fragments.sitemap.SitemapGenerator],
+ *   [io.github.rygel.fragments.LlmsTxtGenerator], and
+ *   [io.github.rygel.fragments.rss.RssGenerator] when building absolute URLs. If your
+ *   HTTP routes differ from the default `baseUrl/slug` pattern, provide a `urlBuilder`
+ *   so that generated sitemaps, RSS feeds, and llms.txt contain correct URLs.
  * @param classLoader ClassLoader used to load resources; defaults to the thread context
  *   class loader.
  * @param parser [MarkdownParser] instance used to parse `.md` files.
@@ -67,6 +72,10 @@ class ClasspathFragmentRepository(
 
     companion object {
         const val INDEX_FILE_NAME = "index.list"
+        private val SLUG_NON_ALPHANUMERIC = Regex("[^a-z0-9\\s-]")
+        private val SLUG_WHITESPACE = Regex("\\s+")
+        private val SLUG_CONSECUTIVE_DASHES = Regex("-+")
+        private val MORE_TAG_PATTERN = Regex("<!--\\s*more\\s*-->", RegexOption.IGNORE_CASE)
     }
 
     override suspend fun getAll(): List<Fragment> = withContext(Dispatchers.IO) { loadFragments() }
@@ -78,13 +87,19 @@ class ClasspathFragmentRepository(
                 .filter { fragment ->
                     fragment.visible &&
                         when (fragment.status) {
-                            FragmentStatus.PUBLISHED ->
+                            FragmentStatus.PUBLISHED -> {
                                 fragment.expiryDate == null || !fragment.expiryDate.isBefore(now)
-                            FragmentStatus.SCHEDULED ->
+                            }
+
+                            FragmentStatus.SCHEDULED -> {
                                 fragment.publishDate != null &&
                                     !fragment.publishDate.isAfter(now) &&
                                     (fragment.expiryDate == null || !fragment.expiryDate.isBefore(now))
-                            else -> false
+                            }
+
+                            else -> {
+                                false
+                            }
                         }
                 }.sortedByDescending { it.date }
         }
@@ -331,12 +346,12 @@ class ClasspathFragmentRepository(
     private fun generateSlug(name: String): String =
         name
             .lowercase()
-            .replace(Regex("[^a-z0-9\\s-]"), "")
-            .replace(Regex("\\s+"), "-")
-            .replace(Regex("-+"), "-")
+            .replace(SLUG_NON_ALPHANUMERIC, "")
+            .replace(SLUG_WHITESPACE, "-")
+            .replace(SLUG_CONSECUTIVE_DASHES, "-")
 
     private fun extractPreview(content: String): String {
-        val moreTag = Regex("<!--\\s*more\\s*-->", RegexOption.IGNORE_CASE).find(content)
+        val moreTag = MORE_TAG_PATTERN.find(content)
         return when {
             moreTag != null -> content.substring(0, moreTag.range.first)
             content.length > 200 -> content.substring(0, 200) + "..."
@@ -355,7 +370,7 @@ class ClasspathFragmentRepository(
     private fun parseFaqEntries(frontMatter: Map<String, Any>): List<FaqEntry> {
         val faqField = frontMatter["faq"] ?: return emptyList()
         return when (faqField) {
-            is List<*> ->
+            is List<*> -> {
                 faqField.mapNotNull { item ->
                     if (item is Map<*, *>) {
                         val q = item["q"]?.toString()
@@ -365,7 +380,11 @@ class ClasspathFragmentRepository(
                         null
                     }
                 }
-            else -> emptyList()
+            }
+
+            else -> {
+                emptyList()
+            }
         }
     }
 }

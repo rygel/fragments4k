@@ -7,7 +7,8 @@
     <parent>
         <groupId>io.github.rygel</groupId>
         <artifactId>fragments-parent</artifactId>
-        <version>0.6.5</version>
+        <version>0.6.6</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>demo-spring-boot</artifactId>
@@ -16,7 +17,8 @@
 
     <properties>
         <maven.deploy.skip>true</maven.deploy.skip>
-        <spring-boot.version>4.0.5</spring-boot.version>
+        <spring-boot.version>4.0.6</spring-boot.version>
+        <tomcat.version>11.0.22</tomcat.version>
     </properties>
 
     <dependencyManagement>

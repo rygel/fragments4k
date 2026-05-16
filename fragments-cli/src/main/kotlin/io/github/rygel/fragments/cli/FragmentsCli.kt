@@ -10,7 +10,7 @@ import java.nio.file.Paths
 @Command(
     name = "fragments",
     mixinStandardHelpOptions = true,
-    version = ["Fragments4k CLI 1.0.0-SNAPSHOT"],
+    version = ["Fragments4k CLI 0.6.6"],
     description = ["Command-line tool for scaffolding Fragments4k projects"],
     subcommands = [InitCommand::class, RunCommand::class],
 )
@@ -90,10 +90,13 @@ class InitCommand : Runnable {
             println("  cd $projectName")
             println("  mvn clean install")
             when (framework) {
-                "http4k", "javalin", "spring-boot", "micronaut" ->
+                "http4k", "javalin", "spring-boot", "micronaut" -> {
                     println("  mvn exec:java -Dexec.mainClass=$packageName.${getMainClassName(framework)}")
-                "quarkus" ->
+                }
+
+                "quarkus" -> {
                     println("  mvn quarkus:dev")
+                }
             }
         } catch (e: IOException) {
             println("Error creating project: ${e.message}")
@@ -118,12 +121,16 @@ class InitCommand : Runnable {
     description = ["Run a Fragments4k development server"],
 )
 class RunCommand : Runnable {
+    companion object {
+        private const val DEFAULT_PORT = 8080
+    }
+
     @Option(
         names = ["-p", "--port"],
-        description = ["Port to listen on (default: 8080)"],
+        description = ["Port to run the server on"],
         defaultValue = "8080",
     )
-    private var port: Int = 8080
+    private var port: Int = DEFAULT_PORT
 
     @Option(
         names = ["-d", "--content-dir"],

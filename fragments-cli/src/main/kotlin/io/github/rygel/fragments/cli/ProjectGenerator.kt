@@ -5,6 +5,17 @@ import java.nio.file.Files
 import java.nio.file.Paths
 
 object ProjectGenerator {
+    private const val JAVA_VERSION = "17"
+    private const val KOTLIN_VERSION = "2.2.0"
+    private const val FRAGMENTS_VERSION = "0.6.6"
+    private const val HTTP4K_VERSION = "6.31.1.0"
+    private const val JAVALIN_VERSION = "7.1.0"
+    private const val SPRING_BOOT_VERSION = "3.3.2"
+    private const val QUARKUS_VERSION = "3.13.3"
+    private const val MICRONAUT_VERSION = "4.5.1"
+    private const val LOGBACK_VERSION = "1.4.14"
+    private const val MAVEN_COMPILER_PLUGIN_VERSION = "3.13.0"
+
     fun generate(
         projectDir: File,
         projectName: String,
@@ -102,77 +113,99 @@ object ProjectGenerator {
 
         val (frameworkArtifact, frameworkDependency) =
             when (framework) {
-                "http4k" ->
+                "http4k" -> {
                     "http4k" to """
                 <dependency>
                     <groupId>org.http4k</groupId>
                     <artifactId>http4k-core</artifactId>
-                    <version>6.31.1.0</version>
+                    <version>${'$'}{http4k.version}</version>
                 </dependency>
                 <dependency>
                     <groupId>org.http4k</groupId>
                     <artifactId>http4k-template-pebble</artifactId>
-                    <version>6.31.1.0</version>
+                    <version>${'$'}{http4k.version}</version>
                 </dependency>
                 <dependency>
                     <groupId>org.http4k</groupId>
                     <artifactId>http4k-server-netty</artifactId>
-                    <version>6.31.1.0</version>
+                    <version>${'$'}{http4k.version}</version>
                 </dependency>
             """
-                "javalin" ->
+                }
+
+                "javalin" -> {
                     "javalin" to """
                 <dependency>
                     <groupId>io.javalin</groupId>
                     <artifactId>javalin</artifactId>
-                    <version>7.1.0</version>
+                    <version>${'$'}{javalin.version}</version>
                 </dependency>
                 <dependency>
                     <groupId>io.javalin</groupId>
                     <artifactId>javalin-rendering-pebble</artifactId>
-                    <version>7.1.0</version>
+                    <version>${'$'}{javalin.version}</version>
                 </dependency>
             """
-                "spring-boot" ->
+                }
+
+                "spring-boot" -> {
                     "spring-boot" to """
                 <dependency>
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-starter-web</artifactId>
-                    <version>3.3.2</version>
+                    <version>${'$'}{spring-boot.version}</version>
                 </dependency>
                 <dependency>
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-starter-thymeleaf</artifactId>
-                    <version>3.3.2</version>
+                    <version>${'$'}{spring-boot.version}</version>
                 </dependency>
             """
-                "quarkus" ->
+                }
+
+                "quarkus" -> {
                     "quarkus" to """
                 <dependency>
                     <groupId>io.quarkus</groupId>
                     <artifactId>quarkus-resteasy-reactive</artifactId>
-                    <version>3.13.3</version>
+                    <version>${'$'}{quarkus.version}</version>
                 </dependency>
                 <dependency>
                     <groupId>io.quarkus</groupId>
                     <artifactId>quarkus-qute</artifactId>
-                    <version>3.13.3</version>
+                    <version>${'$'}{quarkus.version}</version>
                 </dependency>
             """
-                "micronaut" ->
+                }
+
+                "micronaut" -> {
                     "micronaut" to """
                 <dependency>
                     <groupId>io.micronaut</groupId>
                     <artifactId>micronaut-http-server-netty</artifactId>
-                    <version>4.5.1</version>
+                    <version>${'$'}{micronaut.version}</version>
                 </dependency>
                 <dependency>
                     <groupId>io.micronaut.views</groupId>
                     <artifactId>micronaut-views-thymeleaf</artifactId>
-                    <version>4.5.1</version>
+                    <version>${'$'}{micronaut.version}</version>
                 </dependency>
             """
-                else -> throw IllegalArgumentException("Unknown framework: $framework")
+                }
+
+                else -> {
+                    throw IllegalArgumentException("Unknown framework: $framework")
+                }
+            }
+
+        val frameworkVersionProperty =
+            when (framework) {
+                "http4k" -> "        <http4k.version>$HTTP4K_VERSION</http4k.version>"
+                "javalin" -> "        <javalin.version>$JAVALIN_VERSION</javalin.version>"
+                "spring-boot" -> "        <spring-boot.version>$SPRING_BOOT_VERSION</spring-boot.version>"
+                "quarkus" -> "        <quarkus.version>$QUARKUS_VERSION</quarkus.version>"
+                "micronaut" -> "        <micronaut.version>$MICRONAUT_VERSION</micronaut.version>"
+                else -> ""
             }
 
         return """<?xml version="1.0" encoding="UTF-8"?>
@@ -190,13 +223,26 @@ object ProjectGenerator {
     <description>A Fragments4k blog project</description>
 
     <properties>
-        <java.version>17</java.version>
-        <kotlin.version>2.0.21</kotlin.version>
+        <java.version>$JAVA_VERSION</java.version>
+        <kotlin.version>$KOTLIN_VERSION</kotlin.version>
         <maven.compiler.source>${'$'}{java.version}</maven.compiler.source>
         <maven.compiler.target>${'$'}{java.version}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <fragments.version>1.0.0-SNAPSHOT</fragments.version>
+        <fragments.version>$FRAGMENTS_VERSION</fragments.version>
+$frameworkVersionProperty
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.github.rygel</groupId>
+                <artifactId>fragments-bom</artifactId>
+                <version>${'$'}{fragments.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>
@@ -207,7 +253,7 @@ object ProjectGenerator {
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.4.14</version>
+            <version>$LOGBACK_VERSION</version>
         </dependency>
 $frameworkDependency
     </dependencies>
@@ -240,7 +286,7 @@ $frameworkDependency
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.13.0</version>
+                <version>$MAVEN_COMPILER_PLUGIN_VERSION</version>
             </plugin>
         </plugins>
     </build>
@@ -258,8 +304,10 @@ $frameworkDependency
         val content = """package ${packagePath.replace(File.separator, ".")}
 
 import io.github.rygel.fragments.FileSystemFragmentRepository
-import io.github.rygel.fragments.http4k.FragmentsHttp4kAdapter
+import io.github.rygel.fragments.adapter.FragmentsEngine
 import io.github.rygel.fragments.blog.BlogEngine
+import io.github.rygel.fragments.http4k.FragmentsHttp4kAdapter
+import io.github.rygel.fragments.lucene.LuceneSearchEngine
 import io.github.rygel.fragments.static.StaticPageEngine
 import org.http4k.filter.ServerFilters.CatchAll
 import org.http4k.server.asServer
@@ -287,21 +335,24 @@ fun main() {
     }
     val staticEngine = StaticPageEngine(repository)
     val blogEngine = BlogEngine(repository)
+    val searchEngine = LuceneSearchEngine(repository, null)
     
-    val renderer = PebbleTemplates().HotReload("src/main/resources/templates")
-    val adapter = FragmentsHttp4kAdapter(
+    val engine = FragmentsEngine(
         staticEngine = staticEngine,
         blogEngine = blogEngine,
-        renderer = renderer,
+        searchEngine = searchEngine,
         siteTitle = "My Fragments Blog",
         siteDescription = "A blog powered by Fragments4k",
         siteUrl = "http://localhost:8080"
     )
     
+    val renderer = PebbleTemplates().HotReload("src/main/resources/templates")
+    val adapter = FragmentsHttp4kAdapter(engine, renderer)
+    
     val server = CatchAll { e ->
         logger.error("Error handling request", e)
         org.http4k.core.Response(org.http4k.core.Status.INTERNAL_SERVER_ERROR)
-            .body("Internal Server Error: ${'$'}{e.message}")
+            .body("Internal Server Error")
     }.then(adapter.createRoutes()).asServer(Netty(8080))
     
     logger.info("Starting Fragments4k HTTP4k server on port 8080")
@@ -324,8 +375,10 @@ fun main() {
         val content = """package ${packagePath.replace(File.separator, ".")}
 
 import io.github.rygel.fragments.FileSystemFragmentRepository
-import io.github.rygel.fragments.javalin.fragmentsRoutes
+import io.github.rygel.fragments.adapter.FragmentsEngine
 import io.github.rygel.fragments.blog.BlogEngine
+import io.github.rygel.fragments.javalin.fragmentsRoutes
+import io.github.rygel.fragments.lucene.LuceneSearchEngine
 import io.github.rygel.fragments.static.StaticPageEngine
 import io.javalin.Javalin
 import io.javalin.rendering.template.JavalinPebble
@@ -351,6 +404,16 @@ fun main() {
     }
     val staticEngine = StaticPageEngine(repository)
     val blogEngine = BlogEngine(repository)
+    val searchEngine = LuceneSearchEngine(repository, null)
+    
+    val engine = FragmentsEngine(
+        staticEngine = staticEngine,
+        blogEngine = blogEngine,
+        searchEngine = searchEngine,
+        siteTitle = "My Fragments Blog",
+        siteDescription = "A blog powered by Fragments4k",
+        siteUrl = "http://localhost:8080"
+    )
     
     val app = Javalin.create { config ->
         config.plugins.register(JavalinPebble {
@@ -358,16 +421,7 @@ fun main() {
         })
     }
     
-    app.fragmentsRoutes(
-        staticEngine = staticEngine,
-        blogEngine = blogEngine,
-        renderer = { template, viewModel ->
-            JavalinPebble.extensions.render(template, viewModel)
-        },
-        siteTitle = "My Fragments Blog",
-        siteDescription = "A blog powered by Fragments4k",
-        siteUrl = "http://localhost:8080"
-    )
+    app.fragmentsRoutes(engine, renderer = null)
     
     logger.info("Starting Fragments4k Javalin server on port 8080")
     logger.info("RSS feed available at: http://localhost:8080/rss.xml")
@@ -388,8 +442,10 @@ fun main() {
         val content = """package ${packagePath.replace(File.separator, ".")}
 
 import io.github.rygel.fragments.FileSystemFragmentRepository
-import io.github.rygel.fragments.spring.FragmentsSpringController
+import io.github.rygel.fragments.adapter.FragmentsEngine
 import io.github.rygel.fragments.blog.BlogEngine
+import io.github.rygel.fragments.lucene.LuceneSearchEngine
+import io.github.rygel.fragments.spring.FragmentsSpringController
 import io.github.rygel.fragments.static.StaticPageEngine
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
@@ -435,17 +491,29 @@ class DemoApplication {
     }
     
     @Bean
-    fun fragmentsController(
+    fun searchEngine(repository: io.github.rygel.fragments.FileSystemFragmentRepository): io.github.rygel.fragments.lucene.LuceneSearchEngine {
+        return io.github.rygel.fragments.lucene.LuceneSearchEngine(repository, null)
+    }
+    
+    @Bean
+    fun fragmentsEngine(
         staticEngine: io.github.rygel.fragments.static.StaticPageEngine,
-        blogEngine: io.github.rygel.fragments.blog.BlogEngine
-    ): FragmentsSpringController {
-        return FragmentsSpringController(
+        blogEngine: io.github.rygel.fragments.blog.BlogEngine,
+        searchEngine: io.github.rygel.fragments.lucene.LuceneSearchEngine
+    ): FragmentsEngine {
+        return FragmentsEngine(
             staticEngine = staticEngine,
             blogEngine = blogEngine,
+            searchEngine = searchEngine,
             siteTitle = "My Fragments Blog",
             siteDescription = "A blog powered by Fragments4k",
             siteUrl = "http://localhost:8080"
         )
+    }
+    
+    @Bean
+    fun fragmentsController(engine: FragmentsEngine): FragmentsSpringController {
+        return FragmentsSpringController(engine)
     }
 }
 """
@@ -872,7 +940,7 @@ This blog is powered by Fragments4k - a framework-agnostic Markdown-based blog l
 
         val content =
             when (framework) {
-                "spring-boot" ->
+                "spring-boot" -> {
                     """
 server.port=8080
 server.servlet.context-path=/
@@ -880,18 +948,26 @@ spring.thymeleaf.prefix=classpath:/templates/
 spring.thymeleaf.suffix=.html
 logging.level.io.github.rygel.fragments=INFO
 """
-                "quarkus" ->
+                }
+
+                "quarkus" -> {
                     """
 quarkus.http.port=8080
 quarkus.application.name=fragments-blog
 quarkus.log.category."io.github.rygel.fragments".level=INFO
 """
-                "micronaut" ->
+                }
+
+                "micronaut" -> {
                     """
 micronaut.server.port=8080
 micronaut.application.name=fragments-blog
 """
-                else -> ""
+                }
+
+                else -> {
+                    ""
+                }
             }
 
         if (content.isNotEmpty()) {
@@ -960,13 +1036,13 @@ A blog powered by Fragments4k with $framework.
 
 ### Build and Run
 
-\`\`\`bash
+````bash
 # Build the project
 mvn clean install
 
 # Run the application
 $runCommand
-\`\`\`
+````
 
 ### Access Your Blog
 
@@ -978,13 +1054,13 @@ Open your browser and navigate to:
 
 ## Content Management
 
-Edit content files in the \`content/\` directory:
-- \`content/pages/\` - Static pages
-- \`content/blog/\` - Blog posts organized by year/month
+Edit content files in the ``content/`` directory:
+- ``content/pages/`` - Static pages
+- ``content/blog/`` - Blog posts organized by year/month
 
 Each content file is a Markdown file with YAML front matter:
 
-\`\`\`markdown
+````markdown
 ---
 title: "Post Title"
 date: 2024-03-04
@@ -994,12 +1070,36 @@ categories: [category]
 ---
 
 # Content here
-\`\`\`
+````
+
+## Content Security
+
+Fragments4k sanitizes all HTML content before rendering using an OWASP-style
+safelist. By default it uses a relaxed profile suitable for trusted authors.
+
+If your site accepts content from untrusted authors, switch to strict mode:
+
+````kotlin
+val parser = MarkdownParser(sanitizerProfile = SanitizerProfile.STRICT)
+````
+
+See the Fragments4k documentation for details on configuring the sanitizer.
+
+## Production Checklist
+
+Before deploying to production:
+
+- [ ] Set ``siteUrl`` to your real domain in ``FragmentsEngine`` configuration
+- [ ] Review and tighten the Content Security Policy (CSP) headers
+- [ ] Configure ``urlBuilder`` for your URL scheme
+- [ ] Run ``mvn test`` and ensure all tests pass
+- [ ] Keep dependencies current — check for updates regularly
+- [ ] Remove or password-protect draft content before launch
 
 ## Customization
 
-- Templates: \`src/main/resources/templates/\`
-- Configuration: \`src/main/resources/application.properties\`
+- Templates: ``src/main/resources/templates/``
+- Configuration: ``src/main/resources/application.properties``
 
 ## Learn More
 

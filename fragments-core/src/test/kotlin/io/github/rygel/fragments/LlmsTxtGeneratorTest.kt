@@ -232,12 +232,68 @@ class LlmsTxtGeneratorTest {
             assertTrue(newerIndex < olderIndex, "Newer post should appear before older post")
         }
 
+    @Test
+    fun fragmentsWithoutResolvedUrlAreExcluded() =
+        runBlocking {
+            val repo = InMemoryFragmentRepository()
+            repo.addFragment(
+                createFragment(
+                    "resolved-post",
+                    "Resolved Post",
+                    template = "blog_post",
+                    date = LocalDateTime.of(2024, 3, 15, 10, 0),
+                    preview = "<p>A resolved blog post.</p>",
+                    resolvedUrl = "/blog/2024/03/resolved-post",
+                ),
+            )
+            repo.addFragment(
+                createFragment(
+                    "unresolved-post",
+                    "Unresolved Post",
+                    template = "blog_post",
+                    date = LocalDateTime.of(2024, 4, 1, 10, 0),
+                    preview = "<p>An unresolved blog post.</p>",
+                ).copy(resolvedUrl = null),
+            )
+            repo.addFragment(
+                createFragment(
+                    "resolved-page",
+                    "Resolved Page",
+                    template = "page",
+                    preview = "<p>A resolved page.</p>",
+                    resolvedUrl = "/about",
+                ),
+            )
+            repo.addFragment(
+                createFragment(
+                    "unresolved-page",
+                    "Unresolved Page",
+                    template = "page",
+                    preview = "<p>An unresolved page.</p>",
+                ).copy(resolvedUrl = null),
+            )
+
+            val result =
+                LlmsTxtGenerator.generate(
+                    siteTitle = "Test",
+                    siteDescription = "Test",
+                    siteUrl = "https://example.com",
+                    repositories = listOf(repo),
+                )
+
+            assertTrue(result.contains("Resolved Post"))
+            assertFalse(result.contains("Unresolved Post"))
+            assertTrue(result.contains("Resolved Page"))
+            assertFalse(result.contains("Unresolved Page"))
+        }
+
     private fun createFragment(
         slug: String,
         title: String,
         template: String = "default",
         date: LocalDateTime? = null,
         preview: String = "<p>Preview text</p>",
+        resolvedUrl: String = "/$slug",
     ): Fragment =
         Fragment(
             slug = slug,
@@ -249,5 +305,6 @@ class LlmsTxtGeneratorTest {
             template = template,
             visible = true,
             frontMatter = mapOf("title" to title, "slug" to slug),
+            resolvedUrl = resolvedUrl,
         )
 }

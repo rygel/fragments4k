@@ -21,7 +21,7 @@ class ModuleDependencyRulesTest {
     // -- Core isolation -------------------------------------------------------
 
     @Test
-    fun `core must not depend on any adapter module`() {
+    fun testCoreMustNotDependOnAnyAdapterModule() {
         noClasses()
             .that()
             .resideInAPackage("io.github.rygel.fragments")
@@ -48,39 +48,136 @@ class ModuleDependencyRulesTest {
     }
 
     @Test
-    fun `http4k adapter must not depend on other adapters`() {
+    fun testHttp4kAdapterMustNotDependOnOtherAdapters() {
         adapterMustNotDependOnOtherAdapters("io.github.rygel.fragments.http4k..")
     }
 
     @Test
-    fun `javalin adapter must not depend on other adapters`() {
+    fun testJavalinAdapterMustNotDependOnOtherAdapters() {
         adapterMustNotDependOnOtherAdapters("io.github.rygel.fragments.javalin..")
     }
 
     @Test
-    fun `spring adapter must not depend on other adapters`() {
+    fun testSpringAdapterMustNotDependOnOtherAdapters() {
         adapterMustNotDependOnOtherAdapters("io.github.rygel.fragments.spring..")
     }
 
     @Test
-    fun `quarkus adapter must not depend on other adapters`() {
+    fun testQuarkusAdapterMustNotDependOnOtherAdapters() {
         adapterMustNotDependOnOtherAdapters("io.github.rygel.fragments.quarkus..")
     }
 
     @Test
-    fun `micronaut adapter must not depend on other adapters`() {
+    fun testMicronautAdapterMustNotDependOnOtherAdapters() {
         adapterMustNotDependOnOtherAdapters("io.github.rygel.fragments.micronaut..")
     }
 
     // -- Cycle detection ------------------------------------------------------
 
     @Test
-    fun `there must be no cyclic dependencies between packages`() {
+    fun testNoCyclicDependenciesBetweenPackages() {
         slices()
             .matching("io.github.rygel.fragments.(*)..")
             .should()
             .beFreeOfCycles()
             .because("cyclic dependencies make the library impossible to split or evolve independently")
+            .check(classes)
+    }
+
+    // -- Feature module isolation ---------------------------------------------
+
+    private val featurePackages =
+        listOf(
+            "io.github.rygel.fragments.blog..",
+            "io.github.rygel.fragments.rss..",
+            "io.github.rygel.fragments.sitemap..",
+            "io.github.rygel.fragments.image..",
+            "io.github.rygel.fragments.navigation..",
+            "io.github.rygel.fragments.social..",
+            "io.github.rygel.fragments.seo..",
+            "io.github.rygel.fragments.chat..",
+            "io.github.rygel.fragments.cache..",
+        )
+
+    private val allowedFeatureDependencies =
+        mapOf(
+            "io.github.rygel.fragments.lucene.." to
+                setOf(
+                    "io.github.rygel.fragments.blog..",
+                    "io.github.rygel.fragments.cache..",
+                ),
+        )
+
+    @Test
+    fun testFeatureModulesMustNotDependOnAdapterCore() {
+        noClasses()
+            .that()
+            .resideInAnyPackage(*allFeaturePackages.toTypedArray())
+            .should()
+            .dependOnClassesThat()
+            .resideInAnyPackage("io.github.rygel.fragments.adapter..")
+            .because("feature modules must not depend on adapter-core (routing/validation concerns)")
+            .check(classes)
+    }
+
+    private val allFeaturePackages =
+        listOf(
+            "io.github.rygel.fragments.blog..",
+            "io.github.rygel.fragments.rss..",
+            "io.github.rygel.fragments.lucene..",
+            "io.github.rygel.fragments.sitemap..",
+            "io.github.rygel.fragments.image..",
+            "io.github.rygel.fragments.navigation..",
+            "io.github.rygel.fragments.social..",
+            "io.github.rygel.fragments.seo..",
+            "io.github.rygel.fragments.chat..",
+            "io.github.rygel.fragments.cache..",
+        )
+
+    @Test
+    fun testFeatureModulesMustNotDependOnOtherFeatureModules() {
+        for (feature in allFeaturePackages) {
+            val allowed = allowedFeatureDependencies[feature] ?: emptySet()
+            val others =
+                allFeaturePackages
+                    .filter { it != feature && it !in allowed }
+                    .toTypedArray()
+            noClasses()
+                .that()
+                .resideInAPackage(feature)
+                .should()
+                .dependOnClassesThat()
+                .resideInAnyPackage(*others)
+                .because(
+                    "feature module ${feature.removeSuffix(
+                        "..",
+                    )} must be self-contained (allowed: ${allowed.map { it.removeSuffix("..") }})",
+                ).check(classes)
+        }
+    }
+
+    @Test
+    fun testCliMustNotDependOnFeatureModules() {
+        noClasses()
+            .that()
+            .resideInAPackage("io.github.rygel.fragments.cli..")
+            .should()
+            .dependOnClassesThat()
+            .resideInAnyPackage(*allFeaturePackages.toTypedArray())
+            .because("CLI generator should only produce project scaffolding, not depend on feature modules")
+            .check(classes)
+    }
+
+    @Test
+    fun testDemoPackagesMustNotAppearInLibraryModules() {
+        noClasses()
+            .that()
+            .resideOutsideOfPackages(
+                "io.github.rygel.fragments.cli..",
+                "io.github.rygel.fragments.demo..",
+            ).should()
+            .haveNameMatching(".*Demo.*")
+            .because("demo classes belong only in the CLI or demo packages")
             .check(classes)
     }
 

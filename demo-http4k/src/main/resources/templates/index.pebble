@@ -95,7 +95,11 @@
         <h2 class="fragment-title">{{ fragment.title }}</h2>
         <p class="fragment-date">{{ fragment.formattedDate }}</p>
         <div class="fragment-content">{{ fragment.contentPreview }}</div>
-        <p><a href="{{ fragment.slug }}">Read more &rarr;</a></p>
+        {% if fragment.template == 'blog' or fragment.template == 'blog_post' %}
+        <p><a href="/blog/{{ fragment.year }}/{{ fragment.month }}/{{ fragment.slug }}">Read more &rarr;</a></p>
+        {% else %}
+        <p><a href="/page/{{ fragment.slug }}">Read more &rarr;</a></p>
+        {% endif %}
     </article>
     {% endfor %}
  

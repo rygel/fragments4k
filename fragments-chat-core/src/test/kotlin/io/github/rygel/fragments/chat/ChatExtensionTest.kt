@@ -14,37 +14,37 @@ class ChatExtensionTest {
     // -------------------------------------------------------------------------
 
     @Test
-    fun `chat block renders container div`() {
+    fun testChatBlockRendersContainerDiv() {
         val result = render("```chat\nUser: Hello\nAssistant: Hi\n```")
         assertTrue(result.contains("class=\"chat-container\""), "Expected chat-container div")
     }
 
     @Test
-    fun `user speaker gets user modifier class`() {
+    fun testUserSpeakerGetsUserModifierClass() {
         val result = render("```chat\nUser: Hello there\n```")
         assertTrue(result.contains("chat-message--user"), "Expected user modifier class")
     }
 
     @Test
-    fun `non-user speaker gets assistant modifier class`() {
+    fun testNonUserSpeakerGetsAssistantModifierClass() {
         val result = render("```chat\nAssistant: Hello back\n```")
         assertTrue(result.contains("chat-message--assistant"), "Expected assistant modifier class")
     }
 
     @Test
-    fun `speaker label is rendered in chat-speaker span`() {
+    fun testSpeakerLabelRenderedInChatSpeakerSpan() {
         val result = render("```chat\nUser: Hi\n```")
         assertTrue(result.contains("<span class=\"chat-speaker\">User</span>"), "Expected speaker span")
     }
 
     @Test
-    fun `message text is rendered in chat-text span`() {
+    fun testMessageTextRenderedInChatTextSpan() {
         val result = render("```chat\nUser: Hello world\n```")
         assertTrue(result.contains("<span class=\"chat-text\">Hello world</span>"), "Expected text span")
     }
 
     @Test
-    fun `multiple turns produce multiple message divs`() {
+    fun testMultipleTurnsProduceMultipleMessageDivs() {
         val result =
             render(
                 """
@@ -63,19 +63,19 @@ class ChatExtensionTest {
     // -------------------------------------------------------------------------
 
     @Test
-    fun `user speaker name is case-insensitive`() {
+    fun testUserSpeakerNameIsCaseInsensitive() {
         val result = render("```chat\nUSER: Hello\n```")
         assertTrue(result.contains("chat-message--user"))
     }
 
     @Test
-    fun `human is recognised as user speaker by default`() {
+    fun testHumanIsRecognisedAsUserSpeakerByDefault() {
         val result = render("```chat\nHuman: Hey\n```")
         assertTrue(result.contains("chat-message--user"))
     }
 
     @Test
-    fun `custom user speaker set is respected`() {
+    fun testCustomUserSpeakerSetIsRespected() {
         val customParser =
             MarkdownParser(
                 extraExtensions = listOf(ChatExtension.create(userSpeakers = setOf("alice"))),
@@ -90,7 +90,7 @@ class ChatExtensionTest {
     // -------------------------------------------------------------------------
 
     @Test
-    fun `continuation lines are appended to the current message`() {
+    fun testContinuationLinesAppendedToCurrentMessage() {
         val result =
             render(
                 """
@@ -105,7 +105,7 @@ class ChatExtensionTest {
     }
 
     @Test
-    fun `blank lines inside block are ignored`() {
+    fun testBlankLinesInsideBlockAreIgnored() {
         val result =
             render(
                 """
@@ -124,7 +124,7 @@ class ChatExtensionTest {
     // -------------------------------------------------------------------------
 
     @Test
-    fun `speaker and text are HTML-escaped`() {
+    fun testSpeakerAndTextAreHtmlEscaped() {
         val result = render("```chat\nUser: <script>alert(1)</script>\n```")
         assertFalse(result.contains("<script>"), "Raw script tag must not appear in output")
         assertTrue(result.contains("&lt;script&gt;"), "Script tag must be escaped")
@@ -135,14 +135,14 @@ class ChatExtensionTest {
     // -------------------------------------------------------------------------
 
     @Test
-    fun `non-chat fenced block is rendered normally`() {
+    fun testNonChatFencedBlockRenderedNormally() {
         val result = render("```kotlin\nfun hello() = println(\"Hello\")\n```")
         assertFalse(result.contains("chat-container"), "Non-chat block must not produce chat HTML")
         assertTrue(result.contains("<code"), "Non-chat block must produce code element")
     }
 
     @Test
-    fun `plain fenced block without info string is rendered normally`() {
+    fun testPlainFencedBlockWithoutInfoStringRenderedNormally() {
         val result = render("```\nsome code\n```")
         assertFalse(result.contains("chat-container"))
     }
@@ -152,13 +152,13 @@ class ChatExtensionTest {
     // -------------------------------------------------------------------------
 
     @Test
-    fun `empty chat block produces no output`() {
+    fun testEmptyChatBlockProducesNoOutput() {
         val result = render("```chat\n```")
         assertFalse(result.contains("chat-container"), "Empty block should not produce container")
     }
 
     @Test
-    fun `line with space in speaker label is treated as continuation`() {
+    fun testLineWithSpaceInSpeakerLabelTreatedAsContinuation() {
         // "Dr Smith: Hi" has a space — should NOT start a new turn; treated as continuation
         val result =
             render(

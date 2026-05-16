@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.github.rygel</groupId>
         <artifactId>fragments-parent</artifactId>
-        <version>0.6.5</version>
+        <version>0.6.6</version>
     </parent>
 
     <artifactId>fragments-spring-boot</artifactId>
@@ -14,7 +14,8 @@
     <description>Spring Boot web framework adapter</description>
 
     <properties>
-        <spring-boot.version>4.0.5</spring-boot.version>
+        <spring-boot.version>4.0.6</spring-boot.version>
+        <tomcat.version>11.0.22</tomcat.version>
     </properties>
 
     <dependencyManagement>

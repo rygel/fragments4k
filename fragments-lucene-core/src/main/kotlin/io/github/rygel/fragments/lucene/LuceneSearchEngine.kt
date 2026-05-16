@@ -3,6 +3,8 @@ package io.github.rygel.fragments.lucene
 import io.github.rygel.fragments.Fragment
 import io.github.rygel.fragments.FragmentRepository
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.apache.lucene.analysis.standard.StandardAnalyzer
 import org.apache.lucene.document.Document
@@ -10,6 +12,7 @@ import org.apache.lucene.document.Field
 import org.apache.lucene.document.StringField
 import org.apache.lucene.document.TextField
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser
+import org.apache.lucene.queryparser.classic.ParseException
 import org.apache.lucene.queryparser.classic.QueryParser
 import org.apache.lucene.search.BooleanClause
 import org.apache.lucene.search.BooleanQuery
@@ -22,6 +25,7 @@ import org.apache.lucene.search.WildcardQuery
 import org.apache.lucene.store.ByteBuffersDirectory
 import org.apache.lucene.store.Directory
 import org.apache.lucene.store.FSDirectory
+import org.slf4j.LoggerFactory
 import java.nio.file.Path
 
 data class SearchResult(
@@ -51,11 +55,29 @@ data class SearchSuggestion(
     }
 }
 
+/**
+ * Lucene-backed full-text search engine for fragment content.
+ *
+ * When [indexPath] is provided, the index is persisted to disk via [FSDirectory].
+ * Ensure the directory has appropriate OS-level file permissions (read/write for the
+ * application user, no access for others) to prevent unauthorized index manipulation.
+ * When `null`, an in-memory [ByteBuffersDirectory] is used instead.
+ */
 class LuceneSearchEngine(
     private val repositories: List<FragmentRepository>,
     private val indexPath: Path? = null,
 ) {
     constructor(repository: FragmentRepository, indexPath: Path? = null) : this(listOf(repository), indexPath)
+
+    companion object {
+        private const val TITLE_BOOST = 2.0f
+        private const val CONTENT_BOOST = 1.0f
+        private const val MAX_TAG_CATEGORY_RESULTS = 100
+        private const val MAX_QUERY_LENGTH = 500
+        private const val MIN_AUTOCOMPLETE_PREFIX_LENGTH = 2
+        private val WHITESPACE = Regex("\\s+")
+        private val logger = LoggerFactory.getLogger(LuceneSearchEngine::class.java)
+    }
 
     private val analyzer = StandardAnalyzer()
     private val directory: org.apache.lucene.store.Directory =
@@ -67,66 +89,83 @@ class LuceneSearchEngine(
 
     @Volatile private var reader: org.apache.lucene.index.DirectoryReader? = null
 
+    @Volatile private var slugToFragment: Map<String, Fragment> = emptyMap()
+    private val indexMutex = Mutex()
+
     suspend fun index() =
-        withContext(Dispatchers.IO) {
-            val config =
-                org.apache.lucene.index
-                    .IndexWriterConfig(analyzer)
-            val writer =
-                org.apache.lucene.index
-                    .IndexWriter(directory, config)
-            writer.deleteAll()
+        indexMutex.withLock {
+            withContext(Dispatchers.IO) {
+                val config =
+                    org.apache.lucene.index
+                        .IndexWriterConfig(analyzer)
+                val writer =
+                    org.apache.lucene.index
+                        .IndexWriter(directory, config)
+                writer.deleteAll()
 
-            val fragments = repositories.flatMap { it.getAllVisible() }
+                val fragments = repositories.flatMap { it.getAllVisible() }
 
-            fragments.forEach { fragment ->
-                val doc = Document()
-                doc.add(StringField("slug", fragment.slug, Field.Store.YES))
-                doc.add(StringField("url", fragment.url, Field.Store.YES))
-                doc.add(TextField("title", fragment.title, Field.Store.YES))
-                doc.add(TextField("content", fragment.contentTextOnly, Field.Store.NO))
-                doc.add(TextField("preview", fragment.previewTextOnly, Field.Store.NO))
-                fragment.tags.forEach { tag ->
-                    doc.add(StringField("tag", tag, Field.Store.YES))
+                fragments.forEach { fragment ->
+                    val doc = Document()
+                    doc.add(StringField("slug", fragment.slug, Field.Store.YES))
+                    doc.add(StringField("url", fragment.url, Field.Store.YES))
+                    doc.add(TextField("title", fragment.title, Field.Store.YES))
+                    doc.add(TextField("content", fragment.contentTextOnly, Field.Store.NO))
+                    doc.add(TextField("preview", fragment.previewTextOnly, Field.Store.NO))
+                    fragment.tags.forEach { tag ->
+                        doc.add(StringField("tag", tag, Field.Store.YES))
+                    }
+                    fragment.categories.forEach { category ->
+                        doc.add(StringField("category", category, Field.Store.YES))
+                    }
+                    fragment.date?.let { date ->
+                        doc.add(StringField("date", date.toString(), Field.Store.YES))
+                    }
+                    writer.addDocument(doc)
                 }
-                fragment.categories.forEach { category ->
-                    doc.add(StringField("category", category, Field.Store.YES))
+
+                writer.commit()
+                writer.close()
+
+                reader = reader?.let {
+                    org.apache.lucene.index.DirectoryReader
+                        .openIfChanged(it) ?: it
                 }
-                fragment.date?.let { date ->
-                    doc.add(StringField("date", date.toString(), Field.Store.YES))
-                }
-                writer.addDocument(doc)
+                    ?: org.apache.lucene.index.DirectoryReader
+                        .open(directory)
+
+                slugToFragment = repositories.flatMap { it.getAllVisible() }.associateBy { it.slug }
             }
-
-            writer.commit()
-            writer.close()
-
-            reader = reader?.let {
-                org.apache.lucene.index.DirectoryReader
-                    .openIfChanged(it) ?: it
-            }
-                ?: org.apache.lucene.index.DirectoryReader
-                    .open(directory)
         }
 
     private fun requireReader(): org.apache.lucene.index.DirectoryReader =
         reader ?: error("Search index not initialised — call index() first")
+
+    private inline fun <T> withSearcher(block: (IndexSearcher) -> List<T>): List<T> {
+        val currentReader = reader ?: return emptyList()
+        val searcher = IndexSearcher(currentReader)
+        return block(searcher)
+    }
 
     suspend fun search(
         queryString: String,
         maxResults: Int = 10,
     ): List<SearchResult> =
         withContext(Dispatchers.IO) {
-            search(SearchOptions(query = queryString, maxResults = maxResults))
+            val trimmed = queryString.trim()
+            if (trimmed.isBlank() || trimmed.length > MAX_QUERY_LENGTH) {
+                return@withContext emptyList()
+            }
+            val clampedResults = maxResults.coerceIn(1, MAX_TAG_CATEGORY_RESULTS)
+            search(SearchOptions(query = trimmed, maxResults = clampedResults))
         }
 
     suspend fun search(options: SearchOptions): List<SearchResult> =
         withContext(Dispatchers.IO) {
-            val fragmentsBySlug = repositories.flatMap { it.getAllVisible() }.associateBy { it.slug }
+            val fragmentsBySlug = slugToFragment
+            val query = buildQuery(options) ?: return@withContext emptyList()
 
-            org.apache.lucene.index.DirectoryReader.open(directory).use { reader ->
-                val searcher = IndexSearcher(reader)
-                val query = buildQuery(options)
+            withSearcher { searcher ->
                 val maxResults = if (options.autocomplete) options.autocompleteLimit else options.maxResults
                 val topDocs = searcher.search(query, maxResults)
 
@@ -142,17 +181,19 @@ class LuceneSearchEngine(
         limit: Int = 10,
     ): List<SearchSuggestion> =
         withContext(Dispatchers.IO) {
-            if (query.isBlank()) return@withContext emptyList()
+            val trimmed = query.trim()
+            if (trimmed.isBlank() || trimmed.length > MAX_QUERY_LENGTH) return@withContext emptyList()
+            if (trimmed.length < MIN_AUTOCOMPLETE_PREFIX_LENGTH) return@withContext emptyList()
 
-            val lowerQuery = query.lowercase()
-            org.apache.lucene.index.DirectoryReader.open(directory).use { reader ->
-                val searcher = IndexSearcher(reader)
+            val clampedLimit = limit.coerceIn(1, MAX_TAG_CATEGORY_RESULTS)
+            val lowerQuery = trimmed.lowercase()
+            withSearcher { searcher ->
                 val titleQuery =
                     WildcardQuery(
                         org.apache.lucene.index
                             .Term("title", "$lowerQuery*"),
                     )
-                val topDocs = searcher.search(titleQuery, limit * 3)
+                val topDocs = searcher.search(titleQuery, clampedLimit * 3)
 
                 val suggestions = mutableSetOf<SearchSuggestion>()
                 topDocs.scoreDocs.forEach { scoreDoc ->
@@ -173,7 +214,7 @@ class LuceneSearchEngine(
                         }
                     }
                 }
-                suggestions.take(limit).toList()
+                suggestions.take(clampedLimit).toList()
             }
         }
 
@@ -182,23 +223,28 @@ class LuceneSearchEngine(
         limit: Int = 10,
     ): List<SearchSuggestion> = autocomplete(query, limit)
 
-    private fun buildQuery(options: SearchOptions): Query =
+    private fun buildQuery(options: SearchOptions): Query? =
         when {
             options.phraseSearch -> buildPhraseQuery(options.query)
             options.fuzzySearch -> buildFuzzyQuery(options.query, options.fuzzyThreshold)
             else -> buildStandardQuery(options.query)
         }
 
-    private fun buildStandardQuery(query: String): Query {
+    private fun buildStandardQuery(query: String): Query? {
         val fields = arrayOf("title", "content")
-        val boosts = mapOf("title" to 2.0f, "content" to 1.0f)
+        val boosts = mapOf("title" to TITLE_BOOST, "content" to CONTENT_BOOST)
         val parser = MultiFieldQueryParser(fields, analyzer, boosts)
         parser.defaultOperator = QueryParser.Operator.AND
-        return parser.parse(query)
+        return try {
+            parser.parse(query)
+        } catch (e: ParseException) {
+            logger.warn("Failed to parse search query '{}': {}", query, e.message)
+            null
+        }
     }
 
     private fun buildPhraseQuery(query: String): Query {
-        val terms = query.split("\\s+".toRegex()).filter { it.isNotEmpty() }
+        val terms = query.split(WHITESPACE).filter { it.isNotEmpty() }
 
         // Build a phrase query for each field, combine with SHOULD so either field can satisfy
         val booleanQuery = BooleanQuery.Builder()
@@ -220,7 +266,7 @@ class LuceneSearchEngine(
         query: String,
         threshold: Float,
     ): Query {
-        val terms = query.split("\\s+".toRegex()).filter { it.isNotEmpty() }
+        val terms = query.split(WHITESPACE).filter { it.isNotEmpty() }
         val booleanQuery = BooleanQuery.Builder()
 
         terms.forEach { term ->
@@ -238,16 +284,15 @@ class LuceneSearchEngine(
 
     suspend fun searchByTag(tag: String): List<Fragment> =
         withContext(Dispatchers.IO) {
-            val fragmentsBySlug = repositories.flatMap { it.getAllVisible() }.associateBy { it.slug }
+            val fragmentsBySlug = slugToFragment
 
-            org.apache.lucene.index.DirectoryReader.open(directory).use { reader ->
-                val searcher = IndexSearcher(reader)
+            withSearcher { searcher ->
                 val query =
                     TermQuery(
                         org.apache.lucene.index
                             .Term("tag", tag.lowercase()),
                     )
-                val topDocs = searcher.search(query, 100)
+                val topDocs = searcher.search(query, MAX_TAG_CATEGORY_RESULTS)
 
                 topDocs.scoreDocs.mapNotNull { scoreDoc ->
                     fragmentsBySlug[searcher.storedFields().document(scoreDoc.doc).get("slug")]
@@ -257,16 +302,15 @@ class LuceneSearchEngine(
 
     suspend fun searchByCategory(category: String): List<Fragment> =
         withContext(Dispatchers.IO) {
-            val fragmentsBySlug = repositories.flatMap { it.getAllVisible() }.associateBy { it.slug }
+            val fragmentsBySlug = slugToFragment
 
-            org.apache.lucene.index.DirectoryReader.open(directory).use { reader ->
-                val searcher = IndexSearcher(reader)
+            withSearcher { searcher ->
                 val query =
                     TermQuery(
                         org.apache.lucene.index
                             .Term("category", category.lowercase()),
                     )
-                val topDocs = searcher.search(query, 100)
+                val topDocs = searcher.search(query, MAX_TAG_CATEGORY_RESULTS)
 
                 topDocs.scoreDocs.mapNotNull { scoreDoc ->
                     fragmentsBySlug[searcher.storedFields().document(scoreDoc.doc).get("slug")]

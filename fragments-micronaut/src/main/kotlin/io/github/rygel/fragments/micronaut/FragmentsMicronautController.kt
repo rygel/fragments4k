@@ -2,9 +2,18 @@ package io.github.rygel.fragments.micronaut
 
 import io.github.rygel.fragments.AuthorViewModel
 import io.github.rygel.fragments.FragmentViewModel
+import io.github.rygel.fragments.adapter.ArchiveViewModel
+import io.github.rygel.fragments.adapter.AuthorPageViewModel
+import io.github.rygel.fragments.adapter.BlogOverviewViewModel
+import io.github.rygel.fragments.adapter.CategoryViewModel
+import io.github.rygel.fragments.adapter.ContentViewModel
 import io.github.rygel.fragments.adapter.FragmentsEngine
+import io.github.rygel.fragments.adapter.HomeViewModel
+import io.github.rygel.fragments.adapter.SearchViewModel
+import io.github.rygel.fragments.adapter.TagViewModel
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpResponse
+import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Get
 import io.micronaut.http.annotation.Produces
@@ -23,8 +32,10 @@ class FragmentsMicronautController
             val isPartial = isHtmxRequest(headers)
             val viewModel =
                 HomeViewModel(
-                    fragments = fragments.map { FragmentViewModel(it, isPartial) },
+                    fragments = fragments.map { FragmentViewModel(it, isPartial, siteUrl = engine.siteUrl) },
                     isPartialRender = isPartial,
+                    navigationMenu = engine.nav(),
+                    footer = engine.footer(),
                 )
             return HttpResponse.ok(viewModel)
         }
@@ -37,10 +48,17 @@ class FragmentsMicronautController
             val fragment = engine.getPage(slug)
             val isPartial = isHtmxRequest(headers)
             return if (fragment != null) {
-                val viewModel = FragmentViewModel(fragment, isPartial)
-                HttpResponse.ok(viewModel)
+                val contentViewModel =
+                    ContentViewModel(
+                        viewModel = FragmentViewModel(fragment, isPartial, siteUrl = engine.siteUrl),
+                        templateName = fragment.template,
+                        navigationMenu = engine.nav(),
+                        footer = engine.footer(),
+                        socialShareLinks = engine.socialShareLinks(fragment.title, fragment.url),
+                    )
+                HttpResponse.ok(contentViewModel)
             } else {
-                HttpResponse.notFound("Page not found")
+                throw NoSuchElementException("Page not found")
             }
         }
 
@@ -53,12 +71,15 @@ class FragmentsMicronautController
             val isPartial = isHtmxRequest(headers)
             val viewModel =
                 BlogOverviewViewModel(
-                    fragments = pageResult.items.map { FragmentViewModel(it, isPartial) },
+                    fragments = pageResult.items.map { FragmentViewModel(it, isPartial, siteUrl = engine.siteUrl) },
                     currentPage = pageResult.currentPage,
                     totalPages = pageResult.totalPages,
                     hasNext = pageResult.hasNext,
                     hasPrevious = pageResult.hasPrevious,
                     isPartialRender = isPartial,
+                    navigationMenu = engine.nav(),
+                    pagination = engine.pagination(pageResult.currentPage, pageResult.totalPages, "/blog"),
+                    footer = engine.footer(),
                 )
             return HttpResponse.ok(viewModel)
         }
@@ -79,10 +100,17 @@ class FragmentsMicronautController
             val fragment = engine.getBlogPost(year, month, slug)
             val isPartial = isHtmxRequest(headers)
             return if (fragment != null) {
-                val viewModel = FragmentViewModel(fragment, isPartial)
-                HttpResponse.ok(viewModel)
+                val contentViewModel =
+                    ContentViewModel(
+                        viewModel = FragmentViewModel(fragment, isPartial, siteUrl = engine.siteUrl),
+                        templateName = fragment.template,
+                        navigationMenu = engine.nav(),
+                        footer = engine.footer(),
+                        socialShareLinks = engine.socialShareLinks(fragment.title, fragment.url),
+                    )
+                HttpResponse.ok(contentViewModel)
             } else {
-                HttpResponse.notFound("Post not found")
+                throw NoSuchElementException("Post not found")
             }
         }
 
@@ -97,12 +125,15 @@ class FragmentsMicronautController
             val viewModel =
                 TagViewModel(
                     tag = tag,
-                    fragments = pageResult.items.map { FragmentViewModel(it, isPartial) },
+                    fragments = pageResult.items.map { FragmentViewModel(it, isPartial, siteUrl = engine.siteUrl) },
                     currentPage = pageResult.currentPage,
                     totalPages = pageResult.totalPages,
                     hasNext = pageResult.hasNext,
                     hasPrevious = pageResult.hasPrevious,
                     isPartialRender = isPartial,
+                    navigationMenu = engine.nav(),
+                    pagination = engine.pagination(pageResult.currentPage, pageResult.totalPages, "/blog/tag/$tag"),
+                    footer = engine.footer(),
                 )
             return HttpResponse.ok(viewModel)
         }
@@ -118,12 +149,15 @@ class FragmentsMicronautController
             val viewModel =
                 CategoryViewModel(
                     category = category,
-                    fragments = pageResult.items.map { FragmentViewModel(it, isPartial) },
+                    fragments = pageResult.items.map { FragmentViewModel(it, isPartial, siteUrl = engine.siteUrl) },
                     currentPage = pageResult.currentPage,
                     totalPages = pageResult.totalPages,
                     hasNext = pageResult.hasNext,
                     hasPrevious = pageResult.hasPrevious,
                     isPartialRender = isPartial,
+                    navigationMenu = engine.nav(),
+                    pagination = engine.pagination(pageResult.currentPage, pageResult.totalPages, "/blog/category/$category"),
+                    footer = engine.footer(),
                 )
             return HttpResponse.ok(viewModel)
         }
@@ -140,14 +174,17 @@ class FragmentsMicronautController
             val viewModel =
                 AuthorPageViewModel(
                     authorSlug = slug,
-                    authorName = author?.author?.name,
+                    authorName = author?.name,
                     author = author,
-                    fragments = pageResult.items.map { FragmentViewModel(it, isPartial) },
+                    fragments = pageResult.items.map { FragmentViewModel(it, isPartial, siteUrl = engine.siteUrl) },
                     currentPage = pageResult.currentPage,
                     totalPages = pageResult.totalPages,
                     hasNext = pageResult.hasNext,
                     hasPrevious = pageResult.hasPrevious,
                     isPartialRender = isPartial,
+                    navigationMenu = engine.nav(),
+                    pagination = engine.pagination(pageResult.currentPage, pageResult.totalPages, "/blog/author/$slug"),
+                    footer = engine.footer(),
                 )
             return HttpResponse.ok(viewModel)
         }
@@ -163,20 +200,28 @@ class FragmentsMicronautController
                 .header("Content-Type", "application/rss+xml; charset=utf-8")
         }
 
+        @Get("/feed.xml")
+        @Produces(value = ["application/rss+xml;charset=utf-8"])
+        suspend fun feed(): HttpResponse<String> = rss()
+
         @Get("/blog/archive/{year}")
         suspend fun archiveYear(
             year: String,
             headers: HttpHeaders,
         ): HttpResponse<Any> {
-            val yearInt = year.toIntOrNull() ?: return HttpResponse.badRequest("Invalid year")
+            val yearInt = year.toIntOrNull() ?: throw IllegalArgumentException("Invalid year")
             val fragments = engine.getByYear(yearInt)
             val isPartial = isHtmxRequest(headers)
             val viewModel =
                 ArchiveViewModel(
                     type = "year",
                     year = year,
-                    fragments = fragments.map { FragmentViewModel(it, isPartial) },
+                    fragments = fragments.map { FragmentViewModel(it, isPartial, siteUrl = engine.siteUrl) },
                     siteTitle = engine.siteTitle,
+                    navigationMenu = engine.nav(),
+                    footer = engine.footer(),
+                    archiveYearLinks = engine.generateArchiveYearLinks(currentYear = yearInt),
+                    archiveBreadcrumbs = engine.generateArchiveBreadcrumbs(currentYear = yearInt),
                 )
             return HttpResponse.ok(viewModel)
         }
@@ -187,8 +232,8 @@ class FragmentsMicronautController
             month: String,
             headers: HttpHeaders,
         ): HttpResponse<Any> {
-            val yearInt = year.toIntOrNull() ?: return HttpResponse.badRequest("Invalid year")
-            val monthInt = month.toIntOrNull() ?: return HttpResponse.badRequest("Invalid month")
+            val yearInt = year.toIntOrNull() ?: throw IllegalArgumentException("Invalid year")
+            val monthInt = month.toIntOrNull() ?: throw IllegalArgumentException("Invalid month")
             val fragments = engine.getByYearMonth(yearInt, monthInt)
             val isPartial = isHtmxRequest(headers)
             val viewModel =
@@ -196,8 +241,12 @@ class FragmentsMicronautController
                     type = "year-month",
                     year = year,
                     month = month,
-                    fragments = fragments.map { FragmentViewModel(it, isPartial) },
+                    fragments = fragments.map { FragmentViewModel(it, isPartial, siteUrl = engine.siteUrl) },
                     siteTitle = engine.siteTitle,
+                    navigationMenu = engine.nav(),
+                    footer = engine.footer(),
+                    archiveMonthLinks = engine.generateArchiveMonthLinks(year = yearInt, currentMonth = monthInt),
+                    archiveBreadcrumbs = engine.generateArchiveBreadcrumbs(currentYear = yearInt, currentMonth = monthInt),
                 )
             return HttpResponse.ok(viewModel)
         }
@@ -212,11 +261,21 @@ class FragmentsMicronautController
             val viewModel =
                 SearchViewModel(
                     query = query,
-                    results = results.map { FragmentViewModel(it.fragment, isPartial) },
+                    results = results.map { FragmentViewModel(it.fragment, isPartial, siteUrl = engine.siteUrl) },
                     siteTitle = engine.siteTitle,
+                    navigationMenu = engine.nav(),
+                    footer = engine.footer(),
+                    searchForm = engine.searchForm(),
                 )
             return HttpResponse.ok(viewModel)
         }
+
+        @Get("/api/autocomplete")
+        @Produces(MediaType.APPLICATION_JSON)
+        suspend fun autocomplete(
+            @QueryValue q: String,
+            @QueryValue(defaultValue = "10") limit: Int,
+        ): HttpResponse<Any> = HttpResponse.ok(engine.autocomplete(q, limit))
 
         @Get("/sitemap.xml")
         @Produces("application/xml;charset=utf-8")
@@ -244,64 +303,4 @@ class FragmentsMicronautController
                 .ok(body)
                 .header("Content-Type", "text/plain; charset=utf-8")
         }
-
-        data class HomeViewModel(
-            val fragments: List<FragmentViewModel>,
-            val isPartialRender: Boolean = false,
-        )
-
-        data class BlogOverviewViewModel(
-            val fragments: List<FragmentViewModel>,
-            val currentPage: Int,
-            val totalPages: Int,
-            val hasNext: Boolean = false,
-            val hasPrevious: Boolean = false,
-            val isPartialRender: Boolean = false,
-        )
-
-        data class TagViewModel(
-            val tag: String,
-            val fragments: List<FragmentViewModel>,
-            val currentPage: Int,
-            val totalPages: Int,
-            val hasNext: Boolean = false,
-            val hasPrevious: Boolean = false,
-            val isPartialRender: Boolean = false,
-        )
-
-        data class AuthorPageViewModel(
-            val authorSlug: String,
-            val authorName: String? = null,
-            val author: AuthorViewModel? = null,
-            val fragments: List<FragmentViewModel>,
-            val currentPage: Int,
-            val totalPages: Int,
-            val hasNext: Boolean = false,
-            val hasPrevious: Boolean = false,
-            val isPartialRender: Boolean = false,
-        )
-
-        data class CategoryViewModel(
-            val category: String,
-            val fragments: List<FragmentViewModel>,
-            val currentPage: Int,
-            val totalPages: Int,
-            val hasNext: Boolean = false,
-            val hasPrevious: Boolean = false,
-            val isPartialRender: Boolean = false,
-        )
-
-        data class ArchiveViewModel(
-            val type: String,
-            val year: String,
-            val month: String? = null,
-            val fragments: List<FragmentViewModel>,
-            val siteTitle: String,
-        )
-
-        data class SearchViewModel(
-            val query: String,
-            val results: List<FragmentViewModel>,
-            val siteTitle: String,
-        )
     }
