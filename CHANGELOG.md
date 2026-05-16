@@ -1,12 +1,17 @@
 # Changelog
 
-## [Unreleased]
+## [0.6.6] - 2026-05-16
 
 ### Added
 
 - **`/api/autocomplete` endpoint** — now available in Spring Boot, Quarkus, Micronaut, and Javalin adapters (was http4k-only).
 - **CSP headers** — configurable `Content-Security-Policy` in `FragmentsEngine`, wired in Spring Boot and http4k adapters.
 - **Social share links** — `SocialShareGenerator` integrated into `FragmentsEngine.socialShareLinks()`.
+- **Security headers** — `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` added to all 5 adapters via `FragmentsEngine.securityHeaders()`.
+- **Input validation** — centralized in `RequestValidation` and `FragmentsEngine`; slug validation uses `[a-z0-9]+(-[a-z0-9]+)*` pattern.
+- **Autocomplete prefix guard** — Lucene search engine enforces minimum prefix length.
+- **Sanitizer profiles** — configurable HTML sanitization profiles for different content contexts.
+- **Architecture tests** — expanded coverage for feature module boundaries.
 
 ### Changed
 
@@ -14,9 +19,18 @@
 - **View models deduplicated** — 28 duplicated data class definitions consolidated into 7 shared classes in `fragments-adapter-core`.
 - **Date WARN logs demoted to DEBUG** — standard `yyyy-MM-dd` dates no longer produce noisy warnings.
 - **Dependency updates**: kotlinx-coroutines 1.10.2 → 1.11.0.
+- **Regex constants extracted** — `WORDS_REGEX`, `HEADER_PATTERN`, `IMG_TAG_PATTERN` etc. moved to companion objects to avoid recompilation on hot paths.
+- **Slug-to-fragment map cached** in `LuceneSearchEngine` — rebuilt only during `index()`, not per-query.
+- **YAML parsing** — uses `SafeConstructor` to prevent deserialization attacks.
+- **Default `siteUrl` warning** — `FragmentsEngine` logs a warning when using the default `siteUrl`.
 
 ### Fixed
 
+- **Javalin 404 timeout** — replaced `throw NoSuchElementException` with direct `ctx.status(404).result(...)` in async handlers to avoid 120s timeouts.
+- **Consistent JSON error responses** — all adapters now return structured JSON for 400/404/500 errors via shared `ErrorResponse` factory methods.
+- **Path traversal** — `isWithinBasePath` now checks canonical paths with separator to prevent directory prefix attacks (e.g., `/data-evil` matching `/data`).
+- **`FileSystemAuthorRepository` extension filter** — was comparing `file.extension` (returns `"yml"`) against `".author.yml"`, never matching. Fixed to use `file.name.endsWith(extension)`.
+- **`FileSystemAuthorRepository.clear()`** — now clears slug-indexed map instead of incorrect ID-indexed map.
 - **`SeoMetadata.fromFragment` canonical URL** — now uses `fragment.url` instead of hardcoded `/page/{slug}`.
 - **`urlBuilder` wired into all adapter configurations** — sitemap, RSS, and llms.txt generators now produce correct absolute URLs. Previously `baseUrl` was silently ignored.
 - **Fragment computed properties cached** — `hasMoreTag`, `previewTextOnly`, `contentTextOnly` changed from recomputed getters to `by lazy` vals.
@@ -24,10 +38,10 @@
 - **`CachedFragmentRepository.getAll()`** — now properly cached (was bypassing cache entirely).
 - **Lucene `DirectoryReader` reuse** — search queries reuse the cached reader instead of opening a fresh one per request.
 - **Lucene `QueryParser`** — catches `ParseException` from malformed search queries instead of crashing.
-- **Error message leaks** — demos no longer expose exception messages to clients.
-- **Dependency check suppressions** — removed blanket CVE suppressions.
+- **Error message leaks** — demos and CLI error template no longer expose exception messages to clients.
+- **Dependency check suppressions** — removed blanket CVE suppressions; added targeted suppressions for Spring Boot transitive Tomcat CVEs.
 - **`LiveReloadManager`** — calls `repository.reload()` on file changes (was reading stale cache).
-- **Content relationship indexes cached** — rebuilt only on `reload()`, not on every lookup.
+- **Content relationship indexes cached** — rebuilt only on `reload()`, not on every lookup. Keyed by slug to prevent stale cross-slug results.
 - **Slug validation** — slugs validated against `[a-z0-9]+(-[a-z0-9]+)*` pattern; generated slugs trimmed.
 - **JSON escaping in revision repository** — `id`, `fragmentSlug`, `changedBy`, `changeReason` now escaped.
 - **CLI `ProjectGenerator`** — generated projects now use correct `FragmentsEngine` API (was generating uncompilable code).
@@ -35,6 +49,7 @@
 - **Demo content** — all five demo apps now include sample content (javalin, spring-boot, quarkus, micronaut were blank).
 - **Build** — child POM parent versions synced to 0.6.6-SNAPSHOT.
 - **ktlint** — when-entry formatting fixed across all adapter configurations and demo apps.
+- **CI Dep Scan** — added `mvn install` step before `dependency-check:check` to resolve SNAPSHOT inter-module dependencies.
 
 ### Removed
 
