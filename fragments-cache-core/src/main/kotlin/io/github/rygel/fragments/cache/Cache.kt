@@ -205,6 +205,18 @@ class InMemoryCache<K, V>(
             return cached
         }
 
+        val startTime = System.nanoTime()
+        val result = runCatching { compute() }
+        if (result.isFailure) {
+            if (configuration.recordStats) {
+                statistics.updateAndGet { it.loadFailure() }
+                logger.error("Cache load failure for key: $key")
+            }
+            throw result.exceptionOrNull()!!
+        }
+        val value = result.getOrNull()!!
+        val endTime = System.nanoTime()
+
         return mutex.withLock {
             val entry = store[key]
             if (entry != null && !entry.isExpired()) {
@@ -217,27 +229,14 @@ class InMemoryCache<K, V>(
                     store.remove(key)
                 }
 
-                val startTime = System.nanoTime()
-                var success = false
-                try {
-                    val value = compute()
-                    val endTime = System.nanoTime()
+                putEntry(key, value)
 
-                    putEntry(key, value)
-
-                    if (configuration.recordStats) {
-                        statistics.updateAndGet { it.load(endTime - startTime) }
-                        logger.debug("Cache compute and load for key: $key in ${endTime - startTime}ns")
-                    }
-
-                    success = true
-                    value
-                } finally {
-                    if (!success && configuration.recordStats) {
-                        statistics.updateAndGet { it.loadFailure() }
-                        logger.error("Cache load failure for key: $key")
-                    }
+                if (configuration.recordStats) {
+                    statistics.updateAndGet { it.load(endTime - startTime) }
+                    logger.debug("Cache compute and load for key: $key in ${endTime - startTime}ns")
                 }
+
+                value
             }
         }
     }

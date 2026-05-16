@@ -296,6 +296,59 @@ class LuceneSearchEngineTest {
             multiEngine.close()
         }
 
+    @Test
+    fun testSearchAfterCloseReturnsEmpty() =
+        runBlocking {
+            val repo2 = SimpleTestRepository()
+            repo2.addAll(testFragments())
+            val engine2 = LuceneSearchEngine(repo2)
+            engine2.index()
+
+            val resultsBeforeClose = engine2.search("Kotlin")
+            assertTrue(resultsBeforeClose.isNotEmpty(), "Should find results before close")
+
+            engine2.close()
+
+            val resultsAfterClose = engine2.search("Kotlin")
+            assertTrue(resultsAfterClose.isEmpty(), "Search after close should return empty results")
+        }
+
+    @Test
+    fun testAutocompleteAfterCloseReturnsEmpty() =
+        runBlocking {
+            val repo2 = SimpleTestRepository()
+            repo2.addAll(testFragments())
+            val engine2 = LuceneSearchEngine(repo2)
+            engine2.index()
+
+            engine2.close()
+
+            val suggestions = engine2.autocomplete("Kot")
+            assertTrue(suggestions.isEmpty(), "Autocomplete after close should return empty")
+        }
+
+    @Test
+    fun testIndexAfterCloseIsNoOp() =
+        runBlocking {
+            val repo2 = SimpleTestRepository()
+            repo2.addAll(testFragments())
+            val engine2 = LuceneSearchEngine(repo2)
+            engine2.index()
+
+            val resultsBeforeClose = engine2.search("Kotlin")
+            assertTrue(resultsBeforeClose.isNotEmpty())
+
+            engine2.close()
+
+            val engine3 = LuceneSearchEngine(repo2)
+            engine3.index()
+
+            val results = engine3.search("Kotlin")
+            assertTrue(results.isNotEmpty(), "New engine should work after old engine was closed")
+
+            engine3.close()
+        }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private fun testFragments() =

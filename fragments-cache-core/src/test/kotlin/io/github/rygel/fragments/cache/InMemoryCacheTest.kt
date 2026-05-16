@@ -214,6 +214,53 @@ class InMemoryCacheTest {
         }
 
     @Test
+    fun getOrComputeDoesNotDeadlockWhenComputeAccessesSameCache() =
+        runBlocking {
+            val deadlockCache =
+                InMemoryCache<String, String>(
+                    CacheConfiguration(recordStats = true),
+                )
+
+            var computeCalls = 0
+            val result =
+                deadlockCache.getOrCompute("outer") {
+                    computeCalls++
+                    deadlockCache.getOrCompute("inner") {
+                        "inner-value"
+                    }
+                    "outer-value"
+                }
+
+            assertEquals("outer-value", result)
+            assertEquals(1, computeCalls)
+            assertEquals("inner-value", deadlockCache.get("inner"))
+            assertEquals("outer-value", deadlockCache.get("outer"))
+        }
+
+    @Test
+    fun getOrComputeRecordsFailureOnException() =
+        runBlocking {
+            val errorCache =
+                InMemoryCache<String, String>(
+                    CacheConfiguration(recordStats = true),
+                )
+
+            var threw = false
+            try {
+                errorCache.getOrCompute("fail") {
+                    throw RuntimeException("boom")
+                }
+            } catch (e: RuntimeException) {
+                threw = true
+                assertEquals("boom", e.message)
+            }
+
+            assertTrue(threw)
+            val stats = errorCache.getStatistics()
+            assertEquals(1L, stats.loadFailureCount)
+        }
+
+    @Test
     fun resetStatisticsClearsAllStats() =
         runBlocking {
             cache.put("key1", "value1")
