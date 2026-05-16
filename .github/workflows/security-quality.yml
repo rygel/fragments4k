@@ -80,7 +80,7 @@ jobs:
         run: mvn install -DskipTests -T 4
 
       - name: Run OWASP Dependency Check
-        run: mvn org.owasp:dependency-check-maven:check -DfailBuildOnCVSS=7 -DsuppressionFile=dependency-check-suppressions.xml
+        run: mvn org.owasp:dependency-check-maven:12.1.3:check -DfailBuildOnCVSS=7 -DsuppressionFile=dependency-check-suppressions.xml
 
       - name: Upload Dependency Check Reports
         if: always()
