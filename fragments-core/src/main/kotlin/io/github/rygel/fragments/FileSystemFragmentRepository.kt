@@ -292,7 +292,10 @@ class FileSystemFragmentRepository(
 
     private fun loadFragments(): List<Fragment> =
         if (cachedFragments.isEmpty() || lastLoaded.isEqual(LocalDateTime.MIN)) {
-            loadFragmentsFromDisk()
+            loadFragmentsFromDisk().also {
+                cachedFragments = it
+                lastLoaded = LocalDateTime.now(ZoneOffset.UTC)
+            }
         } else {
             cachedFragments
         }

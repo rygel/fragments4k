@@ -88,7 +88,7 @@ class FragmentViewModelTest {
     fun tableOfContentsExtractsHeadings() {
         val fragment =
             createFragment(
-                htmlContent = "# Introduction\n## Section 1\n### Subsection\n## Section 2",
+                htmlContent = "<h1>Introduction</h1><h2>Section 1</h2><h3>Subsection</h3><h2>Section 2</h2>",
             )
         val vm = FragmentViewModel(fragment = fragment)
 
@@ -111,9 +111,9 @@ class FragmentViewModelTest {
 
     @Test
     fun relatedPostsReturnsWrappedViewModels() {
-        val post1 = createFragment(slug = "post-1", tags = listOf("kotlin"), htmlContent = "# Post 1")
-        val post2 = createFragment(slug = "post-2", tags = listOf("kotlin"), htmlContent = "# Post 2")
-        val main = createFragment(slug = "main", tags = listOf("kotlin"), htmlContent = "# Main")
+        val post1 = createFragment(slug = "post-1", tags = listOf("kotlin"), htmlContent = "<h1>Post 1</h1>")
+        val post2 = createFragment(slug = "post-2", tags = listOf("kotlin"), htmlContent = "<h1>Post 2</h1>")
+        val main = createFragment(slug = "main", tags = listOf("kotlin"), htmlContent = "<h1>Main</h1>")
         val vm = FragmentViewModel(fragment = main, allFragments = listOf(main, post1, post2))
 
         assertEquals(2, vm.relatedPosts.size)
