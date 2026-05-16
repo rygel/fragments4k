@@ -12,7 +12,7 @@ object HtmlSanitizer {
     private val RELAXED_SAFE_LIST =
         Safelist
             .relaxed()
-            .addTags("kbd", "mark", "abbr", "details", "summary")
+            .addTags("kbd", "mark", "abbr", "details", "summary", "del", "s", "ins")
             .addAttributes(":all", "class", "id")
             .addAttributes("a", "target", "rel")
             .addAttributes("details", "open")
@@ -22,7 +22,7 @@ object HtmlSanitizer {
     private val STRICT_SAFE_LIST =
         Safelist
             .basic()
-            .addTags("kbd", "mark", "abbr", "details", "summary")
+            .addTags("kbd", "mark", "abbr", "details", "summary", "del", "s", "ins")
             .addAttributes("a", "target", "rel")
             .addAttributes("details", "open")
             .addAttributes("td", "colspan", "rowspan")

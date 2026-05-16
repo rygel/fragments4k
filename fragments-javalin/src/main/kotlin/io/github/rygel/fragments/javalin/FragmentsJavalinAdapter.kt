@@ -61,6 +61,13 @@ fun RoutesConfig.fragmentsRoutes(
         ctx.html(html)
     }
 
+    fun Context.writeJson(error: ErrorResponse) {
+        contentType("application/json")
+        val escapedError = error.error.replace("\\", "\\\\").replace("\"", "\\\"")
+        val escapedMessage = error.message.replace("\\", "\\\\").replace("\"", "\\\"")
+        result("{\"status\":${error.status},\"error\":\"$escapedError\",\"message\":\"$escapedMessage\"}")
+    }
+
     val isHtmxRequest: (Context) -> Boolean = { ctx ->
         engine.isHtmxRequest(ctx.header(FragmentViewModel.HTMX_REQUEST_HEADER))
     }
@@ -94,7 +101,7 @@ fun RoutesConfig.fragmentsRoutes(
                     )
                 render(ctx, fragment.template, viewModel)
             } else {
-                ctx.status(404).result("Page not found: $slug")
+                ctx.status(404).writeJson(ErrorResponse.notFound("Page not found: $slug"))
             }
         }
     }
@@ -166,7 +173,7 @@ fun RoutesConfig.fragmentsRoutes(
                     )
                 render(ctx, fragment.template, viewModel)
             } else {
-                ctx.status(404).result("Post not found")
+                ctx.status(404).writeJson(ErrorResponse.notFound("Post not found"))
             }
         }
     }

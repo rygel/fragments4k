@@ -178,14 +178,17 @@ class CachedLuceneSearchEngine(
     override suspend fun invalidateFragmentSearchResults(fragmentSlug: String) {
         logger.debug("Invalidating search results containing fragment: $fragmentSlug")
 
-        val cacheKeys = searchResultCache.getKeys().filter { it.startsWith("search:") }
+        val keysToRemove = mutableListOf<String>()
+        val allKeys = searchResultCache.getKeys().toList()
 
-        cacheKeys.forEach { key ->
+        allKeys.forEach { key ->
             val results = searchResultCache.get(key)
             if (results != null && results.any { it.slug == fragmentSlug }) {
-                fragmentCache.invalidateFragment(fragmentSlug)
+                keysToRemove.add(key)
             }
         }
+
+        searchResultCache.invalidateAll(keysToRemove)
     }
 
     /**

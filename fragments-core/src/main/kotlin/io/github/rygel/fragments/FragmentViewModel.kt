@@ -56,7 +56,8 @@ data class FragmentViewModel(
         const val WORDS_PER_MINUTE = 225
 
         private val WORDS_REGEX = Regex("\\s+")
-        private val HEADER_PATTERN = Regex("^(#{1,6})\\s+(.+)$", RegexOption.MULTILINE)
+        private val HTML_HEADER_PATTERN = Regex("<h([1-6])[^>]*>(.*?)</h[1-6]>", RegexOption.DOT_MATCHES_ALL)
+        private val HTML_TAG_PATTERN = Regex("<[^>]*>")
         private val ANCHOR_CLEANUP = Regex("[^a-z0-9\\s-]")
         private val ANCHOR_WHITESPACE = Regex("\\s+")
     }
@@ -215,16 +216,16 @@ data class FragmentViewModel(
     private fun extractTableOfContents(): List<TableOfContentsItem> {
         val items = mutableListOf<TableOfContentsItem>()
 
-        HEADER_PATTERN.findAll(content).forEach { match ->
-            val level = match.groupValues[1].length
-            val title = match.groupValues[2].trim()
+        HTML_HEADER_PATTERN.findAll(content).forEach { match ->
+            val level = match.groupValues[1].toInt()
+            val rawTitle = match.groupValues[2].replace(HTML_TAG_PATTERN, "").trim()
             val anchor =
-                title
+                rawTitle
                     .lowercase()
                     .replace(ANCHOR_CLEANUP, "")
                     .replace(ANCHOR_WHITESPACE, "-")
 
-            items.add(TableOfContentsItem(level, title, anchor))
+            items.add(TableOfContentsItem(level, rawTitle, anchor))
         }
 
         return items

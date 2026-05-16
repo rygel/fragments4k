@@ -134,7 +134,7 @@ class LuceneSearchEngine(
                     ?: org.apache.lucene.index.DirectoryReader
                         .open(directory)
 
-                slugToFragment = repositories.flatMap { it.getAllVisible() }.associateBy { it.slug }
+                slugToFragment = fragments.associateBy { it.slug }
             }
         }
 
