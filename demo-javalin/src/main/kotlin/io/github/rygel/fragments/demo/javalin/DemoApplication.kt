@@ -61,7 +61,7 @@ fun main() {
         Javalin.create { config ->
             config.staticFiles.enableWebjars()
             config.fileRenderer(pebble)
-            config.routes.fragmentsRoutes(engine, renderer = PebbleTemplateRenderer())
+            config.routes.fragmentsRoutes(engine, renderer = PebbleTemplateRenderer(), javalinConfig = config)
             config.routes.exception(Exception::class.java) { e, ctx ->
                 when (e) {
                     is IllegalArgumentException -> {

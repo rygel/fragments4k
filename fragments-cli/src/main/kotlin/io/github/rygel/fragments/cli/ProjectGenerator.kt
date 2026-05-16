@@ -419,9 +419,8 @@ fun main() {
         config.plugins.register(JavalinPebble {
             it.prefix = "templates"
         })
+        config.routes.fragmentsRoutes(engine, renderer = null, javalinConfig = config)
     }
-    
-    app.fragmentsRoutes(engine, renderer = null)
     
     logger.info("Starting Fragments4k Javalin server on port 8080")
     logger.info("RSS feed available at: http://localhost:8080/rss.xml")

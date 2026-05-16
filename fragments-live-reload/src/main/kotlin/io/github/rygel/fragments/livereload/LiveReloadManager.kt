@@ -4,6 +4,7 @@ import io.github.rygel.fragments.FragmentRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -43,6 +44,9 @@ class LiveReloadManager(
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
     private var watchJob: Job? = null
 
+    @Volatile
+    private var watchService: WatchService? = null
+
     suspend fun startWatching() {
         logger.info("Starting live reload for content directory: $contentDir")
 
@@ -51,11 +55,14 @@ class LiveReloadManager(
             return
         }
 
-        val watchService = FileSystems.getDefault().newWatchService()
+        stopWatching()
+
+        val ws = FileSystems.getDefault().newWatchService()
+        watchService = ws
         val watchKeys = mutableMapOf<Path, WatchKey>()
 
         // Register watch on content directory recursively
-        registerWatchRecursively(contentDir, watchService, watchKeys)
+        registerWatchRecursively(contentDir, ws, watchKeys)
 
         watchJob =
             coroutineScope.launch {
@@ -63,7 +70,7 @@ class LiveReloadManager(
 
                 while (isActive) {
                     try {
-                        val key = watchService.poll(1, TimeUnit.SECONDS)
+                        val key = ws.poll(1, TimeUnit.SECONDS)
                         val changedFiles = mutableListOf<Path>()
 
                         if (key != null) {
@@ -83,7 +90,7 @@ class LiveReloadManager(
                             if (!key.reset()) {
                                 logger.warn("Watch key for ${key.watchable()} could not be reset")
                                 val path = key.watchable() as Path
-                                registerWatchRecursively(path, watchService, watchKeys)
+                                registerWatchRecursively(path, ws, watchKeys)
                             }
                         }
 
@@ -186,6 +193,16 @@ class LiveReloadManager(
         logger.info("Stopping live reload")
         watchJob?.cancel()
         watchJob = null
+        watchService?.let { ws ->
+            runCatching { ws.close() }
+                .onFailure { logger.warn("Error closing watch service", it) }
+        }
+        watchService = null
+    }
+
+    fun close() {
+        stopWatching()
+        coroutineScope.cancel()
     }
 
     fun isWatching(): Boolean = watchJob?.isActive == true

@@ -198,7 +198,8 @@ data class FragmentViewModel(
     )
 
     private fun calculateReadingTime(): ReadingTime {
-        val words = content.split(WORDS_REGEX).size
+        val plainText = fragment.contentTextOnly
+        val words = plainText.split(WORDS_REGEX).size
         val totalSeconds = (words.toDouble() / WORDS_PER_MINUTE) * 60
         val minutes = totalSeconds.toInt() / 60
         val seconds = totalSeconds.toInt() % 60

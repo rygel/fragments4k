@@ -30,6 +30,11 @@ class CachedLuceneSearchEngine(
         )
 
     private val searchResultCache =
+        InMemoryCache<String, List<SearchResult>>(
+            CacheConfiguration(ttl = SEARCH_RESULT_CACHE_TTL, maxSize = SEARCH_RESULT_CACHE_MAX_SIZE, recordStats = true),
+        )
+
+    private val tagCategoryCache =
         InMemoryCache<String, List<Fragment>>(
             CacheConfiguration(ttl = SEARCH_RESULT_CACHE_TTL, maxSize = SEARCH_RESULT_CACHE_MAX_SIZE, recordStats = true),
         )
@@ -45,13 +50,13 @@ class CachedLuceneSearchEngine(
         val cachedResults = searchResultCache.get(cacheKey)
         if (cachedResults != null) {
             logger.debug("Cache hit for search: $cacheKey")
-            return cachedResults.map { fragment -> SearchResult(fragment = fragment, score = 1.0f) }
+            return cachedResults
         }
 
         logger.debug("Cache miss for search: $cacheKey, executing search")
         val results = delegate.search(queryString, maxResults)
 
-        searchResultCache.put(cacheKey, results.map { it.fragment })
+        searchResultCache.put(cacheKey, results)
 
         return results
     }
@@ -70,13 +75,13 @@ class CachedLuceneSearchEngine(
         val cachedResults = searchResultCache.get(cacheKey)
         if (cachedResults != null) {
             logger.debug("Cache hit for search with options: $cacheKey")
-            return cachedResults.map { fragment -> SearchResult(fragment = fragment, score = 1.0f) }
+            return cachedResults
         }
 
         logger.debug("Cache miss for search with options: $cacheKey, executing search")
         val results = delegate.search(options)
 
-        searchResultCache.put(cacheKey, results.map { it.fragment })
+        searchResultCache.put(cacheKey, results)
 
         return results
     }
@@ -86,7 +91,7 @@ class CachedLuceneSearchEngine(
 
         val cacheKey = generateTagSearchCacheKey(tag)
 
-        val cachedResults = searchResultCache.get(cacheKey)
+        val cachedResults = tagCategoryCache.get(cacheKey)
         if (cachedResults != null) {
             logger.debug("Cache hit for tag search: $cacheKey")
             return cachedResults
@@ -95,7 +100,7 @@ class CachedLuceneSearchEngine(
         logger.debug("Cache miss for tag search: $cacheKey, executing search")
         val results = delegate.searchByTag(tag)
 
-        searchResultCache.put(cacheKey, results)
+        tagCategoryCache.put(cacheKey, results)
 
         return results
     }
@@ -105,7 +110,7 @@ class CachedLuceneSearchEngine(
 
         val cacheKey = generateCategorySearchCacheKey(category)
 
-        val cachedResults = searchResultCache.get(cacheKey)
+        val cachedResults = tagCategoryCache.get(cacheKey)
         if (cachedResults != null) {
             logger.debug("Cache hit for category search: $cacheKey")
             return cachedResults
@@ -114,7 +119,7 @@ class CachedLuceneSearchEngine(
         logger.debug("Cache miss for category search: $cacheKey, executing search")
         val results = delegate.searchByCategory(category)
 
-        searchResultCache.put(cacheKey, results)
+        tagCategoryCache.put(cacheKey, results)
 
         return results
     }
@@ -169,6 +174,7 @@ class CachedLuceneSearchEngine(
     override suspend fun invalidateSearchCache() {
         logger.debug("Invalidating search cache")
         searchResultCache.clear()
+        tagCategoryCache.clear()
         suggestionCache.clear()
     }
 
@@ -179,16 +185,23 @@ class CachedLuceneSearchEngine(
         logger.debug("Invalidating search results containing fragment: $fragmentSlug")
 
         val keysToRemove = mutableListOf<String>()
-        val allKeys = searchResultCache.getKeys().toList()
 
-        allKeys.forEach { key ->
+        searchResultCache.getKeys().toList().forEach { key ->
             val results = searchResultCache.get(key)
+            if (results != null && results.any { it.fragment.slug == fragmentSlug }) {
+                keysToRemove.add(key)
+            }
+        }
+
+        tagCategoryCache.getKeys().toList().forEach { key ->
+            val results = tagCategoryCache.get(key)
             if (results != null && results.any { it.slug == fragmentSlug }) {
                 keysToRemove.add(key)
             }
         }
 
         searchResultCache.invalidateAll(keysToRemove)
+        tagCategoryCache.invalidateAll(keysToRemove)
     }
 
     /**
@@ -198,17 +211,14 @@ class CachedLuceneSearchEngine(
         logger.debug("Invalidating tag search results for tag: $tag")
 
         val cacheKey = generateTagSearchCacheKey(tag)
-        searchResultCache.invalidate(cacheKey)
+        tagCategoryCache.invalidate(cacheKey)
     }
 
-    /**
-     * Invalidate search results containing specific categories
-     */
     override suspend fun invalidateCategorySearchResults(category: String) {
         logger.debug("Invalidating category search results for category: $category")
 
         val cacheKey = generateCategorySearchCacheKey(category)
-        searchResultCache.invalidate(cacheKey)
+        tagCategoryCache.invalidate(cacheKey)
     }
 
     /**
