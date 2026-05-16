@@ -297,6 +297,7 @@ class FragmentsEngine(
         currentMonth: Int? = null,
     ): List<ArchiveNavigationLink> =
         ArchiveNavigationGenerator.generateBreadcrumbs(
+            archiveBaseUrl = "/blog/archive",
             currentYear = currentYear,
             currentMonth = currentMonth,
         )

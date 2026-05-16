@@ -134,6 +134,7 @@ class ArchiveNavigationTest {
         val breadcrumbs =
             ArchiveNavigationGenerator.generateBreadcrumbs(
                 baseUrl = "/blog",
+                archiveBaseUrl = "/blog/archive",
                 currentYear = 2024,
                 currentMonth = null,
             )
@@ -145,7 +146,7 @@ class ArchiveNavigationTest {
         assertFalse(breadcrumbs[0].isActive)
 
         assertEquals("2024", breadcrumbs[1].label)
-        assertEquals("/blog/2024", breadcrumbs[1].url)
+        assertEquals("/blog/archive/2024", breadcrumbs[1].url)
         assertTrue(breadcrumbs[1].isActive)
     }
 
@@ -154,6 +155,7 @@ class ArchiveNavigationTest {
         val breadcrumbs =
             ArchiveNavigationGenerator.generateBreadcrumbs(
                 baseUrl = "/blog",
+                archiveBaseUrl = "/blog/archive",
                 currentYear = 2024,
                 currentMonth = 6,
             )
@@ -165,11 +167,11 @@ class ArchiveNavigationTest {
         assertFalse(breadcrumbs[0].isActive)
 
         assertEquals("2024", breadcrumbs[1].label)
-        assertEquals("/blog/2024", breadcrumbs[1].url)
+        assertEquals("/blog/archive/2024", breadcrumbs[1].url)
         assertFalse(breadcrumbs[1].isActive)
 
         assertEquals("Jun", breadcrumbs[2].label)
-        assertEquals("/blog/2024/06", breadcrumbs[2].url)
+        assertEquals("/blog/archive/2024/06", breadcrumbs[2].url)
         assertTrue(breadcrumbs[2].isActive)
     }
 
@@ -177,14 +179,15 @@ class ArchiveNavigationTest {
     fun testGenerateBreadcrumbsWithCustomBaseUrl() {
         val breadcrumbs =
             ArchiveNavigationGenerator.generateBreadcrumbs(
-                baseUrl = "/archives",
+                baseUrl = "/posts",
+                archiveBaseUrl = "/posts/archives",
                 currentYear = 2024,
                 currentMonth = null,
             )
 
         assertEquals(2, breadcrumbs.size)
-        assertEquals("/archives", breadcrumbs[0].url)
-        assertEquals("/archives/2024", breadcrumbs[1].url)
+        assertEquals("/posts", breadcrumbs[0].url)
+        assertEquals("/posts/archives/2024", breadcrumbs[1].url)
     }
 
     @Test
@@ -266,24 +269,26 @@ class ArchiveNavigationTest {
     fun testMultipleCurrentYearsInBreadcrumbs() {
         val breadcrumbs1 =
             ArchiveNavigationGenerator.generateBreadcrumbs(
-                baseUrl = "/blog",
+                archiveBaseUrl = "/blog/archive",
                 currentYear = 2023,
                 currentMonth = null,
             )
 
         assertEquals(2, breadcrumbs1.size)
         assertEquals("2023", breadcrumbs1[1].label)
+        assertEquals("/blog/archive/2023", breadcrumbs1[1].url)
         assertTrue(breadcrumbs1[1].isActive)
 
         val breadcrumbs2 =
             ArchiveNavigationGenerator.generateBreadcrumbs(
-                baseUrl = "/blog",
+                archiveBaseUrl = "/blog/archive",
                 currentYear = 2024,
                 currentMonth = null,
             )
 
         assertEquals(2, breadcrumbs2.size)
         assertEquals("2024", breadcrumbs2[1].label)
+        assertEquals("/blog/archive/2024", breadcrumbs2[1].url)
         assertTrue(breadcrumbs2[1].isActive)
     }
 
@@ -291,24 +296,26 @@ class ArchiveNavigationTest {
     fun testMultipleCurrentMonthsInBreadcrumbs() {
         val breadcrumbs1 =
             ArchiveNavigationGenerator.generateBreadcrumbs(
-                baseUrl = "/blog",
+                archiveBaseUrl = "/blog/archive",
                 currentYear = 2024,
                 currentMonth = 3,
             )
 
         assertEquals(3, breadcrumbs1.size)
         assertEquals("Mar", breadcrumbs1[2].label)
+        assertEquals("/blog/archive/2024/03", breadcrumbs1[2].url)
         assertTrue(breadcrumbs1[2].isActive)
 
         val breadcrumbs2 =
             ArchiveNavigationGenerator.generateBreadcrumbs(
-                baseUrl = "/blog",
+                archiveBaseUrl = "/blog/archive",
                 currentYear = 2024,
                 currentMonth = 9,
             )
 
         assertEquals(3, breadcrumbs2.size)
         assertEquals("Sep", breadcrumbs2[2].label)
+        assertEquals("/blog/archive/2024/09", breadcrumbs2[2].url)
         assertTrue(breadcrumbs2[2].isActive)
     }
 }

@@ -61,6 +61,7 @@ object ArchiveNavigationGenerator {
 
     fun generateBreadcrumbs(
         baseUrl: String = "/blog",
+        archiveBaseUrl: String = "/blog/archive",
         currentYear: Int? = null,
         currentMonth: Int? = null,
     ): List<ArchiveNavigationLink> {
@@ -77,7 +78,7 @@ object ArchiveNavigationGenerator {
             breadcrumbs.add(
                 ArchiveNavigationLink(
                     label = year.toString(),
-                    url = "$baseUrl/$year",
+                    url = "$archiveBaseUrl/$year",
                     isActive = currentMonth == null,
                 ),
             )
@@ -90,7 +91,7 @@ object ArchiveNavigationGenerator {
                 breadcrumbs.add(
                     ArchiveNavigationLink(
                         label = monthName,
-                        url = "$baseUrl/$year/${String.format("%02d", month)}",
+                        url = "$archiveBaseUrl/$year/${String.format("%02d", month)}",
                         isActive = true,
                     ),
                 )

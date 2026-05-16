@@ -18,7 +18,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import java.io.IOException
 import java.util.concurrent.CompletableFuture
 
 fun RoutesConfig.fragmentsRoutes(
@@ -31,12 +30,11 @@ fun RoutesConfig.fragmentsRoutes(
         future {
             val cf = CompletableFuture<Void?>()
             scope.launch {
-                try {
-                    block()
-                    cf.complete(null)
-                } catch (e: IOException) {
-                    cf.completeExceptionally(e)
-                }
+                val result = runCatching { block() }
+                result.fold(
+                    onSuccess = { cf.complete(null) },
+                    onFailure = { cf.completeExceptionally(it) },
+                )
             }
             cf
         }
@@ -63,8 +61,24 @@ fun RoutesConfig.fragmentsRoutes(
 
     fun Context.writeJson(error: ErrorResponse) {
         contentType("application/json")
-        val escapedError = error.error.replace("\\", "\\\\").replace("\"", "\\\"")
-        val escapedMessage = error.message.replace("\\", "\\\\").replace("\"", "\\\"")
+        val escapedError =
+            error.error
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t")
+                .replace("\b", "\\b")
+                .replace("\u000C", "\\f")
+        val escapedMessage =
+            error.message
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t")
+                .replace("\b", "\\b")
+                .replace("\u000C", "\\f")
         result("{\"status\":${error.status},\"error\":\"$escapedError\",\"message\":\"$escapedMessage\"}")
     }
 

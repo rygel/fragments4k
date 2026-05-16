@@ -193,8 +193,7 @@ class FileSystemContentSeriesRepository(
         if (cachedSeries.isEmpty() || lastLoaded.isEqual(LocalDateTime.MIN)) {
             val files =
                 File(basePath.toFile(), "series").listFiles { file ->
-                    file.extension == extension.removePrefix(".").removePrefix("yml") ||
-                        file.extension == extension.removePrefix(".").removePrefix("yaml")
+                    file.name.endsWith(extension)
                 } ?: emptyArray()
 
             cachedSeries =
@@ -268,9 +267,10 @@ class FileSystemContentSeriesRepository(
         val seriesDir = File(basePath.toFile(), "series")
         if (!seriesDir.exists()) return null
 
+        val targetName = "$slug$extension"
         val files =
             seriesDir.listFiles { file ->
-                file.nameWithoutExtension == slug
+                file.name == targetName
             }
 
         return files?.firstOrNull()

@@ -92,40 +92,44 @@ class LuceneSearchEngine(
     @Volatile private var slugToFragment: Map<String, Fragment> = emptyMap()
     private val indexMutex = Mutex()
 
+    @Volatile private var closed = false
+
     suspend fun index() =
         indexMutex.withLock {
             withContext(Dispatchers.IO) {
+                if (closed) return@withContext
                 val config =
                     org.apache.lucene.index
                         .IndexWriterConfig(analyzer)
-                val writer =
-                    org.apache.lucene.index
-                        .IndexWriter(directory, config)
-                writer.deleteAll()
-
                 val fragments = repositories.flatMap { it.getAllVisible() }
+                org.apache.lucene.index
+                    .IndexWriter(directory, config)
+                    .use { writer ->
+                        writer.deleteAll()
 
-                fragments.forEach { fragment ->
-                    val doc = Document()
-                    doc.add(StringField("slug", fragment.slug, Field.Store.YES))
-                    doc.add(StringField("url", fragment.url, Field.Store.YES))
-                    doc.add(TextField("title", fragment.title, Field.Store.YES))
-                    doc.add(TextField("content", fragment.contentTextOnly, Field.Store.NO))
-                    doc.add(TextField("preview", fragment.previewTextOnly, Field.Store.NO))
-                    fragment.tags.forEach { tag ->
-                        doc.add(StringField("tag", tag, Field.Store.YES))
-                    }
-                    fragment.categories.forEach { category ->
-                        doc.add(StringField("category", category, Field.Store.YES))
-                    }
-                    fragment.date?.let { date ->
-                        doc.add(StringField("date", date.toString(), Field.Store.YES))
-                    }
-                    writer.addDocument(doc)
-                }
+                        fragments.forEach { fragment ->
+                            val doc = Document()
+                            doc.add(StringField("slug", fragment.slug, Field.Store.YES))
+                            doc.add(StringField("url", fragment.url, Field.Store.YES))
+                            doc.add(TextField("title", fragment.title, Field.Store.YES))
+                            doc.add(TextField("content", fragment.contentTextOnly, Field.Store.NO))
+                            doc.add(TextField("preview", fragment.previewTextOnly, Field.Store.NO))
+                            fragment.tags.forEach { tag ->
+                                doc.add(StringField("tag", tag, Field.Store.YES))
+                            }
+                            fragment.categories.forEach { category ->
+                                doc.add(StringField("category", category, Field.Store.YES))
+                            }
+                            fragment.date?.let { date ->
+                                doc.add(StringField("date", date.toString(), Field.Store.YES))
+                            }
+                            writer.addDocument(doc)
+                        }
 
-                writer.commit()
-                writer.close()
+                        writer.commit()
+                    }
+
+                if (closed) return@withContext
 
                 reader = reader?.let {
                     org.apache.lucene.index.DirectoryReader
@@ -142,6 +146,7 @@ class LuceneSearchEngine(
         reader ?: error("Search index not initialised — call index() first")
 
     private inline fun <T> withSearcher(block: (IndexSearcher) -> List<T>): List<T> {
+        if (closed) return emptyList()
         val currentReader = reader ?: return emptyList()
         val searcher = IndexSearcher(currentReader)
         return block(searcher)
@@ -162,6 +167,7 @@ class LuceneSearchEngine(
 
     suspend fun search(options: SearchOptions): List<SearchResult> =
         withContext(Dispatchers.IO) {
+            if (closed) return@withContext emptyList()
             val fragmentsBySlug = slugToFragment
             val query = buildQuery(options) ?: return@withContext emptyList()
 
@@ -181,6 +187,7 @@ class LuceneSearchEngine(
         limit: Int = 10,
     ): List<SearchSuggestion> =
         withContext(Dispatchers.IO) {
+            if (closed) return@withContext emptyList()
             val trimmed = query.trim()
             if (trimmed.isBlank() || trimmed.length > MAX_QUERY_LENGTH) return@withContext emptyList()
             if (trimmed.length < MIN_AUTOCOMPLETE_PREFIX_LENGTH) return@withContext emptyList()
@@ -284,6 +291,7 @@ class LuceneSearchEngine(
 
     suspend fun searchByTag(tag: String): List<Fragment> =
         withContext(Dispatchers.IO) {
+            if (closed) return@withContext emptyList()
             val fragmentsBySlug = slugToFragment
 
             withSearcher { searcher ->
@@ -302,6 +310,7 @@ class LuceneSearchEngine(
 
     suspend fun searchByCategory(category: String): List<Fragment> =
         withContext(Dispatchers.IO) {
+            if (closed) return@withContext emptyList()
             val fragmentsBySlug = slugToFragment
 
             withSearcher { searcher ->
@@ -319,6 +328,7 @@ class LuceneSearchEngine(
         }
 
     fun close() {
+        closed = true
         reader?.close()
         analyzer.close()
         directory.close()

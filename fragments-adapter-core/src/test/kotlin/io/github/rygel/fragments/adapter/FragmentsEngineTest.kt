@@ -136,7 +136,9 @@ class FragmentsEngineTest {
         assertNotNull(breadcrumbs)
         assertTrue(breadcrumbs.isNotEmpty())
         assertEquals("Blog", breadcrumbs[0].label)
+        assertEquals("/blog", breadcrumbs[0].url)
         assertEquals("2025", breadcrumbs[1].label)
+        assertEquals("/blog/archive/2025", breadcrumbs[1].url)
     }
 
     @Test
