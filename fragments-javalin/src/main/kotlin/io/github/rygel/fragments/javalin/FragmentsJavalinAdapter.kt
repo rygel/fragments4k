@@ -12,19 +12,26 @@ import io.github.rygel.fragments.adapter.FragmentsEngine
 import io.github.rygel.fragments.adapter.HomeViewModel
 import io.github.rygel.fragments.adapter.SearchViewModel
 import io.github.rygel.fragments.adapter.TagViewModel
+import io.javalin.config.JavalinConfig
 import io.javalin.config.RoutesConfig
 import io.javalin.http.Context
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import java.util.concurrent.CompletableFuture
 
 fun RoutesConfig.fragmentsRoutes(
     engine: FragmentsEngine,
     renderer: TemplateRenderer?,
+    javalinConfig: JavalinConfig? = null,
 ) {
     val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
+    javalinConfig?.events?.serverStopped {
+        scope.cancel()
+    }
 
     fun Context.handleAsync(block: suspend () -> Unit) {
         future {

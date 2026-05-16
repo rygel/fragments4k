@@ -48,6 +48,7 @@ class FragmentsJavalinAdapterTest {
             config.routes.fragmentsRoutes(
                 engine = engine,
                 renderer = MockTemplateRenderer(),
+                javalinConfig = config,
             )
         }
 

@@ -243,16 +243,21 @@ class FragmentsEngine(
         return (staticPages + blogPosts + additional + providerFragments).distinctBy { it.slug }
     }
 
-    suspend fun generateRssFeed(): String =
-        rssGenerator.generateFeed(
+    suspend fun generateRssFeed(): String {
+        val fragments = collectResolvedFragments()
+        return rssGenerator.generateFeed(
             siteTitle = siteTitle,
             siteDescription = siteDescription,
             siteUrl = siteUrl,
             feedUrl = feedUrl,
-            resolvedFragments = collectResolvedFragments(),
+            resolvedFragments = fragments,
         )
+    }
 
-    suspend fun generateSitemap(): String = sitemapGenerator.generateSitemap(collectResolvedFragments())
+    suspend fun generateSitemap(): String {
+        val fragments = collectResolvedFragments()
+        return sitemapGenerator.generateSitemap(fragments)
+    }
 
     fun generateRobotsTxt(): String =
         buildString {
@@ -262,14 +267,44 @@ class FragmentsEngine(
             appendLine("Sitemap: $siteUrl/sitemap.xml")
         }
 
-    suspend fun generateLlmsTxt(): String =
-        LlmsTxtGenerator.generate(
+    suspend fun generateLlmsTxt(): String {
+        val fragments = collectResolvedFragments()
+        return LlmsTxtGenerator.generate(
             siteTitle = siteTitle,
             siteDescription = siteDescription,
             siteUrl = siteUrl,
             repositories = allRepositories,
-            resolvedFragments = collectResolvedFragments(),
+            resolvedFragments = fragments,
         )
+    }
+
+    data class FeedOutput(
+        val rssXml: String,
+        val sitemapXml: String,
+        val llmsTxt: String,
+    )
+
+    suspend fun generateAllFeeds(): FeedOutput {
+        val fragments = collectResolvedFragments()
+        val rssXml =
+            rssGenerator.generateFeed(
+                siteTitle = siteTitle,
+                siteDescription = siteDescription,
+                siteUrl = siteUrl,
+                feedUrl = feedUrl,
+                resolvedFragments = fragments,
+            )
+        val sitemapXml = sitemapGenerator.generateSitemap(fragments)
+        val llmsTxt =
+            LlmsTxtGenerator.generate(
+                siteTitle = siteTitle,
+                siteDescription = siteDescription,
+                siteUrl = siteUrl,
+                repositories = allRepositories,
+                resolvedFragments = fragments,
+            )
+        return FeedOutput(rssXml, sitemapXml, llmsTxt)
+    }
 
     // -- Archive navigation ---------------------------------------------------
 

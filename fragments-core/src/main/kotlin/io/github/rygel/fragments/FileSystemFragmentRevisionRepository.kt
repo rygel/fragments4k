@@ -3,6 +3,7 @@ package io.github.rygel.fragments
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
+import org.yaml.snakeyaml.Yaml
 import java.io.File
 import java.io.IOException
 import java.time.LocalDateTime
@@ -13,6 +14,7 @@ class FileSystemFragmentRevisionRepository(
     private val basePath: String,
 ) : FragmentRevisionRepository {
     private val logger = LoggerFactory.getLogger(FileSystemFragmentRevisionRepository::class.java)
+    private val yaml = Yaml()
     private val revisionsDir = File(basePath, ".revisions")
     private val fragmentsIndexFile = File(revisionsDir, "index.json")
     private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
@@ -213,7 +215,12 @@ class FileSystemFragmentRevisionRepository(
     private fun getNextVersion(slug: String): Int {
         val index = loadIndex()
         val ids = index[slug] ?: return 1
-        return ids.size + 1
+        if (ids.isEmpty()) return 1
+        return ids
+            .mapNotNull { id ->
+                runCatching { loadRevision(id)?.version }.getOrNull()
+            }.maxOrNull()
+            ?.let { it + 1 } ?: (ids.size + 1)
     }
 
     private fun getPreviousRevisionId(
@@ -226,8 +233,15 @@ class FileSystemFragmentRevisionRepository(
         return ids.getOrNull(version - 2)
     }
 
-    private fun serializeRevision(revision: FragmentRevision): String =
-        """
+    @Suppress("UNCHECKED_CAST")
+    private fun serializeRevision(revision: FragmentRevision): String {
+        val frontMatterYaml =
+            if (revision.frontMatter.isNotEmpty()) {
+                "\"${TextEscapeUtils.escapeJson(yaml.dump(revision.frontMatter))}\""
+            } else {
+                "null"
+            }
+        return """
             |{
             |  "id": "${TextEscapeUtils.escapeJson(revision.id)}",
             |  "fragmentSlug": "${TextEscapeUtils.escapeJson(revision.fragmentSlug)}",
@@ -235,19 +249,29 @@ class FileSystemFragmentRevisionRepository(
             |  "title": "${TextEscapeUtils.escapeJson(revision.title)}",
             |  "content": "${TextEscapeUtils.escapeJson(revision.content)}",
             |  "preview": "${TextEscapeUtils.escapeJson(revision.preview)}",
+            |  "frontMatterYaml": $frontMatterYaml,
             |  "changedBy": ${revision.changedBy?.let { "\"${TextEscapeUtils.escapeJson(it)}\"" } ?: "null"},
             |  "changedAt": "${revision.changedAt.format(formatter)}",
             |  "changeReason": ${revision.changeReason?.let { "\"${TextEscapeUtils.escapeJson(it)}\"" } ?: "null"},
             |  "previousRevisionId": ${revision.previousRevisionId?.let { "\"${TextEscapeUtils.escapeJson(it)}\"" } ?: "null"}
             |}
-        """.trimMargin().trim()
+            """.trimMargin().trim()
+    }
 
+    @Suppress("UNCHECKED_CAST")
     private fun loadRevision(id: String): FragmentRevision? {
         val file = File(revisionsDir, "$id.json")
         if (!file.exists()) return null
 
         val content = file.readText()
         val map = parseJsonToMap(content)
+
+        val frontMatter =
+            (map["frontMatterYaml"] as? String)?.let { yamlStr ->
+                runCatching { yaml.load<Map<String, Any>>(yamlStr) ?: emptyMap() }
+                    .onFailure { logger.warn("Failed to parse frontMatter YAML for revision: $id", it) }
+                    .getOrDefault(emptyMap())
+            } ?: emptyMap()
 
         return FragmentRevision(
             id = map["id"] as String,
@@ -256,7 +280,7 @@ class FileSystemFragmentRevisionRepository(
             title = map["title"] as String,
             content = map["content"] as String,
             preview = map["preview"] as String,
-            frontMatter = emptyMap(),
+            frontMatter = frontMatter,
             changedBy = map["changedBy"] as String?,
             changedAt = LocalDateTime.parse(map["changedAt"] as String, formatter),
             changeReason = map["changeReason"] as String?,
