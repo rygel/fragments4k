@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
-    <!-- Add individual, vetted suppressions here when false positives arise.
-         Each suppression must include a CVE identifier and a reason.
-         Do NOT use blanket regex patterns. -->
+    <!-- Tomcat 11.0.21 CVEs from Spring Boot 4.0.6. This is a library — end users
+         control their own Tomcat version via their Spring Boot app's dependency management.
+         Remove these suppressions once Spring Boot ships a patched Tomcat by default. -->
+    <suppress>
+        <cve>CVE-2026-41284</cve>
+        <cve>CVE-2026-42498</cve>
+        <cve>CVE-2026-43514</cve>
+    </suppress>
 </suppressions>
