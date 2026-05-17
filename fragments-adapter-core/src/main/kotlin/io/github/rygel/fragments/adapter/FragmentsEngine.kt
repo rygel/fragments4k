@@ -97,6 +97,7 @@ class FragmentsEngine(
     }
 
     @Volatile private var cachedFeedOutput: FeedOutput? = null
+
     @Volatile private var feedContentSnapshot: List<Fragment>? = null
 
     private val allRepositories: List<FragmentRepository> =
@@ -246,27 +247,37 @@ class FragmentsEngine(
         val staticRepo = staticEngine.getRepository()
         val blogRepo = blogEngine.getRepository()
 
-        val staticPages = (repoResults[staticRepo] ?: staticRepo.getAllVisible())
-            .filter { it.template == FragmentTemplates.STATIC || it.template.isEmpty() || it.template == FragmentTemplates.DEFAULT }
-            .map { fragment ->
-                if (fragment.resolvedUrl != null) fragment
-                else fragment.copy(resolvedUrl = "/page/${fragment.slug}")
-            }
+        val staticResults = repoResults[staticRepo] ?: staticRepo.getAllVisible()
+        val blogResults = repoResults[blogRepo] ?: blogRepo.getAllVisible()
 
-        val blogPosts = (repoResults[blogRepo] ?: blogRepo.getAllVisible())
-            .filter { it.template in BlogEngine.BLOG_TEMPLATES }
-            .map { fragment ->
-                if (fragment.resolvedUrl != null) fragment
-                else {
-                    val date = fragment.date
-                    val url = if (date != null) {
-                        "/blog/${date.year}/${String.format(java.util.Locale.US, "%02d", date.monthValue)}/${fragment.slug}"
+        val staticPages =
+            staticResults
+                .filter { it.template == FragmentTemplates.STATIC || it.template.isEmpty() || it.template == FragmentTemplates.DEFAULT }
+                .map { fragment ->
+                    if (fragment.resolvedUrl != null) {
+                        fragment
                     } else {
-                        "/blog/${fragment.slug}"
+                        fragment.copy(resolvedUrl = "/page/${fragment.slug}")
                     }
-                    fragment.copy(resolvedUrl = url)
                 }
-            }
+
+        val blogPosts =
+            blogResults
+                .filter { it.template in BlogEngine.BLOG_TEMPLATES }
+                .map { fragment ->
+                    if (fragment.resolvedUrl != null) {
+                        fragment
+                    } else {
+                        val date = fragment.date
+                        val url =
+                            if (date != null) {
+                                "/blog/${date.year}/${String.format(java.util.Locale.US, "%02d", date.monthValue)}/${fragment.slug}"
+                            } else {
+                                "/blog/${fragment.slug}"
+                            }
+                        fragment.copy(resolvedUrl = url)
+                    }
+                }
 
         val additional = additionalRepositories.flatMap { repoResults[it] ?: it.getAllVisible() }
         val providerFragments = additionalFragmentProviders.flatMap { it() }
