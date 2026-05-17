@@ -8,11 +8,14 @@ import java.awt.image.BufferedImage
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
+import java.io.BufferedInputStream
 import java.io.InputStream
 import javax.imageio.IIOImage
 import javax.imageio.ImageIO
+import javax.imageio.ImageReader
 import javax.imageio.ImageWriteParam
 import javax.imageio.stream.FileImageOutputStream
+import javax.imageio.stream.MemoryCacheImageInputStream
 
 class BasicImageOptimizer : ImageOptimizer {
     private val logger = LoggerFactory.getLogger(BasicImageOptimizer::class.java)
@@ -23,8 +26,16 @@ class BasicImageOptimizer : ImageOptimizer {
         options: ImageResizeOptions,
     ): Result<OptimizedImage> =
         withContext(Dispatchers.IO) {
-            inputStream.use { stream ->
+            val bufferedStream = if (inputStream.markSupported()) inputStream else BufferedInputStream(inputStream)
+            bufferedStream.use { stream ->
                 try {
+                    stream.mark(100 * 1024 * 1024)
+                    try {
+                        preflightImage(stream)
+                    } catch (e: IllegalArgumentException) {
+                        return@withContext Result.failure(e)
+                    }
+                    stream.reset()
                     val image = ImageIO.read(stream) ?: return@withContext Result.failure(IllegalArgumentException("Could not read image"))
                     val originalSize = stream.available().toLong()
 
@@ -97,55 +108,60 @@ class BasicImageOptimizer : ImageOptimizer {
                 val fileName = getOptimizedFileName(filePath, options.format)
                 val outputPath = file.parent + File.separator + fileName
 
-                file.inputStream().use { inputStream ->
-                    val image =
-                        ImageIO.read(inputStream) ?: return@withContext Result.failure(IllegalArgumentException("Could not read image"))
-                    val originalSize = file.length()
-
-                    val resizedImage = resizeImage(image, options)
-
-                    val format = options.format.lowercase()
-                    val outputFormat = getOutputFormat(format)
-
-                    val quality = options.quality
-                    val outputFile = File(outputPath)
-                    outputFile.parentFile?.mkdirs()
-
-                    writeImageWithQuality(resizedImage, outputFormat, quality, outputFile)
-
-                    val optimizedSize = outputFile.length()
-                    var sizeReduction = 0.0f
-                    if (originalSize > 0) {
-                        sizeReduction = ((originalSize - optimizedSize).toFloat() / originalSize) * 100f
+                file.inputStream().use { preflightStream ->
+                    try {
+                        preflightImage(preflightStream)
+                    } catch (e: IllegalArgumentException) {
+                        return@withContext Result.failure(e)
                     }
-
-                    val metadata =
-                        ImageMetadata(
-                            width = resizedImage.width,
-                            height = resizedImage.height,
-                            format = format,
-                            sizeBytes = optimizedSize,
-                            mimeType = "image/$outputFormat",
-                            hasAlpha = false,
-                            colorDepth = 24,
-                        )
-
-                    val optimizedImage =
-                        OptimizedImage(
-                            originalPath = filePath,
-                            optimizedPath = outputPath,
-                            originalSize = originalSize,
-                            optimizedSize = optimizedSize,
-                            sizeReduction = sizeReduction,
-                            width = resizedImage.width,
-                            height = resizedImage.height,
-                            format = format,
-                            quality = quality,
-                            metadata = metadata,
-                        )
-
-                    return@withContext Result.success(optimizedImage)
                 }
+                val image =
+                    ImageIO.read(file) ?: return@withContext Result.failure(IllegalArgumentException("Could not read image"))
+                val originalSize = file.length()
+
+                val resizedImage = resizeImage(image, options)
+
+                val format = options.format.lowercase()
+                val outputFormat = getOutputFormat(format)
+
+                val quality = options.quality
+                val outputFile = File(outputPath)
+                outputFile.parentFile?.mkdirs()
+
+                writeImageWithQuality(resizedImage, outputFormat, quality, outputFile)
+
+                val optimizedSize = outputFile.length()
+                var sizeReduction = 0.0f
+                if (originalSize > 0) {
+                    sizeReduction = ((originalSize - optimizedSize).toFloat() / originalSize) * 100f
+                }
+
+                val metadata =
+                    ImageMetadata(
+                        width = resizedImage.width,
+                        height = resizedImage.height,
+                        format = format,
+                        sizeBytes = optimizedSize,
+                        mimeType = "image/$outputFormat",
+                        hasAlpha = false,
+                        colorDepth = 24,
+                    )
+
+                val optimizedImage =
+                    OptimizedImage(
+                        originalPath = filePath,
+                        optimizedPath = outputPath,
+                        originalSize = originalSize,
+                        optimizedSize = optimizedSize,
+                        sizeReduction = sizeReduction,
+                        width = resizedImage.width,
+                        height = resizedImage.height,
+                        format = format,
+                        quality = quality,
+                        metadata = metadata,
+                    )
+
+                return@withContext Result.success(optimizedImage)
             } catch (e: IOException) {
                 logger.error("Failed to optimize image", e)
                 return@withContext Result.failure(e)
@@ -209,6 +225,13 @@ class BasicImageOptimizer : ImageOptimizer {
                     return@withContext Result.failure(IllegalArgumentException("File not found: $imagePath"))
                 }
 
+                file.inputStream().use { stream ->
+                    try {
+                        preflightImage(stream)
+                    } catch (e: IllegalArgumentException) {
+                        return@withContext Result.failure(e)
+                    }
+                }
                 val image = ImageIO.read(file) ?: return@withContext Result.failure(IllegalArgumentException("Could not read image"))
                 val formatName = file.extension.lowercase()
                 val mimeType = "image/$formatName"
@@ -260,6 +283,40 @@ class BasicImageOptimizer : ImageOptimizer {
             val currentFormat = file.extension.lowercase()
             optimize(imagePath, ImageResizeOptions(format = currentFormat, quality = quality))
         }
+
+    private data class PreflightResult(
+        val width: Int,
+        val height: Int,
+    )
+
+    private fun preflightImage(stream: InputStream): PreflightResult {
+        val buffered = if (stream is BufferedInputStream) stream else BufferedInputStream(stream)
+        val imageInputStream = MemoryCacheImageInputStream(buffered)
+        val readers = ImageIO.getImageReaders(imageInputStream)
+        if (!readers.hasNext()) {
+            throw IllegalArgumentException("Unsupported or unrecognized image format")
+        }
+        val reader: ImageReader = readers.next()
+        try {
+            imageInputStream.seek(0)
+            reader.input = imageInputStream
+            val width = reader.getWidth(0)
+            val height = reader.getHeight(0)
+            if (width > ImageResizeOptions.MAX_DIMENSION || height > ImageResizeOptions.MAX_DIMENSION) {
+                throw IllegalArgumentException(
+                    "Image dimensions ${width}x${height} exceed maximum ${ImageResizeOptions.MAX_DIMENSION}x${ImageResizeOptions.MAX_DIMENSION}",
+                )
+            }
+            if (width.toLong() * height.toLong() > ImageResizeOptions.MAX_PIXEL_COUNT) {
+                throw IllegalArgumentException(
+                    "Image pixel count ${width.toLong() * height.toLong()} exceeds maximum ${ImageResizeOptions.MAX_PIXEL_COUNT}",
+                )
+            }
+            return PreflightResult(width, height)
+        } finally {
+            reader.dispose()
+        }
+    }
 
     private fun resizeImage(
         image: BufferedImage,

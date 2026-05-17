@@ -235,6 +235,19 @@ class BasicImageOptimizerTest {
         }
 
     @Test
+    fun getMetadataRejectsUnsupportedFormat() =
+        runBlocking {
+            val textFile = File(tempDir, "not-an-image.txt")
+            textFile.writeText("this is not an image")
+            val result = optimizer.getMetadata(textFile.absolutePath)
+            assertTrue(result.isFailure, "Non-image file should be rejected")
+            assertTrue(
+                result.exceptionOrNull()?.message?.contains("Unsupported") == true,
+                "Error should mention unsupported format",
+            )
+        }
+
+    @Test
     fun webpFormatIsRejectedAsUnsupported() =
         runBlocking {
             val testImage = createTestImage(100, 100)
