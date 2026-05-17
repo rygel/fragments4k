@@ -76,9 +76,14 @@ class PathSafetyTest {
     }
 
     @Test
-    fun resolveAndCheckRejectsAbsoluteWindowsPath() {
+    fun resolveAndCheckRejectsAbsolutePath() {
+        val absolutePath = if (File.separatorChar == '\\') {
+            "C:\\Windows\\System32"
+        } else {
+            "/etc/passwd"
+        }
         assertThrows<IllegalArgumentException> {
-            PathSafety.resolveAndCheck(tempDir, "C:\\Windows\\System32")
+            PathSafety.resolveAndCheck(tempDir, absolutePath)
         }
     }
 
