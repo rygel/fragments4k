@@ -199,14 +199,20 @@ class FragmentCacheTest {
             fragmentCache.getOrComputeFragment("test-slug") { createTestFragment("test-slug") }
 
             var computeCalls = 0
-            fragmentCache.getOrComputeFragment("test-slug") { computeCalls++; createTestFragment("test-slug") }
-            assertEquals(0, computeCalls) // still cached
+            fragmentCache.getOrComputeFragment("test-slug") {
+                computeCalls++
+                createTestFragment("test-slug")
+            }
+            assertEquals(0, computeCalls)
 
             fragmentCache.invalidateFragment("test-slug")
 
             var computeCalls2 = 0
-            fragmentCache.getOrComputeFragment("test-slug") { computeCalls2++; createTestFragment("test-slug") }
-            assertEquals(1, computeCalls2) // recomputed
+            fragmentCache.getOrComputeFragment("test-slug") {
+                computeCalls2++
+                createTestFragment("test-slug")
+            }
+            assertEquals(1, computeCalls2)
         }
 
     @Test
@@ -219,14 +225,20 @@ class FragmentCacheTest {
             fragmentCache.getOrComputeByAuthor("author1") { listOf(createTestFragment("slug1")) }
 
             var computeCalls = 0
-            fragmentCache.getOrComputeVisibleFragments { computeCalls++; listOf(createTestFragment("slug1")) }
+            fragmentCache.getOrComputeVisibleFragments {
+                computeCalls++
+                listOf(createTestFragment("slug1"))
+            }
             assertEquals(0, computeCalls) // all still cached
 
             fragmentCache.invalidateFragmentLists()
 
             var computeCalls2 = 0
-            fragmentCache.getOrComputeVisibleFragments { computeCalls2++; listOf(createTestFragment("slug1")) }
-            assertEquals(1, computeCalls2) // recomputed
+            fragmentCache.getOrComputeVisibleFragments {
+                computeCalls2++
+                listOf(createTestFragment("slug1"))
+            }
+            assertEquals(1, computeCalls2)
         }
 
     @Test
@@ -241,7 +253,10 @@ class FragmentCacheTest {
             fragmentCache.clearAll()
 
             var fragmentCalls = 0
-            fragmentCache.getOrComputeFragment("test-slug") { fragmentCalls++; createTestFragment("test-slug") }
+            fragmentCache.getOrComputeFragment("test-slug") {
+                fragmentCalls++
+                createTestFragment("test-slug")
+            }
             assertEquals(1, fragmentCalls) // recomputed
         }
 

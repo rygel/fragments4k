@@ -41,8 +41,10 @@ class FragmentCache(
     private val searchResultCache: Cache<String, List<Fragment>> =
         InMemoryCache(CacheConfiguration(ttl = Duration.ofMinutes(5), maxSize = 500, recordStats = true))
 
-    suspend fun getOrComputeFragment(slug: String, compute: suspend () -> Fragment): Fragment =
-        fragmentCache.getOrCompute("fragment:$slug", compute)
+    suspend fun getOrComputeFragment(
+        slug: String,
+        compute: suspend () -> Fragment,
+    ): Fragment = fragmentCache.getOrCompute("fragment:$slug", compute)
 
     suspend fun getFragment(slug: String): Fragment? = fragmentCache.get("fragment:$slug")
 
@@ -70,17 +72,25 @@ class FragmentCache(
         fragmentsByAuthorCache.clear()
     }
 
-    suspend fun getOrComputeByTag(tag: String, compute: suspend () -> List<Fragment>): List<Fragment> =
-        fragmentsByTagCache.getOrCompute("tag:$tag", compute)
+    suspend fun getOrComputeByTag(
+        tag: String,
+        compute: suspend () -> List<Fragment>,
+    ): List<Fragment> = fragmentsByTagCache.getOrCompute("tag:$tag", compute)
 
-    suspend fun getOrComputeByCategory(category: String, compute: suspend () -> List<Fragment>): List<Fragment> =
-        fragmentsByCategoryCache.getOrCompute("category:$category", compute)
+    suspend fun getOrComputeByCategory(
+        category: String,
+        compute: suspend () -> List<Fragment>,
+    ): List<Fragment> = fragmentsByCategoryCache.getOrCompute("category:$category", compute)
 
-    suspend fun getOrComputeByAuthor(authorId: String, compute: suspend () -> List<Fragment>): List<Fragment> =
-        fragmentsByAuthorCache.getOrCompute("author:$authorId", compute)
+    suspend fun getOrComputeByAuthor(
+        authorId: String,
+        compute: suspend () -> List<Fragment>,
+    ): List<Fragment> = fragmentsByAuthorCache.getOrCompute("author:$authorId", compute)
 
-    suspend fun getOrComputeRelationships(slug: String, compute: suspend () -> ContentRelationships): ContentRelationships =
-        relationshipCache.getOrCompute("relationships:$slug", compute)
+    suspend fun getOrComputeRelationships(
+        slug: String,
+        compute: suspend () -> ContentRelationships,
+    ): ContentRelationships = relationshipCache.getOrCompute("relationships:$slug", compute)
 
     suspend fun getRelationships(slug: String): ContentRelationships? = relationshipCache.get("relationships:$slug")
 
@@ -98,31 +108,40 @@ class FragmentCache(
     }
 
     fun getStatistics(): CacheStatisticsReport {
-        val listStats = listOf(
-            allFragmentsCache.getStatistics(),
-            visibleFragmentsCache.getStatistics(),
-            fragmentsByTagCache.getStatistics(),
-            fragmentsByCategoryCache.getStatistics(),
-            fragmentsByAuthorCache.getStatistics(),
-        )
+        val listStats =
+            listOf(
+                allFragmentsCache.getStatistics(),
+                visibleFragmentsCache.getStatistics(),
+                fragmentsByTagCache.getStatistics(),
+                fragmentsByCategoryCache.getStatistics(),
+                fragmentsByAuthorCache.getStatistics(),
+            )
         return CacheStatisticsReport(
             fragmentStats = fragmentCache.getStatistics(),
-            listStats = CacheStatistics(
-                hitCount = listStats.sumOf { it.hitCount },
-                missCount = listStats.sumOf { it.missCount },
-                loadCount = listStats.sumOf { it.loadCount },
-                loadFailureCount = listStats.sumOf { it.loadFailureCount },
-                totalLoadTime = listStats.sumOf { it.totalLoadTime },
-                evictionCount = listStats.sumOf { it.evictionCount },
-            ),
+            listStats =
+                CacheStatistics(
+                    hitCount = listStats.sumOf { it.hitCount },
+                    missCount = listStats.sumOf { it.missCount },
+                    loadCount = listStats.sumOf { it.loadCount },
+                    loadFailureCount = listStats.sumOf { it.loadFailureCount },
+                    totalLoadTime = listStats.sumOf { it.totalLoadTime },
+                    evictionCount = listStats.sumOf { it.evictionCount },
+                ),
             relationshipStats = relationshipCache.getStatistics(),
             parsedContentStats = parsedContentCache.getStatistics(),
             searchStats = searchResultCache.getStatistics(),
-            totalSize = listOf(
-                fragmentCache.size(), allFragmentsCache.size(), visibleFragmentsCache.size(),
-                fragmentsByTagCache.size(), fragmentsByCategoryCache.size(), fragmentsByAuthorCache.size(),
-                relationshipCache.size(), parsedContentCache.size(), searchResultCache.size(),
-            ).sum(),
+            totalSize =
+                listOf(
+                    fragmentCache.size(),
+                    allFragmentsCache.size(),
+                    visibleFragmentsCache.size(),
+                    fragmentsByTagCache.size(),
+                    fragmentsByCategoryCache.size(),
+                    fragmentsByAuthorCache.size(),
+                    relationshipCache.size(),
+                    parsedContentCache.size(),
+                    searchResultCache.size(),
+                ).sum(),
         )
     }
 
