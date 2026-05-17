@@ -60,6 +60,7 @@ data class FragmentViewModel(
         private val HTML_TAG_PATTERN = Regex("<[^>]*>")
         private val ANCHOR_CLEANUP = Regex("[^a-z0-9\\s-]")
         private val ANCHOR_WHITESPACE = Regex("\\s+")
+        private val formatterCache = java.util.concurrent.ConcurrentHashMap<String, DateTimeFormatter>()
     }
 
     /**
@@ -134,7 +135,9 @@ data class FragmentViewModel(
         get() = fragment.author
 
     val formattedDate: String
-        get() = fragment.date?.format(DateTimeFormatter.ofPattern(dateFormat)) ?: ""
+        get() = fragment.date?.format(
+            formatterCache.computeIfAbsent(dateFormat) { DateTimeFormatter.ofPattern(it) },
+        ) ?: ""
 
     val contentPreview: String
         get() = fragment.preview
@@ -177,8 +180,7 @@ data class FragmentViewModel(
     fun expiryDateInZone(zoneId: ZoneId): ZonedDateTime? = fragment.expiryDate?.atZone(ZoneOffset.UTC)?.withZoneSameInstant(zoneId)
 
     /** Estimated reading time based on [WORDS_PER_MINUTE]. */
-    val readingTime: ReadingTime
-        get() = calculateReadingTime()
+    val readingTime: ReadingTime by lazy { calculateReadingTime() }
 
     /** Human-readable reading time string, e.g. `"3m read"` or `"45s read"`. */
     val formattedReadingTime: String
