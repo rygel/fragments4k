@@ -2,6 +2,7 @@ package io.github.rygel.fragments.javalin
 
 import io.github.rygel.fragments.FragmentTemplates
 import io.github.rygel.fragments.FragmentViewModel
+import io.github.rygel.fragments.TextEscapeUtils
 import io.github.rygel.fragments.adapter.ArchiveViewModel
 import io.github.rygel.fragments.adapter.AuthorPageViewModel
 import io.github.rygel.fragments.adapter.BlogOverviewViewModel
@@ -68,24 +69,8 @@ fun RoutesConfig.fragmentsRoutes(
 
     fun Context.writeJson(error: ErrorResponse) {
         contentType("application/json")
-        val escapedError =
-            error.error
-                .replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r")
-                .replace("\t", "\\t")
-                .replace("\b", "\\b")
-                .replace("\u000C", "\\f")
-        val escapedMessage =
-            error.message
-                .replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r")
-                .replace("\t", "\\t")
-                .replace("\b", "\\b")
-                .replace("\u000C", "\\f")
+        val escapedError = TextEscapeUtils.escapeJson(error.error)
+        val escapedMessage = TextEscapeUtils.escapeJson(error.message)
         result("{\"status\":${error.status},\"error\":\"$escapedError\",\"message\":\"$escapedMessage\"}")
     }
 

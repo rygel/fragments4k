@@ -11,6 +11,7 @@ import java.io.IOException
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeParseException
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * File-system backed implementation of [FragmentRepository].
@@ -97,7 +98,7 @@ class FileSystemFragmentRepository(
 
     @Volatile private var lastLoaded: LocalDateTime = LocalDateTime.MIN
 
-    @Volatile private var cachedRelationships: MutableMap<String, ContentRelationships> = mutableMapOf()
+    @Volatile private var cachedRelationships: MutableMap<String, ContentRelationships> = ConcurrentHashMap()
 
     override suspend fun getAll(): List<Fragment> =
         withContext(Dispatchers.IO) {
@@ -417,6 +418,9 @@ class FileSystemFragmentRepository(
 
     companion object {
         private const val MAX_FILE_SIZE = 10L * 1024 * 1024
+        private const val SYSTEM_ACTOR = "system"
+        private const val REASON_SCHEDULED_PUBLICATION = "Scheduled publication"
+        private const val REASON_CONTENT_EXPIRED = "Content expired"
         private val SLUG_PATTERN = Regex("^[a-z0-9]+(-[a-z0-9]+)*$")
         private val SLUG_NON_ALPHANUMERIC = Regex("[^a-z0-9\\s-]")
         private val SLUG_WHITESPACE = Regex("\\s+")
@@ -572,8 +576,8 @@ class FileSystemFragmentRepository(
                     slug = fragment.slug,
                     status = FragmentStatus.PUBLISHED,
                     force = true,
-                    changedBy = "system",
-                    reason = "Scheduled publication",
+                    changedBy = SYSTEM_ACTOR,
+                    reason = REASON_SCHEDULED_PUBLICATION,
                 )
             }
         }
@@ -657,8 +661,8 @@ class FileSystemFragmentRepository(
                     slug = fragment.slug,
                     status = FragmentStatus.EXPIRED,
                     force = true,
-                    changedBy = "system",
-                    reason = "Content expired",
+                    changedBy = SYSTEM_ACTOR,
+                    reason = REASON_CONTENT_EXPIRED,
                 )
             }
         }

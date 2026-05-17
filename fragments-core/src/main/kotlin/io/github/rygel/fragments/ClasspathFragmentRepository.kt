@@ -270,7 +270,7 @@ class ClasspathFragmentRepository(
         val filenames =
             indexStream
                 .bufferedReader()
-                .readLines()
+                .use { it.readLines() }
                 .map { it.trim() }
                 .filter { it.isNotEmpty() && !it.startsWith("#") }
 
@@ -283,9 +283,10 @@ class ClasspathFragmentRepository(
                     return@mapNotNull null
                 }
                 try {
-                    val content = stream.bufferedReader().readText()
-                    val nameWithoutExtension = filename.substringAfterLast('/').removeSuffix(".md")
-                    parseFragment(content, nameWithoutExtension)
+                    stream.bufferedReader().use { it.readText() }.let { content ->
+                        val nameWithoutExtension = filename.substringAfterLast('/').removeSuffix(".md")
+                        parseFragment(content, nameWithoutExtension)
+                    }
                 } catch (e: IllegalArgumentException) {
                     logger.error("Error parsing classpath fragment: $resourcePath", e)
                     null
