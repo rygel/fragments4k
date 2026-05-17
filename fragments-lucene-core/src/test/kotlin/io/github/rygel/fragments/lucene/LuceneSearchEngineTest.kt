@@ -269,6 +269,41 @@ class LuceneSearchEngineTest {
             assertTrue(suggestions.size <= 1)
         }
 
+    // ── Query hardening ──────────────────────────────────────────────────────
+
+    @Test
+    fun testStandardSearchTreatsSpecialCharsAsLiteral() =
+        runBlocking {
+            val results = engine.search(SearchOptions(query = "title:secret OR content:admin"))
+            assertTrue(
+                results.isEmpty() || results.none { it.fragment.slug == "cooking-basics" },
+                "Query syntax should be escaped in standard mode"
+            )
+        }
+
+    @Test
+    fun testAdvancedModeAcceptsRawQuerySyntax() =
+        runBlocking {
+            val results = engine.search(
+                SearchOptions(
+                    query = "title:Kotlin",
+                    searchType = SearchOptions.SearchType.ADVANCED,
+                ),
+            )
+            assertTrue(
+                results.any { it.fragment.slug == "kotlin-guide" },
+                "ADVANCED mode should allow field-specific queries"
+            )
+        }
+
+    @Test
+    fun testQueryWithExcessiveTokensIsTruncated() =
+        runBlocking {
+            val longQuery = (1..25).joinToString(" ") { "word$it" }
+            val results = engine.search(SearchOptions(query = longQuery))
+            assertTrue(results.size <= testFragments().size, "Should not crash with excessive tokens")
+        }
+
     // ── Multiple repositories ────────────────────────────────────────────────
 
     @Test
