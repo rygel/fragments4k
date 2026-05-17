@@ -108,7 +108,7 @@ data class FragmentViewModel(
         get() = relationships?.hasRelationships ?: false
 
     val content: String
-        get() = fragment.htmlContent
+        get() = HtmlLazyLoader.addLazyLoading(fragment.htmlContent)
 
     val preview: String
         get() = fragment.preview
@@ -148,6 +148,9 @@ data class FragmentViewModel(
 
     val month: Int?
         get() = fragment.date?.monthValue
+
+    val monthFormatted: String
+        get() = fragment.date?.let { String.format(java.util.Locale.US, "%02d", it.monthValue) } ?: ""
 
     val tableOfContents: List<TableOfContentsItem> by lazy { extractTableOfContents() }
 

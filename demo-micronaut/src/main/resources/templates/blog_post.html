@@ -253,16 +253,9 @@
         <div class="content" th:utext="${viewModel.content}">
         </div>
 
-        <aside class="related-posts" th:if="${viewModel.relatedPosts != null and !viewModel.relatedPosts.empty}">
-            <h3>You might also like</h3>
-            <ul>
-                <li th:each="post : ${viewModel.relatedPosts}">
-                    <a th:href="@{/blog/{year}/{month}/{slug}(year=${post.date[0]}, month=${post.date[1]}, slug=${post.slug})}"
-                       th:text="${post.title}">Related Post Title</a>
-                    <span class="post-date" th:text="${post.formattedDate}">2024-03-03</span>
-                </li>
-            </ul>
-        </aside>
+        <section id="related-posts" hx-trigger="intersect once" th:hx-get="'/blog/' + ${viewModel.year} + '/' + ${viewModel.monthFormatted} + '/' + ${viewModel.slug} + '/related'" hx-target="this" hx-swap="innerHTML">
+            <div class="loading">Loading related posts...</div>
+        </section>
     </article>
 
     <footer>
@@ -270,6 +263,7 @@
         <p>&copy; 2024 Fragments4k. Powered by <a href="https://github.com/rygel/fragments4k">Fragments4k</a></p>
     </footer>
 
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-kotlin.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>

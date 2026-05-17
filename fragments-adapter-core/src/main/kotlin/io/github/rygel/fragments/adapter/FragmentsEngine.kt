@@ -8,6 +8,7 @@ import io.github.rygel.fragments.ContentRelationships
 import io.github.rygel.fragments.Fragment
 import io.github.rygel.fragments.FragmentRepository
 import io.github.rygel.fragments.FragmentTemplates
+import io.github.rygel.fragments.FragmentViewModel
 import io.github.rygel.fragments.LlmsTxtGenerator
 import io.github.rygel.fragments.NavigationLink
 import io.github.rygel.fragments.NavigationMenuGenerator
@@ -145,6 +146,27 @@ class FragmentsEngine(
         val validatedSlug = RequestValidation.validateSlug(slug)
         if (!validatedSlug.isValid) throw IllegalArgumentException(validatedSlug.errorMessage)
         return blogEngine.getPostWithRelationships(year, month, validatedSlug.value)
+    }
+
+    suspend fun getRelatedPostsFragment(year: String, month: String, slug: String): String? {
+        val post = blogEngine.getPost(year, month, slug) ?: return null
+        val allPosts = blogEngine.getAllPosts()
+        val fragmentVm =
+            FragmentViewModel(
+                fragment = post,
+                allFragments = allPosts,
+                siteUrl = siteUrl,
+            )
+        val related = fragmentVm.relatedPosts
+        if (related.isEmpty()) return null
+        return buildString {
+            appendLine("<h3>Related Posts</h3>")
+            appendLine("<ul>")
+            for (r in related) {
+                appendLine("<li><a href=\"${r.url}\">${r.title}</a></li>")
+            }
+            appendLine("</ul>")
+        }
     }
 
     suspend fun getByTag(
