@@ -100,6 +100,8 @@ class FileSystemFragmentRepository(
 
     @Volatile private var cachedRelationships: MutableMap<String, ContentRelationships> = ConcurrentHashMap()
 
+    @Volatile private var indexes: FragmentIndexes = FragmentIndexes.EMPTY
+
     override suspend fun getAll(): List<Fragment> =
         withContext(Dispatchers.IO) {
             loadFragments()
@@ -107,36 +109,14 @@ class FileSystemFragmentRepository(
 
     override suspend fun getAllVisible(): List<Fragment> =
         withContext(Dispatchers.IO) {
-            val now = LocalDateTime.now()
             loadFragments()
-                .filter { fragment ->
-                    fragment.visible &&
-                        when (fragment.status) {
-                            FragmentStatus.PUBLISHED -> {
-                                fragment.expiryDate == null || !fragment.expiryDate.isBefore(now)
-                            }
-
-                            FragmentStatus.SCHEDULED -> {
-                                fragment.publishDate != null &&
-                                    !fragment.publishDate.isAfter(now) &&
-                                    (fragment.expiryDate == null || !fragment.expiryDate.isBefore(now))
-                            }
-
-                            FragmentStatus.DRAFT,
-                            FragmentStatus.REVIEW,
-                            FragmentStatus.APPROVED,
-                            FragmentStatus.ARCHIVED,
-                            FragmentStatus.EXPIRED,
-                            -> {
-                                false
-                            }
-                        }
-                }.sortedByDescending { it.date }
+            indexes.allVisibleSorted
         }
 
     override suspend fun getBySlug(slug: String): Fragment? =
         withContext(Dispatchers.IO) {
-            loadFragments().find { it.slug == slug || it.slug == "/$slug" }
+            loadFragments()
+            indexes.bySlug[slug] ?: indexes.bySlug["/$slug"]
         }
 
     override suspend fun getByYearMonthAndSlug(
@@ -145,40 +125,40 @@ class FileSystemFragmentRepository(
         slug: String,
     ): Fragment? =
         withContext(Dispatchers.IO) {
-            loadFragments().find {
-                it.slug == slug &&
-                    it.date?.year == year.toIntOrNull() &&
-                    it.date?.monthValue == month.toIntOrNull()
-            }
+            loadFragments()
+            val yearInt = year.toIntOrNull() ?: return@withContext null
+            val monthInt = month.toIntOrNull() ?: return@withContext null
+            indexes.byYearMonth[Pair(yearInt, monthInt)]?.find { it.slug == slug }
         }
 
     override suspend fun getByTag(tag: String): List<Fragment> =
         withContext(Dispatchers.IO) {
-            loadFragments().filter { it.tags.contains(tag.lowercase()) }
+            loadFragments()
+            indexes.byTag[tag.lowercase()] ?: emptyList()
         }
 
     override suspend fun getByCategory(category: String): List<Fragment> =
         withContext(Dispatchers.IO) {
-            loadFragments().filter { it.categories.contains(category.lowercase()) }
+            loadFragments()
+            indexes.byCategory[category.lowercase()] ?: emptyList()
         }
 
     override suspend fun getByStatus(status: FragmentStatus): List<Fragment> =
         withContext(Dispatchers.IO) {
-            loadFragments().filter { it.status == status }
+            loadFragments()
+            indexes.byStatus[status] ?: emptyList()
         }
 
     override suspend fun getByAuthor(authorId: String): List<Fragment> =
         withContext(Dispatchers.IO) {
-            loadFragments().filter { it.authorIds.contains(authorId) || it.author == authorId }
+            loadFragments()
+            indexes.byAuthor[authorId] ?: emptyList()
         }
 
     override suspend fun getByAuthors(authorIds: List<String>): List<Fragment> =
         withContext(Dispatchers.IO) {
-            loadFragments().filter { fragment ->
-                authorIds.any { authorId ->
-                    fragment.authorIds.contains(authorId) || fragment.author == authorId
-                }
-            }
+            loadFragments()
+            authorIds.flatMap { indexes.byAuthor[it] ?: emptyList() }.distinctBy { it.slug }
         }
 
     override suspend fun updateFragmentStatus(
@@ -262,7 +242,9 @@ class FileSystemFragmentRepository(
 
     override suspend fun reload() {
         withContext(Dispatchers.IO) {
-            cachedFragments = loadFragmentsFromDisk()
+            val fragments = loadFragmentsFromDisk()
+            cachedFragments = fragments
+            indexes = FragmentIndexes.build(fragments)
             cachedRelationships.clear()
             lastLoaded = LocalDateTime.now(ZoneOffset.UTC)
         }
@@ -275,7 +257,9 @@ class FileSystemFragmentRepository(
     private fun cacheUpdatedFragment(fragment: Fragment) {
         val index = cachedFragments.indexOfFirst { it.slug == fragment.slug }
         if (index >= 0) {
-            cachedFragments = cachedFragments.toMutableList().apply { this[index] = fragment }
+            val updated = cachedFragments.toMutableList().apply { this[index] = fragment }
+            cachedFragments = updated
+            indexes = FragmentIndexes.build(updated)
         }
     }
 
@@ -295,6 +279,7 @@ class FileSystemFragmentRepository(
         if (cachedFragments.isEmpty() || lastLoaded.isEqual(LocalDateTime.MIN)) {
             loadFragmentsFromDisk().also {
                 cachedFragments = it
+                indexes = FragmentIndexes.build(it)
                 lastLoaded = LocalDateTime.now(ZoneOffset.UTC)
             }
         } else {
@@ -555,20 +540,18 @@ class FileSystemFragmentRepository(
 
     override suspend fun getScheduledFragmentsDueForPublication(threshold: LocalDateTime): List<Fragment> =
         withContext(Dispatchers.IO) {
-            loadFragments().filter { fragment ->
-                fragment.status == FragmentStatus.SCHEDULED &&
-                    fragment.publishDate != null &&
-                    !fragment.publishDate.isAfter(threshold)
+            loadFragments()
+            (indexes.byStatus[FragmentStatus.SCHEDULED] ?: emptyList()).filter { fragment ->
+                fragment.publishDate != null && !fragment.publishDate.isAfter(threshold)
             }
         }
 
     override suspend fun publishScheduledFragments(threshold: LocalDateTime): List<Result<Fragment>> =
         withContext(Dispatchers.IO) {
+            loadFragments()
             val dueFragments =
-                loadFragments().filter { fragment ->
-                    fragment.status == FragmentStatus.SCHEDULED &&
-                        fragment.publishDate != null &&
-                        !fragment.publishDate.isAfter(threshold)
+                (indexes.byStatus[FragmentStatus.SCHEDULED] ?: emptyList()).filter { fragment ->
+                    fragment.publishDate != null && !fragment.publishDate.isAfter(threshold)
                 }
 
             dueFragments.map { fragment ->
@@ -640,20 +623,18 @@ class FileSystemFragmentRepository(
 
     override suspend fun getFragmentsExpiringSoon(threshold: LocalDateTime): List<Fragment> =
         withContext(Dispatchers.IO) {
-            loadFragments().filter { fragment ->
-                fragment.expiryDate != null &&
-                    !fragment.expiryDate.isAfter(threshold) &&
-                    fragment.status == FragmentStatus.PUBLISHED
+            loadFragments()
+            (indexes.byStatus[FragmentStatus.PUBLISHED] ?: emptyList()).filter { fragment ->
+                fragment.expiryDate != null && !fragment.expiryDate.isAfter(threshold)
             }
         }
 
     override suspend fun expireFragments(threshold: LocalDateTime): List<Result<Fragment>> =
         withContext(Dispatchers.IO) {
+            loadFragments()
             val expiredFragments =
-                loadFragments().filter { fragment ->
-                    fragment.status == FragmentStatus.PUBLISHED &&
-                        fragment.expiryDate != null &&
-                        fragment.expiryDate.isBefore(threshold)
+                (indexes.byStatus[FragmentStatus.PUBLISHED] ?: emptyList()).filter { fragment ->
+                    fragment.expiryDate != null && fragment.expiryDate.isBefore(threshold)
                 }
 
             expiredFragments.map { fragment ->
