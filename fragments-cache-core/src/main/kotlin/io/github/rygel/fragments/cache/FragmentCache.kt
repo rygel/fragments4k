@@ -157,3 +157,32 @@ class FragmentCache(
         searchResultCache.resetStatistics()
     }
 }
+
+data class ParsedContent(
+    val frontMatter: Map<String, Any>,
+    val rawContent: String,
+    val htmlContent: String,
+    val fileHash: String,
+)
+
+data class CacheStatisticsReport(
+    val fragmentStats: CacheStatistics,
+    val listStats: CacheStatistics,
+    val relationshipStats: CacheStatistics,
+    val parsedContentStats: CacheStatistics,
+    val searchStats: CacheStatistics,
+    val totalSize: Long,
+) {
+    val overallHitRate: Double
+        get() {
+            val totalRequests =
+                fragmentStats.requestCount + listStats.requestCount +
+                    relationshipStats.requestCount + parsedContentStats.requestCount +
+                    searchStats.requestCount
+            val totalHits =
+                fragmentStats.hitCount + listStats.hitCount +
+                    relationshipStats.hitCount + parsedContentStats.hitCount +
+                    searchStats.hitCount
+            return if (totalRequests > 0) totalHits.toDouble() / totalRequests else 0.0
+        }
+}
