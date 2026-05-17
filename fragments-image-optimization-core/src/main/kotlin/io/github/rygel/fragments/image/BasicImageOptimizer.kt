@@ -7,7 +7,6 @@ import java.awt.RenderingHints
 import java.awt.image.BufferedImage
 import java.io.BufferedInputStream
 import java.io.File
-import java.io.FileInputStream
 import java.io.IOException
 import java.io.InputStream
 import javax.imageio.IIOImage
@@ -181,36 +180,11 @@ class BasicImageOptimizer : ImageOptimizer {
                 if (!file.exists()) {
                     return@withContext Result.failure(IllegalArgumentException("File not found: $imagePath"))
                 }
-
+                val source = readAndPreflight(file)
                 val baseName = file.nameWithoutExtension
                 val parentDir = file.parent
-                val variantList = mutableListOf<ResponsiveVariant>()
-
-                for (index in variants.indices) {
-                    val opts = variants[index]
-                    val fileName = "$baseName-${opts.maxWidth}x${opts.maxHeight}.${opts.format}"
-                    val outputPath = parentDir + File.separator + fileName
-
-                    FileInputStream(imagePath).use { inputStream ->
-                        val result = optimize(inputStream, outputPath, opts)
-                        if (result.isSuccess) {
-                            val optimized = result.getOrNull()!!
-                            val variant =
-                                ResponsiveVariant(
-                                    name = opts.maxWidth?.toString() ?: "original",
-                                    path = outputPath,
-                                    width = optimized.width,
-                                    height = optimized.height,
-                                    sizeBytes = optimized.optimizedSize,
-                                    format = optimized.format,
-                                    mediaQuery = generateMediaQuery(optimized.width),
-                                )
-                            variantList.add(variant)
-                        }
-                    }
-                }
-
-                return@withContext Result.success(variantList.toList())
+                val results = generateVariantsFromImage(source, baseName, parentDir, variants)
+                return@withContext Result.success(results)
             } catch (e: IOException) {
                 logger.error("Failed to generate responsive variants", e)
                 return@withContext Result.failure(e)
@@ -428,5 +402,45 @@ class BasicImageOptimizer : ImageOptimizer {
         }
 
         ImageIO.write(image, format, outputFile)
+    }
+
+    private fun readAndPreflight(file: File): BufferedImage {
+        file.inputStream().use { stream ->
+            preflightImage(stream)
+        }
+        return ImageIO.read(file)
+            ?: throw IllegalArgumentException("Could not read image: ${file.path}")
+    }
+
+    private fun generateVariantsFromImage(
+        source: BufferedImage,
+        baseName: String,
+        parentDir: String,
+        variants: List<ImageResizeOptions>,
+    ): List<ResponsiveVariant> {
+        val variantList = mutableListOf<ResponsiveVariant>()
+        for (opts in variants) {
+            val fileName = "$baseName-${opts.maxWidth}x${opts.maxHeight}.${opts.format}"
+            val outputPath = "$parentDir${File.separator}$fileName"
+            val resized = resizeImage(source, opts)
+            val outputFile = File(outputPath)
+            outputFile.parentFile?.mkdirs()
+            val quality = opts.quality
+            val format = opts.format.lowercase()
+            val outputFormat = getOutputFormat(format)
+            writeImageWithQuality(resized, outputFormat, quality, outputFile)
+            val variant =
+                ResponsiveVariant(
+                    name = opts.maxWidth?.toString() ?: "original",
+                    path = outputPath,
+                    width = resized.width,
+                    height = resized.height,
+                    sizeBytes = outputFile.length(),
+                    format = format,
+                    mediaQuery = generateMediaQuery(resized.width),
+                )
+            variantList.add(variant)
+        }
+        return variantList.toList()
     }
 }
