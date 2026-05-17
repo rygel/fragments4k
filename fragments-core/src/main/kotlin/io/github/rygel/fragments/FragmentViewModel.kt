@@ -108,7 +108,7 @@ data class FragmentViewModel(
         get() = relationships?.hasRelationships ?: false
 
     val content: String
-        get() = fragment.htmlContent
+        get() = HtmlLazyLoader.addLazyLoading(fragment.htmlContent)
 
     val preview: String
         get() = fragment.preview
