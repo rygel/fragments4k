@@ -3,7 +3,9 @@ package io.github.rygel.fragments
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
+import org.yaml.snakeyaml.LoaderOptions
 import org.yaml.snakeyaml.Yaml
+import org.yaml.snakeyaml.constructor.SafeConstructor
 import org.yaml.snakeyaml.error.YAMLException
 import java.io.File
 import java.io.IOException
@@ -17,10 +19,12 @@ class FileSystemContentSeriesRepository(
     private val extension: String = ".series.yml",
 ) : ContentSeriesRepository {
     private val logger = LoggerFactory.getLogger(FileSystemContentSeriesRepository::class.java)
-    private val yaml = Yaml()
+    private val yaml = Yaml(SafeConstructor(LoaderOptions()))
     private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
-    private var cachedSeries: List<ContentSeries> = emptyList()
-    private var lastLoaded: LocalDateTime = LocalDateTime.MIN
+
+    @Volatile private var cachedSeries: List<ContentSeries> = emptyList()
+
+    @Volatile private var lastLoaded: LocalDateTime = LocalDateTime.MIN
 
     override suspend fun getAll(): List<ContentSeries> =
         withContext(Dispatchers.IO) {

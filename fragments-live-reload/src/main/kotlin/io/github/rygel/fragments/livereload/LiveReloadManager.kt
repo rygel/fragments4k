@@ -42,7 +42,8 @@ class LiveReloadManager(
     val reloadEvents: SharedFlow<ReloadEvent> = _reloadEvents.asSharedFlow()
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
-    private var watchJob: Job? = null
+
+    @Volatile private var watchJob: Job? = null
 
     @Volatile
     private var watchService: WatchService? = null

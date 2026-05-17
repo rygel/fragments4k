@@ -290,7 +290,7 @@ class InMemoryCache<K, V>(
 
     override fun size(): Long = store.size.toLong()
 
-    override fun getKeys(): Set<K> = store.keys
+    override fun getKeys(): Set<K> = store.keys.toSet()
 
     override suspend fun containsKey(key: K): Boolean =
         mutex.withLock {
