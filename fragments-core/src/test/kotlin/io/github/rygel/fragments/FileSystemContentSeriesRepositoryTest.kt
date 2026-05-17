@@ -212,11 +212,12 @@ class FileSystemContentSeriesRepositoryTest {
     @Test
     fun createSeriesRejectsPathTraversalSlug() =
         runBlocking {
-            val series = ContentSeries(
-                slug = "../../etc/passwd",
-                title = "Malicious",
-                status = SeriesStatus.ACTIVE,
-            )
+            val series =
+                ContentSeries(
+                    slug = "../../etc/passwd",
+                    title = "Malicious",
+                    status = SeriesStatus.ACTIVE,
+                )
             val result = repository.createSeries(series)
             assertTrue(result.isFailure)
             assertTrue(result.exceptionOrNull() is IllegalArgumentException)
@@ -225,11 +226,12 @@ class FileSystemContentSeriesRepositoryTest {
     @Test
     fun createSeriesRejectsBlankSlug() =
         runBlocking {
-            val series = ContentSeries(
-                slug = "",
-                title = "Empty Slug",
-                status = SeriesStatus.ACTIVE,
-            )
+            val series =
+                ContentSeries(
+                    slug = "",
+                    title = "Empty Slug",
+                    status = SeriesStatus.ACTIVE,
+                )
             val result = repository.createSeries(series)
             assertTrue(result.isFailure)
         }

@@ -136,7 +136,12 @@ class FileSystemFragmentRevisionRepositoryTest {
 
     @Test
     fun safeYamlRejectsUnsafeTagsInRevisionFrontMatter() {
-        val yaml = org.yaml.snakeyaml.Yaml(org.yaml.snakeyaml.constructor.SafeConstructor(org.yaml.snakeyaml.LoaderOptions()))
+        val yaml =
+            org.yaml.snakeyaml
+                .Yaml(
+                    org.yaml.snakeyaml.constructor
+                        .SafeConstructor(org.yaml.snakeyaml.LoaderOptions()),
+                )
         val result =
             runCatching {
                 yaml.load<Any>("!!javax.script.ScriptEngineManager [[]]")

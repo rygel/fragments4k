@@ -277,22 +277,23 @@ class LuceneSearchEngineTest {
             val results = engine.search(SearchOptions(query = "title:secret OR content:admin"))
             assertTrue(
                 results.isEmpty() || results.none { it.fragment.slug == "cooking-basics" },
-                "Query syntax should be escaped in standard mode"
+                "Query syntax should be escaped in standard mode",
             )
         }
 
     @Test
     fun testAdvancedModeAcceptsRawQuerySyntax() =
         runBlocking {
-            val results = engine.search(
-                SearchOptions(
-                    query = "title:Kotlin",
-                    searchType = SearchOptions.SearchType.ADVANCED,
-                ),
-            )
+            val results =
+                engine.search(
+                    SearchOptions(
+                        query = "title:Kotlin",
+                        searchType = SearchOptions.SearchType.ADVANCED,
+                    ),
+                )
             assertTrue(
                 results.any { it.fragment.slug == "kotlin-guide" },
-                "ADVANCED mode should allow field-specific queries"
+                "ADVANCED mode should allow field-specific queries",
             )
         }
 

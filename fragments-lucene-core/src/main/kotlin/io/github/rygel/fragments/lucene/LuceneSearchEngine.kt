@@ -239,12 +239,13 @@ class LuceneSearchEngine(
 
     private fun buildQuery(options: SearchOptions): Query? {
         val tokens = options.query.split(WHITESPACE).filter { it.isNotEmpty() }
-        val effectiveOptions = if (tokens.size > MAX_TOKEN_COUNT) {
-            logger.warn("Search query has {} tokens, truncating to {}", tokens.size, MAX_TOKEN_COUNT)
-            options.copy(query = tokens.take(MAX_TOKEN_COUNT).joinToString(" "))
-        } else {
-            options
-        }
+        val effectiveOptions =
+            if (tokens.size > MAX_TOKEN_COUNT) {
+                logger.warn("Search query has {} tokens, truncating to {}", tokens.size, MAX_TOKEN_COUNT)
+                options.copy(query = tokens.take(MAX_TOKEN_COUNT).joinToString(" "))
+            } else {
+                options
+            }
 
         return when {
             effectiveOptions.phraseSearch -> buildPhraseQuery(effectiveOptions.query)
@@ -260,11 +261,12 @@ class LuceneSearchEngine(
         val parser = MultiFieldQueryParser(fields, analyzer, boosts)
         parser.defaultOperator = QueryParser.Operator.AND
 
-        val processedQuery = if (options.searchType == SearchOptions.SearchType.ADVANCED) {
-            query
-        } else {
-            QueryParser.escape(query)
-        }
+        val processedQuery =
+            if (options.searchType == SearchOptions.SearchType.ADVANCED) {
+                query
+            } else {
+                QueryParser.escape(query)
+            }
 
         return try {
             val parsed = parser.parse(processedQuery)
@@ -317,18 +319,21 @@ class LuceneSearchEngine(
         return booleanQuery.setMinimumNumberShouldMatch(1).build()
     }
 
-    private fun hasLeadingWildcard(query: Query): Boolean {
-        return when (query) {
+    private fun hasLeadingWildcard(query: Query): Boolean =
+        when (query) {
             is WildcardQuery -> {
                 val termText = query.term.text()
                 termText.startsWith("*") || termText.startsWith("?")
             }
+
             is BooleanQuery -> {
                 query.clauses().any { hasLeadingWildcard(it.query) }
             }
-            else -> false
+
+            else -> {
+                false
+            }
         }
-    }
 
     suspend fun searchByTag(tag: String): List<Fragment> =
         withContext(Dispatchers.IO) {

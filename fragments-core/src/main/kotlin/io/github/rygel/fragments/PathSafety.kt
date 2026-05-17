@@ -13,15 +13,22 @@ object PathSafety {
         require(SLUG_PATTERN.matches(slug)) { "Slug contains invalid characters: $slug" }
     }
 
-    fun resolveAndCheck(baseDir: File, fileName: String): File {
+    fun resolveAndCheck(
+        baseDir: File,
+        fileName: String,
+    ): File {
         val baseCanonical = baseDir.canonicalPath
         val targetFile = File(baseDir, fileName)
-        val targetCanonical = try {
-            targetFile.canonicalPath
-        } catch (e: IOException) {
-            throw IllegalArgumentException("Invalid file path: '$fileName'", e)
-        }
-        require(targetCanonical == baseCanonical || targetCanonical.startsWith(baseCanonical + File.separator)) {
+        val targetCanonical =
+            try {
+                targetFile.canonicalPath
+            } catch (e: IOException) {
+                throw IllegalArgumentException("Invalid file path: '$fileName'", e)
+            }
+        require(
+            targetCanonical == baseCanonical ||
+                targetCanonical.startsWith(baseCanonical + File.separator),
+        ) {
             "Path traversal detected: '$fileName' escapes base directory"
         }
         return targetFile

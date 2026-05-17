@@ -5,10 +5,10 @@ import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
 import java.awt.RenderingHints
 import java.awt.image.BufferedImage
+import java.io.BufferedInputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
-import java.io.BufferedInputStream
 import java.io.InputStream
 import javax.imageio.IIOImage
 import javax.imageio.ImageIO
@@ -304,7 +304,8 @@ class BasicImageOptimizer : ImageOptimizer {
             val height = reader.getHeight(0)
             if (width > ImageResizeOptions.MAX_DIMENSION || height > ImageResizeOptions.MAX_DIMENSION) {
                 throw IllegalArgumentException(
-                    "Image dimensions ${width}x${height} exceed maximum ${ImageResizeOptions.MAX_DIMENSION}x${ImageResizeOptions.MAX_DIMENSION}",
+                    "Image dimensions ${width}x$height exceed maximum " +
+                        "${ImageResizeOptions.MAX_DIMENSION}x${ImageResizeOptions.MAX_DIMENSION}",
                 )
             }
             if (width.toLong() * height.toLong() > ImageResizeOptions.MAX_PIXEL_COUNT) {
