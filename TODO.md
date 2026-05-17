@@ -42,6 +42,77 @@ This document outlines planned features and enhancements for the Fragments proje
 
 ## 🎯 High Priority (Core CMS Features)
 
+### Security Hardening
+
+- [x] **Harden Fragment Revision File Paths** ✅
+  - Current: Revision file names are derived from fragment slugs, and fragment front-matter slugs are only logged when invalid
+  - Risk: A malicious slug containing path separators could escape the `.revisions/` directory during revision save/load/delete operations
+  - Goal: Reject invalid fragment slugs at parse time and ensure revision paths stay inside the revisions directory
+  - Technical: Validate slugs with the existing slug pattern, validate revision IDs, resolve/canonicalize all revision paths, and assert canonical containment before read/write/delete
+  - Estimation: 1-2 days
+  - Status: Completed 2026-05-17
+  - Implementation:
+    - Created shared `PathSafety` utility with `validateSlug()` and `resolveAndCheck()`
+    - Added slug validation to all revision repository methods accepting slugs
+    - Replaced all `File(revisionsDir, "$id.json")` with `PathSafety.resolveAndCheck()`
+    - 6 regression tests for path traversal rejection
+
+- [x] **Use Safe YAML Loading in Revision Repository** ✅
+  - Current: `FileSystemFragmentRevisionRepository` uses `Yaml()` directly while other repositories use `SafeConstructor`
+  - Risk: Locally modified revision files expand the YAML parsing attack surface
+  - Goal: Align revision front-matter parsing with the safer YAML configuration used by author and series repositories
+  - Technical: Replace direct `Yaml()` usage with `Yaml(SafeConstructor(LoaderOptions()))` and add regression coverage for unsafe YAML tags
+  - Estimation: 0.5-1 day
+  - Status: Completed 2026-05-17
+  - Implementation:
+    - Changed `Yaml()` to `Yaml(SafeConstructor(LoaderOptions()))` in revision repository
+    - Added regression test verifying SafeConstructor rejects unsafe YAML tags
+
+- [x] **Validate Content Series Slugs Before File Writes** ✅
+  - Current: `FileSystemContentSeriesRepository` writes `${series.slug}.series.yml` without explicit slug validation
+  - Risk: A caller-provided series slug containing path separators could write outside the `series/` directory
+  - Goal: Apply the same slug validation and path containment checks used for author storage
+  - Technical: Add slug validation to create/update/delete paths, normalize target paths, and add traversal regression tests
+  - Estimation: 1 day
+  - Status: Completed 2026-05-17
+  - Implementation:
+    - Added `PathSafety.validateSlug()` to getBySlug, createSeries, updateSeries, deleteSeries
+    - Replaced `File(seriesDir, ...)` with `PathSafety.resolveAndCheck()` in saveSeries
+    - 4 regression tests for path traversal and blank slug rejection
+
+- [x] **Harden Public Lucene Query Handling** ✅
+  - Current: Public search input is length-limited but passed to Lucene `MultiFieldQueryParser`
+  - Risk: Operator-heavy, wildcard-heavy, or malformed queries can be expensive and may create avoidable denial-of-service risk
+  - Goal: Make normal public search treat user input as plain text by default while preserving optional advanced search APIs
+  - Technical: Escape public query text by default, reject leading wildcards, cap token count, consider query timeouts/rate limits at adapter boundaries, and test pathological inputs
+  - Estimation: 2-3 days
+  - Status: Completed 2026-05-17
+  - Implementation:
+    - Added `SearchType` enum (STANDARD/ADVANCED) to `SearchOptions`
+    - Standard mode escapes all Lucene special chars via `QueryParser.escape()`
+    - Leading wildcard detection and rejection
+    - Token count capping at 20 with warning log
+    - 3 regression tests for literal escaping, advanced mode, and token truncation
+
+- [x] **Preflight Image Metadata Before Full Decode** ✅
+  - Current: `BasicImageOptimizer` calls `ImageIO.read()` before enforcing dimension limits
+  - Risk: Crafted or very large image files can consume memory during decode before `MAX_DIMENSION` is checked
+  - Goal: Reject oversized images before full decode
+  - Technical: Add max input file size/pixel count checks, use `ImageReader` to inspect width/height first, reject unsupported formats early, and add regression tests for oversized dimensions
+  - Estimation: 2-3 days
+  - Status: Completed 2026-05-17
+  - Implementation:
+    - Added `preflightImage()` method using `ImageReader.getWidth(0)`/`getHeight(0)` for header-only dimension reading
+    - Added `MAX_PIXEL_COUNT = 200M` constant to `ImageResizeOptions`
+    - Preflight wired into `optimize()`, `getMetadata()` — rejects oversized/unsupported images before full decode
+    - Regression test for unsupported format rejection
+
+- [x] **Expand Default HTTP Security Headers** ✅
+  - Current: Adapters apply CSP, `X-Content-Type-Options`, `X-Frame-Options`, and `Referrer-Policy`
+  - Goal: Provide stronger production defaults while keeping them configurable
+  - Technical: Consider adding `Strict-Transport-Security` when HTTPS is enabled, `Permissions-Policy`, and selected Cross-Origin headers; document deployment caveats
+  - Estimation: 1 day
+
 ### Content Management
 
 - [x] **Expiration & Unpublishing** ✅
@@ -430,6 +501,62 @@ This document outlines planned features and enhancements for the Fragments proje
      - Framework-agnostic HTTP caching layer
      - Expected performance: 60-80% reduction in HTTP responses for cached content
 
+- [ ] **Reload-Time Fragment Indexes**
+  - Current: Repository lookups repeatedly scan cached fragment lists for slug, tag, category, author, year/month, and visible/sorted content
+  - Goal: Build indexes when fragments are loaded or reloaded so request-time access avoids repeated filtering and sorting
+  - Impact: Improves scalability for larger content collections and reduces CPU per request
+  - Technical: Add `slug -> Fragment`, tag/category/author maps, visible sorted list, and year/month indexes to `FileSystemFragmentRepository` and `ClasspathFragmentRepository`; invalidate and rebuild on `reload()`
+  - Estimation: 3-5 days
+
+- [ ] **Blog View Index**
+  - Current: `BlogEngine` filters, resolves URLs, copies fragments, and sorts by date in most methods
+  - Goal: Maintain a reload-aware blog index with sorted posts and lookup maps for common views
+  - Impact: Faster blog overview, tag/category/year/archive/author routes
+  - Technical: Build a `BlogIndex` from visible fragments, keyed by tag/category/year/month/author, and reuse URL-resolved fragments instead of copying on every request
+  - Estimation: 3-5 days
+
+- [ ] **Cache Generated Feed Outputs**
+  - Current: RSS, sitemap, and llms.txt endpoints call `collectResolvedFragments()` and regenerate output on each request
+  - Goal: Cache generated feed strings and invalidate them when repositories reload or content changes
+  - Impact: Reduces repeated full-corpus scans and XML/text generation for frequently crawled endpoints
+  - Technical: Add feed-output cache entries for RSS, sitemap, robots/llms if needed, with explicit invalidation hooks and optional HTTP cache integration
+  - Estimation: 2-3 days
+
+- [ ] **Avoid Duplicate Repository Reads During Feed Collection**
+  - Current: `collectResolvedFragments()` calls static and blog engines separately, which can read/filter the same repository more than once
+  - Goal: Collect visible fragments once per repository and partition into static/blog/additional content in memory
+  - Impact: Reduces CPU and allocation cost for feed generation and static-site export paths
+  - Technical: Refactor `FragmentsEngine.collectResolvedFragments()` to de-duplicate repositories first, then apply static/blog URL resolution without repeated repository calls
+  - Estimation: 1-2 days
+
+- [ ] **Optimize ViewModel Computed Properties**
+  - Current: `FragmentViewModel.formattedDate` creates a new `DateTimeFormatter` on access and `readingTime` recalculates every access
+  - Goal: Cache cheap but repeated template-facing computations
+  - Impact: Reduces allocations during page rendering, especially on listing pages
+  - Technical: Cache `DateTimeFormatter` instances by pattern and make `readingTime` lazy like `tableOfContents`
+  - Estimation: 0.5-1 day
+
+- [ ] **Single-Flight Cache Loads**
+  - Current: `InMemoryCache.getOrCompute()` computes outside the lock, so concurrent misses for the same key can duplicate expensive work
+  - Goal: Ensure only one coroutine computes a missing key while others await the result
+  - Impact: Prevents thundering-herd work during cold cache or cache expiry
+  - Technical: Add per-key mutex/deferred single-flight tracking and regression tests with concurrent callers
+  - Estimation: 1-2 days
+
+- [ ] **Improve Cache Eviction Complexity**
+  - Current: `InMemoryCache.enforceMaxSize()` scans all entries to evict the oldest item on each overflow
+  - Goal: Make eviction efficient under high churn or replace the implementation with a proven cache
+  - Impact: Reduces O(n) eviction overhead for large caches
+  - Technical: Use Caffeine internally or maintain insertion/access order with a linked structure; keep the existing cache interface stable
+  - Estimation: 2-3 days
+
+- [ ] **Optimize Image Variant Generation**
+  - Current: Responsive variant generation re-opens and decodes the source image for each variant
+  - Goal: Decode once and derive all variants from the in-memory source image
+  - Impact: Reduces CPU and I/O for image-heavy workflows
+  - Technical: Split decode/resize/write helpers, reuse decoded `BufferedImage`, and inspect metadata with `ImageReader` without full decode where possible
+  - Estimation: 2-3 days
+
 - [ ] **Lazy Loading Optimization**
   - Current: All content loaded immediately
   - Goal: Implement lazy loading for images, related content, and below-the-fold content
@@ -699,14 +826,114 @@ This document outlines planned features and enhancements for the Fragments proje
   - Technical: Video recording, editing workflows, hosting platform
   - Estimation: 2-3 weeks
 
+### Usability Improvements
+
+- [ ] **Fix CLI Project Scaffolding Output**
+  - Current: Generated starters use outdated or invalid code paths, including trailing-lambda repository construction and a null Javalin renderer that can return blank HTML
+  - Goal: Ensure every generated framework starter compiles, starts, and renders visible content immediately
+  - Impact: Prevents first-run failure and improves trust in the CLI
+  - Technical: Update `ProjectGenerator.kt`, use named `urlBuilder` arguments, provide a real Javalin renderer, and add generated-project compile/run smoke tests
+  - Estimation: 2-3 days
+
+- [ ] **Refresh README Quick Start and Version References**
+  - Current: Root README shows stale dependency versions and an outdated `FragmentsHttp4kAdapter` constructor example
+  - Goal: Align quick start docs with the current `FragmentsEngine` and adapter APIs
+  - Impact: Reduces onboarding friction and prevents copy/paste failures
+  - Technical: Update README snippets, verify examples against current constructors, and keep published versions in one documented source of truth
+  - Estimation: 1 day
+
+- [ ] **Make CLI `run` Behavior Match User Expectations**
+  - Current: `fragments run` prints server information but only shows framework commands; `--watch` prints live-reload setup instructions instead of starting a watcher
+  - Goal: Either launch the selected framework dev server or rename/reword the command so behavior is explicit
+  - Impact: Avoids confusing users who expect a working local development command
+  - Technical: Implement framework-specific process launch, or split commands into `run`, `doctor`, and `livereload instructions`
+  - Estimation: 2-4 days
+
+- [ ] **Unify Framework Adapter Rendering Semantics**
+  - Current: Spring returns template names, HTTP4k renders through `TemplateRenderer`, Javalin manually renders HTML, and Micronaut/Quarkus return raw view models that likely serialize as JSON unless separate view integration is configured
+  - Goal: Make each adapter's default routes consistently return usable HTML or clearly document JSON-only behavior
+  - Impact: Gives users the same mental model across HTTP4k, Javalin, Spring Boot, Quarkus, and Micronaut
+  - Technical: Add renderer integration or view annotations where needed, decide whether Micronaut and Quarkus are HTML adapters or JSON API adapters, standardize adapter docs, and add endpoint response-type tests
+  - Estimation: 3-5 days
+
+- [ ] **Add Generated Project Smoke Tests**
+  - Current: CLI templates can drift from current constructors, package names, renderer requirements, and dependency versions
+  - Goal: Generate each supported framework starter in CI and verify it compiles and exposes at least one working route
+  - Impact: Catches broken starters before release and protects the first-run developer experience
+  - Technical: Add CLI integration tests for HTTP4k, Javalin, Spring Boot, Quarkus, and Micronaut; run `mvn test-compile` and targeted startup/render checks for generated projects
+  - Estimation: 3-5 days
+
+- [ ] **Centralize Project and Template Version Management**
+  - Current: Root POM, CLI version output, generated POMs, README snippets, and demo docs can reference different Fragments versions
+  - Goal: Keep published version references in one source of truth
+  - Impact: Prevents stale docs and generated projects from pointing users at incompatible versions
+  - Technical: Read version metadata from build properties or generated resources, update CLI output from the same source, and add a documentation/version consistency check
+  - Estimation: 1-2 days
+
+- [ ] **Improve Search Setup Feedback**
+  - Current: Lucene search returns empty results when the index has not been initialized, which looks the same as a valid no-results query
+  - Goal: Surface a clear warning, health status, or setup error when search is enabled but `index()` has not run
+  - Impact: Makes search setup failures diagnosable without source-code inspection
+  - Technical: Use the existing uninitialized-reader path, add adapter-level diagnostics, and document startup indexing in generated projects
+  - Estimation: 1-2 days
+
+- [ ] **Expose Production Configuration in Framework Starters**
+  - Current: `siteUrl` defaults to localhost and production-critical values are mostly hard-coded or constructor-only in generated apps
+  - Goal: Provide clear framework-native properties for `siteUrl`, site title, description, page size, content path, search index path, and security headers
+  - Impact: Reduces accidental localhost URLs in RSS, sitemap, canonical links, and generated metadata
+  - Technical: Add configuration property classes for Spring, Micronaut, and Quarkus; update generated apps and docs
+  - Estimation: 3-5 days
+
+- [ ] **Standardize Pagination Link Generation**
+  - Current: Adapters expose `/blog/page/{page}` routes while shared pagination links emit `?page=` URLs
+  - Goal: Generate links that match the active route style for each adapter
+  - Impact: Produces cleaner navigation and avoids mixed URL patterns in rendered pages
+  - Technical: Make `PaginationGenerator` accept a URL strategy or page URL builder
+  - Estimation: 1-2 days
+
+- [ ] **Normalize Blog Template Naming Across Examples and Templates**
+  - Current: Core accepts both `blog` and `blog_post`, but some demo search templates special-case only `blog_post`
+  - Goal: Use the shared `FragmentTemplates.BLOG_TEMPLATES` concept consistently in generated content, docs, demos, and templates
+  - Impact: Prevents surprising behavior when users choose the supported `template: blog` value
+  - Technical: Update demo templates, generated templates, and docs; add template behavior tests for both names
+  - Estimation: 1-2 days
+
+- [ ] **Clarify Optional View Model Fields**
+  - Current: Shared adapter models expose nullable footer/search-form fields, while HTTP4k later requires them with `requireNotNull`
+  - Goal: Make required fields non-null at construction time or provide defaults before rendering
+  - Impact: Converts late runtime crashes into clear API contracts
+  - Technical: Adjust adapter view models, constructor defaults, and HTTP4k mapping code
+  - Estimation: 1-2 days
+
+- [ ] **Improve CLI Error Messages**
+  - Current: Some CLI errors print stack traces or refer only to project names instead of full target paths
+  - Goal: Provide concise actionable errors with paths, suggested fixes, and optional verbose diagnostics
+  - Impact: Helps users recover from invalid input or filesystem problems quickly
+  - Technical: Add a verbose flag, route exceptions through a common error formatter, and include resolved paths in failure messages
+  - Estimation: 1-2 days
+
+- [ ] **Add CLI Doctor Command**
+  - Current: Users must inspect logs, generated files, and framework setup manually when a project does not render or search returns no results
+  - Goal: Provide `fragments doctor` to validate local setup and explain actionable fixes
+  - Impact: Makes installation, content setup, production configuration, and search indexing problems easier to diagnose
+  - Technical: Check Java and Maven versions, content directory existence, template availability, configured `siteUrl`, search index state, framework adapter mode, route configuration, and common generated-project mistakes
+  - Estimation: 3-5 days
+
+- [ ] **Make Documentation Examples Executable in CI**
+  - Current: README and generated documentation snippets can become stale independently from source code
+  - Goal: Verify quick-start snippets and framework examples against the current API during CI
+  - Impact: Prevents copy/paste failures and keeps docs trustworthy for new users
+  - Technical: Extract examples into compilable sample modules or snippet tests, run them with Maven Surefire, and fail CI on stale constructor calls or missing imports
+  - Estimation: 3-5 days
+
 ---
 
 ## 📊 Summary Statistics
 
 - **Total Features:** 64
-- **Completed Features:** 10 (15.6%)
+- **Completed Features:** 16 (25.0%)
 - **Critical Priority:** 3 (Content Management Lifecycle) - 2 completed
-- **High Priority:** 14 (Core CMS Features) - 7 completed, 1 in progress
+- **High Priority:** 14 (Core CMS Features) - 13 completed, 1 in progress
 - **Medium Priority:** 24 (Search, User, Admin, Performance, Integration, Testing) - 2 completed
 - **Lower Priority:** 24 (Deployment, Dev Tools, Localization, Documentation)
 

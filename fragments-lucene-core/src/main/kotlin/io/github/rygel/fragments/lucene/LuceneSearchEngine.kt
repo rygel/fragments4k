@@ -41,7 +41,13 @@ data class SearchOptions(
     val fuzzyThreshold: Float = 0.7f,
     val autocomplete: Boolean = false,
     val autocompleteLimit: Int = 10,
-)
+    val searchType: SearchType = SearchType.STANDARD,
+) {
+    enum class SearchType {
+        STANDARD,
+        ADVANCED,
+    }
+}
 
 data class SearchSuggestion(
     val text: String,
@@ -75,6 +81,7 @@ class LuceneSearchEngine(
         private const val MAX_TAG_CATEGORY_RESULTS = 100
         private const val MAX_QUERY_LENGTH = 500
         private const val MIN_AUTOCOMPLETE_PREFIX_LENGTH = 2
+        private const val MAX_TOKEN_COUNT = 20
         private val WHITESPACE = Regex("\\s+")
         private val logger = LoggerFactory.getLogger(LuceneSearchEngine::class.java)
     }
@@ -162,7 +169,7 @@ class LuceneSearchEngine(
                 return@withContext emptyList()
             }
             val clampedResults = maxResults.coerceIn(1, MAX_TAG_CATEGORY_RESULTS)
-            search(SearchOptions(query = trimmed, maxResults = clampedResults))
+            search(SearchOptions(query = trimmed, maxResults = clampedResults, searchType = SearchOptions.SearchType.STANDARD))
         }
 
     suspend fun search(options: SearchOptions): List<SearchResult> =
@@ -230,20 +237,43 @@ class LuceneSearchEngine(
         limit: Int = 10,
     ): List<SearchSuggestion> = autocomplete(query, limit)
 
-    private fun buildQuery(options: SearchOptions): Query? =
-        when {
-            options.phraseSearch -> buildPhraseQuery(options.query)
-            options.fuzzySearch -> buildFuzzyQuery(options.query, options.fuzzyThreshold)
-            else -> buildStandardQuery(options.query)
-        }
+    private fun buildQuery(options: SearchOptions): Query? {
+        val tokens = options.query.split(WHITESPACE).filter { it.isNotEmpty() }
+        val effectiveOptions =
+            if (tokens.size > MAX_TOKEN_COUNT) {
+                logger.warn("Search query has {} tokens, truncating to {}", tokens.size, MAX_TOKEN_COUNT)
+                options.copy(query = tokens.take(MAX_TOKEN_COUNT).joinToString(" "))
+            } else {
+                options
+            }
 
-    private fun buildStandardQuery(query: String): Query? {
+        return when {
+            effectiveOptions.phraseSearch -> buildPhraseQuery(effectiveOptions.query)
+            effectiveOptions.fuzzySearch -> buildFuzzyQuery(effectiveOptions.query, effectiveOptions.fuzzyThreshold)
+            else -> buildStandardQuery(effectiveOptions)
+        }
+    }
+
+    private fun buildStandardQuery(options: SearchOptions): Query? {
+        val query = options.query
         val fields = arrayOf("title", "content")
         val boosts = mapOf("title" to TITLE_BOOST, "content" to CONTENT_BOOST)
         val parser = MultiFieldQueryParser(fields, analyzer, boosts)
         parser.defaultOperator = QueryParser.Operator.AND
+
+        val processedQuery =
+            if (options.searchType == SearchOptions.SearchType.ADVANCED) {
+                query
+            } else {
+                QueryParser.escape(query)
+            }
+
         return try {
-            parser.parse(query)
+            val parsed = parser.parse(processedQuery)
+            if (hasLeadingWildcard(parsed)) {
+                throw IllegalArgumentException("Leading wildcards are not allowed in search queries")
+            }
+            parsed
         } catch (e: ParseException) {
             logger.warn("Failed to parse search query '{}': {}", query, e.message)
             null
@@ -288,6 +318,22 @@ class LuceneSearchEngine(
 
         return booleanQuery.setMinimumNumberShouldMatch(1).build()
     }
+
+    private fun hasLeadingWildcard(query: Query): Boolean =
+        when (query) {
+            is WildcardQuery -> {
+                val termText = query.term.text()
+                termText.startsWith("*") || termText.startsWith("?")
+            }
+
+            is BooleanQuery -> {
+                query.clauses().any { hasLeadingWildcard(it.query) }
+            }
+
+            else -> {
+                false
+            }
+        }
 
     suspend fun searchByTag(tag: String): List<Fragment> =
         withContext(Dispatchers.IO) {

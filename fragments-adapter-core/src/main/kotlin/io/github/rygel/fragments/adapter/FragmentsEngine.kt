@@ -364,12 +364,16 @@ class FragmentsEngine(
     fun cspHeader(): String = contentSecurityPolicy
 
     fun securityHeaders(): Map<String, String> =
-        mapOf(
-            "Content-Security-Policy" to contentSecurityPolicy,
-            "X-Content-Type-Options" to "nosniff",
-            "X-Frame-Options" to "DENY",
-            "Referrer-Policy" to "strict-origin-when-cross-origin",
-        )
+        buildMap {
+            put("Content-Security-Policy", contentSecurityPolicy)
+            put("X-Content-Type-Options", "nosniff")
+            put("X-Frame-Options", "DENY")
+            put("Referrer-Policy", "strict-origin-when-cross-origin")
+            put("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+            if (siteUrl.startsWith("https")) {
+                put("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload")
+            }
+        }
 
     fun close() {
         searchEngine?.close()

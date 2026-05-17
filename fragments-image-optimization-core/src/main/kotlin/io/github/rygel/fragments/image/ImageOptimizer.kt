@@ -60,6 +60,7 @@ data class ImageResizeOptions(
 
     companion object {
         const val MAX_DIMENSION = 20000
+        const val MAX_PIXEL_COUNT = 200_000_000L
 
         val THUMBNAIL = ImageResizeOptions(maxWidth = 200, maxHeight = 200, quality = 0.7f)
         val MEDIUM = ImageResizeOptions(maxWidth = 800, maxHeight = 800, quality = 0.8f)

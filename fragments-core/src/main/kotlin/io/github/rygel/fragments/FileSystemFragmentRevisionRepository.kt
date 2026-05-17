@@ -3,7 +3,9 @@ package io.github.rygel.fragments
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
+import org.yaml.snakeyaml.LoaderOptions
 import org.yaml.snakeyaml.Yaml
+import org.yaml.snakeyaml.constructor.SafeConstructor
 import java.io.File
 import java.io.IOException
 import java.time.LocalDateTime
@@ -14,7 +16,7 @@ class FileSystemFragmentRevisionRepository(
     private val basePath: String,
 ) : FragmentRevisionRepository {
     private val logger = LoggerFactory.getLogger(FileSystemFragmentRevisionRepository::class.java)
-    private val yaml = Yaml()
+    private val yaml = Yaml(SafeConstructor(LoaderOptions()))
     private val revisionsDir = File(basePath, ".revisions")
     private val fragmentsIndexFile = File(revisionsDir, "index.json")
     private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
@@ -32,6 +34,7 @@ class FileSystemFragmentRevisionRepository(
     ): FragmentRevision =
         withContext(Dispatchers.IO) {
             val slug = fragment.slug
+            PathSafety.validateSlug(slug)
             val version = getNextVersion(slug)
 
             val revision =
@@ -51,7 +54,7 @@ class FileSystemFragmentRevisionRepository(
                 )
 
             ensureRevisionsDir()
-            val revisionFile = File(revisionsDir, "${revision.id}.json")
+            val revisionFile = PathSafety.resolveAndCheck(revisionsDir, "${revision.id}.json")
             revisionFile.writeText(serializeRevision(revision))
 
             updateIndex(slug, revision.id)
@@ -62,6 +65,7 @@ class FileSystemFragmentRevisionRepository(
 
     override suspend fun getRevisions(slug: String): List<FragmentRevision> =
         withContext(Dispatchers.IO) {
+            PathSafety.validateSlug(slug)
             val index = loadIndex()
             val revisionIds = index[slug] ?: return@withContext emptyList()
 
@@ -129,6 +133,7 @@ class FileSystemFragmentRevisionRepository(
         reason: String?,
     ): Result<Fragment> =
         withContext(Dispatchers.IO) {
+            PathSafety.validateSlug(slug)
             val revision = loadRevision(revisionId)
             if (revision == null || revision.fragmentSlug != slug) {
                 return@withContext Result.failure(IllegalArgumentException("Revision not found: $revisionId"))
@@ -152,11 +157,12 @@ class FileSystemFragmentRevisionRepository(
 
     override suspend fun deleteRevisions(slug: String): Int =
         withContext(Dispatchers.IO) {
+            PathSafety.validateSlug(slug)
             val index = loadIndex()
             val ids = index[slug] ?: return@withContext 0
 
             ids.forEach { id ->
-                File(revisionsDir, "$id.json").delete()
+                PathSafety.resolveAndCheck(revisionsDir, "$id.json").delete()
             }
 
             index.remove(slug)
@@ -170,6 +176,7 @@ class FileSystemFragmentRevisionRepository(
         before: LocalDateTime,
     ): Int =
         withContext(Dispatchers.IO) {
+            PathSafety.validateSlug(slug)
             val index = loadIndex()
             val ids = index[slug] ?: return@withContext 0
 
@@ -186,7 +193,7 @@ class FileSystemFragmentRevisionRepository(
                 }
 
             toRemove.forEach { id ->
-                File(revisionsDir, "$id.json").delete()
+                PathSafety.resolveAndCheck(revisionsDir, "$id.json").delete()
             }
 
             index[slug] = (ids - toRemove.toSet()).toMutableList()
@@ -197,6 +204,7 @@ class FileSystemFragmentRevisionRepository(
 
     override suspend fun getRevisionCount(slug: String): Int =
         withContext(Dispatchers.IO) {
+            PathSafety.validateSlug(slug)
             val index = loadIndex()
             index[slug]?.size ?: 0
         }
@@ -260,7 +268,7 @@ class FileSystemFragmentRevisionRepository(
 
     @Suppress("UNCHECKED_CAST")
     private fun loadRevision(id: String): FragmentRevision? {
-        val file = File(revisionsDir, "$id.json")
+        val file = PathSafety.resolveAndCheck(revisionsDir, "$id.json")
         if (!file.exists()) return null
 
         val content = file.readText()

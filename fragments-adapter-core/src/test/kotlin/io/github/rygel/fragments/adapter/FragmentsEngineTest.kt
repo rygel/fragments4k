@@ -156,4 +156,31 @@ class FragmentsEngineTest {
         assertEquals("strict-origin-when-cross-origin", headers["Referrer-Policy"])
         assertTrue(headers.containsKey("Content-Security-Policy"))
     }
+
+    @Test
+    fun testSecurityHeadersIncludesPermissionsPolicy() {
+        val headers = engine.securityHeaders()
+        assertEquals("camera=(), microphone=(), geolocation=()", headers["Permissions-Policy"])
+    }
+
+    @Test
+    fun testSecurityHeadersOmitsHstsForHttpSiteUrl() {
+        val headers = engine.securityHeaders()
+        assertFalse(headers.containsKey("Strict-Transport-Security"), "HSTS should be absent for HTTP siteUrl")
+    }
+
+    @Test
+    fun testSecurityHeadersIncludesHstsForHttpsSiteUrl() {
+        val httpsEngine =
+            FragmentsEngine(
+                staticEngine = mockStaticEngine,
+                blogEngine = mockBlogEngine,
+                siteUrl = "https://example.com",
+            )
+        val headers = httpsEngine.securityHeaders()
+        assertTrue(headers.containsKey("Strict-Transport-Security"), "HSTS should be present for HTTPS siteUrl")
+        val hsts = headers["Strict-Transport-Security"]!!
+        assertTrue(hsts.contains("max-age="), "HSTS should contain max-age directive")
+        assertTrue(hsts.contains("includeSubDomains"), "HSTS should contain includeSubDomains")
+    }
 }

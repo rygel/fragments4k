@@ -33,6 +33,7 @@ class FileSystemContentSeriesRepository(
 
     override suspend fun getBySlug(slug: String): ContentSeries? =
         withContext(Dispatchers.IO) {
+            PathSafety.validateSlug(slug)
             loadSeries().find { it.slug == slug }
         }
 
@@ -53,6 +54,11 @@ class FileSystemContentSeriesRepository(
 
     override suspend fun createSeries(series: ContentSeries): Result<ContentSeries> =
         withContext(Dispatchers.IO) {
+            try {
+                PathSafety.validateSlug(series.slug)
+            } catch (e: IllegalArgumentException) {
+                return@withContext Result.failure(e)
+            }
             if (loadSeries().any { it.slug == series.slug }) {
                 logger.warn("Series already exists: ${series.slug}")
                 return@withContext Result.failure(IllegalArgumentException("Series already exists: ${series.slug}"))
@@ -71,6 +77,7 @@ class FileSystemContentSeriesRepository(
 
     override suspend fun updateSeries(series: ContentSeries): Result<ContentSeries> =
         withContext(Dispatchers.IO) {
+            PathSafety.validateSlug(series.slug)
             val existing = loadSeries().find { it.slug == series.slug }
             if (existing == null) {
                 logger.warn("Series not found: ${series.slug}")
@@ -90,6 +97,11 @@ class FileSystemContentSeriesRepository(
 
     override suspend fun deleteSeries(slug: String): Result<Boolean> =
         withContext(Dispatchers.IO) {
+            try {
+                PathSafety.validateSlug(slug)
+            } catch (e: IllegalArgumentException) {
+                return@withContext Result.failure(e)
+            }
             val file = getSeriesFile(slug)
             if (file == null || !file.exists()) {
                 logger.warn("Series file not found: $slug")
@@ -247,7 +259,7 @@ class FileSystemContentSeriesRepository(
             seriesDir.mkdirs()
         }
 
-        val file = File(seriesDir, "${series.slug}$extension")
+        val file = PathSafety.resolveAndCheck(seriesDir, "${series.slug}$extension")
         val data =
             mapOf(
                 "slug" to series.slug,
