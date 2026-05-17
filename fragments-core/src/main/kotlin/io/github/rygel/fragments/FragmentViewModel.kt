@@ -135,9 +135,10 @@ data class FragmentViewModel(
         get() = fragment.author
 
     val formattedDate: String
-        get() = fragment.date?.format(
-            formatterCache.computeIfAbsent(dateFormat) { DateTimeFormatter.ofPattern(it) },
-        ) ?: ""
+        get() =
+            fragment.date?.format(
+                formatterCache.computeIfAbsent(dateFormat) { DateTimeFormatter.ofPattern(it) },
+            ) ?: ""
 
     val contentPreview: String
         get() = fragment.preview

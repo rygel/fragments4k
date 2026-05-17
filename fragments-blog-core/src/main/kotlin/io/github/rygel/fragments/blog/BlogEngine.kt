@@ -36,6 +36,7 @@ class BlogEngine(
     )
 
     @Volatile private var blogIndex: BlogIndex? = null
+
     @Volatile private var indexSnapshot: List<Fragment>? = null
 
     private suspend fun ensureIndex(): BlogIndex {
@@ -43,26 +44,43 @@ class BlogEngine(
         val current = blogIndex
         if (current != null && indexSnapshot === visible) return current
 
-        val blogPosts = visible
-            .filter { isBlogTemplate(it.template) }
-            .withResolvedUrls()
-            .sortedByDescending { it.date }
+        val blogPosts =
+            visible
+                .filter { isBlogTemplate(it.template) }
+                .withResolvedUrls()
+                .sortedByDescending { it.date }
 
-        val index = BlogIndex(
-            allPostsSorted = blogPosts,
-            byTag = blogPosts.flatMap { f -> f.tags.map { tag -> tag.lowercase() to f } }
-                .groupBy({ it.first }, { it.second }),
-            byCategory = blogPosts.flatMap { f -> f.categories.map { cat -> cat.lowercase() to f } }
-                .groupBy({ it.first }, { it.second }),
-            byYear = blogPosts.filter { it.date != null }.groupBy { it.date!!.year },
-            byYearMonth = blogPosts.filter { it.date != null }
-                .groupBy { Pair(it.date!!.year, it.date!!.monthValue) },
-            byAuthor = blogPosts.flatMap { f ->
-                (f.authorIds + listOfNotNull(f.author)).map { aid -> aid to f }
-            }.groupBy({ it.first }, { it.second }),
-            allTags = blogPosts.flatMap { it.tags }.groupingBy { it }.eachCount(),
-            allCategories = blogPosts.flatMap { it.categories }.groupingBy { it }.eachCount(),
-        )
+        val byTag =
+            blogPosts
+                .flatMap { f -> f.tags.map { tag -> tag.lowercase() to f } }
+                .groupBy({ it.first }, { it.second })
+
+        val byCategory =
+            blogPosts
+                .flatMap { f -> f.categories.map { cat -> cat.lowercase() to f } }
+                .groupBy({ it.first }, { it.second })
+
+        val byAuthor =
+            blogPosts
+                .flatMap { f -> (f.authorIds + listOfNotNull(f.author)).map { aid -> aid to f } }
+                .groupBy({ it.first }, { it.second })
+
+        val byYearMonth =
+            blogPosts
+                .filter { it.date != null }
+                .groupBy { Pair(it.date!!.year, it.date!!.monthValue) }
+
+        val index =
+            BlogIndex(
+                allPostsSorted = blogPosts,
+                byTag = byTag,
+                byCategory = byCategory,
+                byYear = blogPosts.filter { it.date != null }.groupBy { it.date!!.year },
+                byYearMonth = byYearMonth,
+                byAuthor = byAuthor,
+                allTags = blogPosts.flatMap { it.tags }.groupingBy { it }.eachCount(),
+                allCategories = blogPosts.flatMap { it.categories }.groupingBy { it }.eachCount(),
+            )
         blogIndex = index
         indexSnapshot = visible
         return index
@@ -106,10 +124,12 @@ class BlogEngine(
         page: Int,
     ): Page<Fragment> {
         if (includeDrafts) {
-            val blogPosts = repository.getAll()
-                .filter { isBlogTemplate(it.template) }
-                .withResolvedUrls()
-                .sortedByDescending { it.date }
+            val blogPosts =
+                repository
+                    .getAll()
+                    .filter { isBlogTemplate(it.template) }
+                    .withResolvedUrls()
+                    .sortedByDescending { it.date }
             return Page.create(blogPosts, page, pageSize)
         }
         return Page.create(ensureIndex().allPostsSorted, page, pageSize)
@@ -117,7 +137,8 @@ class BlogEngine(
 
     suspend fun getAllPosts(includeDrafts: Boolean = false): List<Fragment> {
         if (includeDrafts) {
-            return repository.getAll()
+            return repository
+                .getAll()
                 .filter { isBlogTemplate(it.template) }
                 .withResolvedUrls()
                 .sortedByDescending { it.date }
@@ -158,14 +179,12 @@ class BlogEngine(
         return Page.create(posts, page, pageSize)
     }
 
-    suspend fun getByYear(year: Int): List<Fragment> =
-        ensureIndex().byYear[year] ?: emptyList()
+    suspend fun getByYear(year: Int): List<Fragment> = ensureIndex().byYear[year] ?: emptyList()
 
     suspend fun getByYearMonth(
         year: Int,
         month: Int,
-    ): List<Fragment> =
-        ensureIndex().byYearMonth[Pair(year, month)] ?: emptyList()
+    ): List<Fragment> = ensureIndex().byYearMonth[Pair(year, month)] ?: emptyList()
 
     suspend fun getByAuthor(
         authorId: String,

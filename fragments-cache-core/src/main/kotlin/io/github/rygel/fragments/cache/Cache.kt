@@ -172,18 +172,19 @@ class InMemoryCache<K, V>(
     private val configuration: CacheConfiguration = CacheConfiguration.DEFAULT,
 ) : Cache<K, V> {
     private val logger = LoggerFactory.getLogger(InMemoryCache::class.java)
-    private val store = object : LinkedHashMap<K, CacheEntry<V>>(16, 0.75f, true) {
-        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<K, CacheEntry<V>>): Boolean {
-            val maxSize = configuration.maxSize ?: return false
-            if (size > maxSize) {
-                if (configuration.recordStats) {
-                    statistics.updateAndGet { it.eviction() }
+    private val store =
+        object : LinkedHashMap<K, CacheEntry<V>>(16, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<K, CacheEntry<V>>): Boolean {
+                val maxSize = configuration.maxSize ?: return false
+                if (size > maxSize) {
+                    if (configuration.recordStats) {
+                        statistics.updateAndGet { it.eviction() }
+                    }
+                    return true
                 }
-                return true
+                return false
             }
-            return false
         }
-    }
     private val mutex = Mutex()
     private val statistics = AtomicReference(CacheStatistics())
     private val inFlight = java.util.concurrent.ConcurrentHashMap<K, kotlinx.coroutines.CompletableDeferred<V>>()
