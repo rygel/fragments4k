@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Path
 
@@ -207,4 +208,45 @@ class FileSystemContentSeriesRepositoryTest {
             assertNotNull(reloaded)
             assertEquals("Updated Title", reloaded?.title)
         }
+
+    @Test
+    fun createSeriesRejectsPathTraversalSlug() =
+        runBlocking {
+            val series = ContentSeries(
+                slug = "../../etc/passwd",
+                title = "Malicious",
+                status = SeriesStatus.ACTIVE,
+            )
+            val result = repository.createSeries(series)
+            assertTrue(result.isFailure)
+            assertTrue(result.exceptionOrNull() is IllegalArgumentException)
+        }
+
+    @Test
+    fun createSeriesRejectsBlankSlug() =
+        runBlocking {
+            val series = ContentSeries(
+                slug = "",
+                title = "Empty Slug",
+                status = SeriesStatus.ACTIVE,
+            )
+            val result = repository.createSeries(series)
+            assertTrue(result.isFailure)
+        }
+
+    @Test
+    fun deleteSeriesRejectsPathTraversalSlug() =
+        runBlocking {
+            val result = repository.deleteSeries("../../etc/passwd")
+            assertTrue(result.isFailure)
+        }
+
+    @Test
+    fun getBySlugRejectsPathTraversalSlug() {
+        runBlocking {
+            assertThrows<IllegalArgumentException> {
+                repository.getBySlug("../secret")
+            }
+        }
+    }
 }
