@@ -9,60 +9,38 @@ import io.github.rygel.fragments.RelationshipConfig
 import org.slf4j.LoggerFactory
 import java.time.LocalDateTime
 
-/**
- * Cached repository decorator that adds caching to FragmentRepository operations
- */
 class CachedFragmentRepository(
     private val delegate: FragmentRepository,
     private val fragmentCache: FragmentCache,
 ) : FragmentRepository {
-    private val logger = org.slf4j.LoggerFactory.getLogger(CachedFragmentRepository::class.java)
+    private val logger = LoggerFactory.getLogger(CachedFragmentRepository::class.java)
 
     override suspend fun getAll(): List<Fragment> {
         logger.debug("Getting all fragments")
-
-        val cached = fragmentCache.getAllFragments()
-        if (cached != null) {
-            logger.debug("Cache hit for all fragments")
-            return cached
+        return fragmentCache.getOrComputeAllFragments {
+            logger.debug("Cache miss for all fragments, loading from repository")
+            val fragments = delegate.getAll()
+            fragments.forEach { fragment ->
+                fragmentCache.getOrComputeFragment(fragment.slug) { fragment }
+            }
+            fragments
         }
-
-        logger.debug("Cache miss for all fragments, loading from repository")
-        val fragments = delegate.getAll()
-
-        fragmentCache.putAllFragments(fragments)
-
-        fragments.forEach { fragment ->
-            fragmentCache.putFragment(fragment)
-        }
-
-        return fragments
     }
 
     override suspend fun getAllVisible(): List<Fragment> {
         logger.debug("Getting all visible fragments")
-
-        val cached = fragmentCache.getVisibleFragments()
-        if (cached != null) {
-            logger.debug("Cache hit for visible fragments")
-            return cached
+        return fragmentCache.getOrComputeVisibleFragments {
+            logger.debug("Cache miss for visible fragments, loading from repository")
+            val fragments = delegate.getAllVisible()
+            fragments.forEach { fragment ->
+                fragmentCache.getOrComputeFragment(fragment.slug) { fragment }
+            }
+            fragments
         }
-
-        logger.debug("Cache miss for visible fragments, loading from repository")
-        val fragments = delegate.getAllVisible()
-
-        fragmentCache.putVisibleFragments(fragments)
-
-        fragments.forEach { fragment ->
-            fragmentCache.putFragment(fragment)
-        }
-
-        return fragments
     }
 
     override suspend fun getBySlug(slug: String): Fragment? {
         logger.debug("Getting fragment by slug: $slug")
-
         val cached = fragmentCache.getFragment(slug)
         if (cached != null) {
             logger.debug("Cache hit for fragment: $slug")
@@ -73,7 +51,7 @@ class CachedFragmentRepository(
         val fragment = delegate.getBySlug(slug)
 
         if (fragment != null && fragment.isPublished) {
-            fragmentCache.putFragment(fragment)
+            fragmentCache.getOrComputeFragment(slug) { fragment }
         }
 
         return fragment
@@ -90,36 +68,18 @@ class CachedFragmentRepository(
 
     override suspend fun getByTag(tag: String): List<Fragment> {
         logger.debug("Getting fragments by tag: $tag")
-
-        val cached = fragmentCache.getFragmentsByTag(tag)
-        if (cached != null) {
-            logger.debug("Cache hit for tag: $tag")
-            return cached
+        return fragmentCache.getOrComputeByTag(tag) {
+            logger.debug("Cache miss for tag: $tag, loading from repository")
+            delegate.getByTag(tag)
         }
-
-        logger.debug("Cache miss for tag: $tag, loading from repository")
-        val fragments = delegate.getByTag(tag)
-
-        fragmentCache.putFragmentsByTag(tag, fragments)
-
-        return fragments
     }
 
     override suspend fun getByCategory(category: String): List<Fragment> {
         logger.debug("Getting fragments by category: $category")
-
-        val cached = fragmentCache.getFragmentsByCategory(category)
-        if (cached != null) {
-            logger.debug("Cache hit for category: $category")
-            return cached
+        return fragmentCache.getOrComputeByCategory(category) {
+            logger.debug("Cache miss for category: $category, loading from repository")
+            delegate.getByCategory(category)
         }
-
-        logger.debug("Cache miss for category: $category, loading from repository")
-        val fragments = delegate.getByCategory(category)
-
-        fragmentCache.putFragmentsByCategory(category, fragments)
-
-        return fragments
     }
 
     override suspend fun getByStatus(status: FragmentStatus): List<Fragment> {
@@ -129,19 +89,10 @@ class CachedFragmentRepository(
 
     override suspend fun getByAuthor(authorId: String): List<Fragment> {
         logger.debug("Getting fragments by author: $authorId")
-
-        val cached = fragmentCache.getFragmentsByAuthor(authorId)
-        if (cached != null) {
-            logger.debug("Cache hit for author: $authorId")
-            return cached
+        return fragmentCache.getOrComputeByAuthor(authorId) {
+            logger.debug("Cache miss for author: $authorId, loading from repository")
+            delegate.getByAuthor(authorId)
         }
-
-        logger.debug("Cache miss for author: $authorId, loading from repository")
-        val fragments = delegate.getByAuthor(authorId)
-
-        fragmentCache.putFragmentsByAuthor(authorId, fragments)
-
-        return fragments
     }
 
     override suspend fun getByAuthors(authorIds: List<String>): List<Fragment> {
@@ -157,14 +108,11 @@ class CachedFragmentRepository(
         reason: String?,
     ): Result<Fragment> {
         logger.debug("Updating fragment status: $slug -> $status")
-
         val result = delegate.updateFragmentStatus(slug, status, force, changedBy, reason)
-
         if (result.isSuccess) {
             fragmentCache.invalidateFragment(slug)
             fragmentCache.invalidateFragmentLists()
         }
-
         return result
     }
 
@@ -176,15 +124,12 @@ class CachedFragmentRepository(
         reason: String?,
     ): List<Result<Fragment>> {
         logger.debug("Updating status for ${slugs.size} fragments: $status")
-
         val results = delegate.updateMultipleFragmentsStatus(slugs, status, force, changedBy, reason)
-
         val successCount = results.count { it.isSuccess }
         if (successCount > 0) {
             slugs.forEach { fragmentCache.invalidateFragment(it) }
             fragmentCache.invalidateFragmentLists()
         }
-
         return results
     }
 
@@ -194,15 +139,12 @@ class CachedFragmentRepository(
         reason: String?,
     ): List<Result<Fragment>> {
         logger.debug("Publishing ${slugs.size} fragments")
-
         val results = delegate.publishMultiple(slugs, changedBy, reason)
-
         val successCount = results.count { it.isSuccess }
         if (successCount > 0) {
             slugs.forEach { fragmentCache.invalidateFragment(it) }
             fragmentCache.invalidateFragmentLists()
         }
-
         return results
     }
 
@@ -212,15 +154,12 @@ class CachedFragmentRepository(
         reason: String?,
     ): List<Result<Fragment>> {
         logger.debug("Unpublishing ${slugs.size} fragments")
-
         val results = delegate.unpublishMultiple(slugs, changedBy, reason)
-
         val successCount = results.count { it.isSuccess }
         if (successCount > 0) {
             slugs.forEach { fragmentCache.invalidateFragment(it) }
             fragmentCache.invalidateFragmentLists()
         }
-
         return results
     }
 
@@ -230,15 +169,12 @@ class CachedFragmentRepository(
         reason: String?,
     ): List<Result<Fragment>> {
         logger.debug("Archiving ${slugs.size} fragments")
-
         val results = delegate.archiveMultiple(slugs, changedBy, reason)
-
         val successCount = results.count { it.isSuccess }
         if (successCount > 0) {
             slugs.forEach { fragmentCache.invalidateFragment(it) }
             fragmentCache.invalidateFragmentLists()
         }
-
         return results
     }
 
@@ -249,15 +185,12 @@ class CachedFragmentRepository(
 
     override suspend fun publishScheduledFragments(threshold: LocalDateTime): List<Result<Fragment>> {
         logger.debug("Publishing scheduled fragments: $threshold")
-
         val results = delegate.publishScheduledFragments(threshold)
-
         val succeededSlugs = results.mapNotNull { it.getOrNull()?.slug }
         if (succeededSlugs.isNotEmpty()) {
             succeededSlugs.forEach { fragmentCache.invalidateFragment(it) }
             fragmentCache.invalidateFragmentLists()
         }
-
         return results
     }
 
@@ -268,29 +201,23 @@ class CachedFragmentRepository(
         reason: String?,
     ): List<Result<Fragment>> {
         logger.debug("Scheduling ${slugs.size} fragments for: $publishDate")
-
         val results = delegate.scheduleMultiple(slugs, publishDate, changedBy, reason)
-
         val successCount = results.count { it.isSuccess }
         if (successCount > 0) {
             slugs.forEach { fragmentCache.invalidateFragment(it) }
             fragmentCache.invalidateFragmentLists()
         }
-
         return results
     }
 
     override suspend fun expireFragments(threshold: LocalDateTime): List<Result<Fragment>> {
         logger.debug("Expiring fragments: $threshold")
-
         val results = delegate.expireFragments(threshold)
-
         val succeededSlugs = results.mapNotNull { it.getOrNull()?.slug }
         if (succeededSlugs.isNotEmpty()) {
             succeededSlugs.forEach { fragmentCache.invalidateFragment(it) }
             fragmentCache.invalidateFragmentLists()
         }
-
         return results
     }
 
@@ -310,7 +237,6 @@ class CachedFragmentRepository(
         config: RelationshipConfig,
     ): ContentRelationships? {
         logger.debug("Getting relationships for: $slug")
-
         val cached = fragmentCache.getRelationships(slug)
         if (cached != null) {
             logger.debug("Cache hit for relationships: $slug")
@@ -321,7 +247,7 @@ class CachedFragmentRepository(
         val relationships = delegate.getRelationships(slug, config)
 
         if (relationships != null) {
-            fragmentCache.putRelationships(slug, relationships)
+            fragmentCache.getOrComputeRelationships(slug) { relationships }
         }
 
         return relationships
@@ -348,14 +274,11 @@ class CachedFragmentRepository(
         reason: String?,
     ): Result<Fragment> {
         logger.debug("Reverting to revision for: $slug")
-
         val result = delegate.revertToRevision(slug, revisionId, changedBy, reason)
-
         if (result.isSuccess) {
             fragmentCache.invalidateFragment(slug)
             fragmentCache.invalidateFragmentLists()
         }
-
         return result
     }
 }

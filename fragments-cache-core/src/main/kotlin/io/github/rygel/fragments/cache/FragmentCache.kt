@@ -5,15 +5,6 @@ import io.github.rygel.fragments.Fragment
 import org.slf4j.LoggerFactory
 import java.time.Duration
 
-/**
- * Multi-level cache for Fragments CMS
- *
- * Provides caching for:
- * - Individual fragments by slug
- * - Fragment lists (visible, by tag, by category, etc.)
- * - Parsed content (markdown + HTML)
- * - Relationships (previous, next, related fragments)
- */
 class FragmentCache(
     private val fragmentTtl: Duration = Duration.ofMinutes(5),
     private val listTtl: Duration = Duration.ofMinutes(2),
@@ -23,88 +14,40 @@ class FragmentCache(
 ) {
     private val logger = LoggerFactory.getLogger(FragmentCache::class.java)
 
-    // Fragment cache by slug
-    private val fragmentCache =
-        InMemoryCache<String, Fragment>(
-            CacheConfiguration(
-                ttl = fragmentTtl,
-                maxSize = maxSize,
-                recordStats = true,
-            ),
-        )
+    private val fragmentCache: Cache<String, Fragment> =
+        InMemoryCache(CacheConfiguration(ttl = fragmentTtl, maxSize = maxSize, recordStats = true))
 
-    // Fragment list caches
-    private val allFragmentsCache =
-        InMemoryCache<String, List<Fragment>>(
-            CacheConfiguration(ttl = listTtl, maxSize = 100, recordStats = true),
-        )
+    private val allFragmentsCache: Cache<String, List<Fragment>> =
+        InMemoryCache(CacheConfiguration(ttl = listTtl, maxSize = 100, recordStats = true))
 
-    private val visibleFragmentsCache =
-        InMemoryCache<String, List<Fragment>>(
-            CacheConfiguration(ttl = listTtl, maxSize = 100, recordStats = true),
-        )
+    private val visibleFragmentsCache: Cache<String, List<Fragment>> =
+        InMemoryCache(CacheConfiguration(ttl = listTtl, maxSize = 100, recordStats = true))
 
-    private val fragmentsByTagCache =
-        InMemoryCache<String, List<Fragment>>(
-            CacheConfiguration(ttl = listTtl, maxSize = 500, recordStats = true),
-        )
+    private val fragmentsByTagCache: Cache<String, List<Fragment>> =
+        InMemoryCache(CacheConfiguration(ttl = listTtl, maxSize = 500, recordStats = true))
 
-    private val fragmentsByCategoryCache =
-        InMemoryCache<String, List<Fragment>>(
-            CacheConfiguration(ttl = listTtl, maxSize = 500, recordStats = true),
-        )
+    private val fragmentsByCategoryCache: Cache<String, List<Fragment>> =
+        InMemoryCache(CacheConfiguration(ttl = listTtl, maxSize = 500, recordStats = true))
 
-    private val fragmentsByAuthorCache =
-        InMemoryCache<String, List<Fragment>>(
-            CacheConfiguration(ttl = listTtl, maxSize = 200, recordStats = true),
-        )
+    private val fragmentsByAuthorCache: Cache<String, List<Fragment>> =
+        InMemoryCache(CacheConfiguration(ttl = listTtl, maxSize = 200, recordStats = true))
 
-    private val fragmentsBySeriesCache =
-        InMemoryCache<String, List<Fragment>>(
-            CacheConfiguration(ttl = listTtl, maxSize = 100, recordStats = true),
-        )
+    private val relationshipCache: Cache<String, ContentRelationships> =
+        InMemoryCache(CacheConfiguration(ttl = relationshipTtl, maxSize = 500, recordStats = true))
 
-    // Relationship cache
-    private val relationshipCache =
-        InMemoryCache<String, ContentRelationships>(
-            CacheConfiguration(ttl = relationshipTtl, maxSize = 500, recordStats = true),
-        )
+    private val parsedContentCache: Cache<String, ParsedContent> =
+        InMemoryCache(CacheConfiguration(ttl = parsedContentTtl, maxSize = maxSize, recordStats = true))
 
-    // Parsed content cache (front matter + raw content + HTML)
-    private val parsedContentCache =
-        InMemoryCache<String, ParsedContent>(
-            CacheConfiguration(ttl = parsedContentTtl, maxSize = maxSize, recordStats = true),
-        )
+    private val searchResultCache: Cache<String, List<Fragment>> =
+        InMemoryCache(CacheConfiguration(ttl = Duration.ofMinutes(5), maxSize = 500, recordStats = true))
 
-    // Search result cache
-    private val searchResultCache =
-        InMemoryCache<String, List<io.github.rygel.fragments.Fragment>>(
-            CacheConfiguration(ttl = Duration.ofMinutes(5), maxSize = 500, recordStats = true),
-        )
-
-    /**
-     * Get a fragment by slug from cache
-     */
-    suspend fun getFragment(slug: String): Fragment? = fragmentCache.get("fragment:$slug")
-
-    /**
-     * Get a fragment by slug, or compute if not cached
-     */
     suspend fun getOrComputeFragment(
         slug: String,
         compute: suspend () -> Fragment,
     ): Fragment = fragmentCache.getOrCompute("fragment:$slug", compute)
 
-    /**
-     * Cache a fragment
-     */
-    suspend fun putFragment(fragment: Fragment) {
-        fragmentCache.put("fragment:${fragment.slug}", fragment)
-    }
+    suspend fun getFragment(slug: String): Fragment? = fragmentCache.get("fragment:$slug")
 
-    /**
-     * Invalidate a specific fragment
-     */
     suspend fun invalidateFragment(slug: String) {
         logger.debug("Invalidating fragment cache for: $slug")
         fragmentCache.invalidate("fragment:$slug")
@@ -112,33 +55,14 @@ class FragmentCache(
         parsedContentCache.invalidate("parsed:$slug")
     }
 
-    /**
-     * Get all available fragments from cache
-     */
-    suspend fun getAllFragments(): List<Fragment>? = allFragmentsCache.get("all:fragments")
+    suspend fun getOrComputeAllFragments(compute: suspend () -> List<Fragment>): List<Fragment> =
+        allFragmentsCache.getOrCompute("all:fragments", compute)
 
-    /**
-     * Cache all available fragments
-     */
-    suspend fun putAllFragments(fragments: List<Fragment>) {
-        allFragmentsCache.put("all:fragments", fragments)
-    }
+    suspend fun getOrComputeVisibleFragments(compute: suspend () -> List<Fragment>): List<Fragment> =
+        visibleFragmentsCache.getOrCompute("visible:all", compute)
 
-    /**
-     * Get all visible fragments from cache
-     */
     suspend fun getVisibleFragments(): List<Fragment>? = visibleFragmentsCache.get("visible:all")
 
-    /**
-     * Cache all visible fragments
-     */
-    suspend fun putVisibleFragments(fragments: List<Fragment>) {
-        visibleFragmentsCache.put("visible:all", fragments)
-    }
-
-    /**
-     * Invalidate fragment list caches
-     */
     suspend fun invalidateFragmentLists() {
         logger.debug("Invalidating all fragment list caches")
         allFragmentsCache.clear()
@@ -146,133 +70,30 @@ class FragmentCache(
         fragmentsByTagCache.clear()
         fragmentsByCategoryCache.clear()
         fragmentsByAuthorCache.clear()
-        fragmentsBySeriesCache.clear()
     }
 
-    /**
-     * Get fragments by tag from cache
-     */
-    suspend fun getFragmentsByTag(tag: String): List<Fragment>? = fragmentsByTagCache.get("tag:$tag")
-
-    /**
-     * Cache fragments by tag
-     */
-    suspend fun putFragmentsByTag(
+    suspend fun getOrComputeByTag(
         tag: String,
-        fragments: List<Fragment>,
-    ) {
-        fragmentsByTagCache.put("tag:$tag", fragments)
-    }
+        compute: suspend () -> List<Fragment>,
+    ): List<Fragment> = fragmentsByTagCache.getOrCompute("tag:$tag", compute)
 
-    /**
-     * Get fragments by category from cache
-     */
-    suspend fun getFragmentsByCategory(category: String): List<Fragment>? = fragmentsByCategoryCache.get("category:$category")
-
-    /**
-     * Cache fragments by category
-     */
-    suspend fun putFragmentsByCategory(
+    suspend fun getOrComputeByCategory(
         category: String,
-        fragments: List<Fragment>,
-    ) {
-        fragmentsByCategoryCache.put("category:$category", fragments)
-    }
+        compute: suspend () -> List<Fragment>,
+    ): List<Fragment> = fragmentsByCategoryCache.getOrCompute("category:$category", compute)
 
-    /**
-     * Get fragments by author from cache
-     */
-    suspend fun getFragmentsByAuthor(authorId: String): List<Fragment>? = fragmentsByAuthorCache.get("author:$authorId")
-
-    /**
-     * Cache fragments by author
-     */
-    suspend fun putFragmentsByAuthor(
+    suspend fun getOrComputeByAuthor(
         authorId: String,
-        fragments: List<Fragment>,
-    ) {
-        fragmentsByAuthorCache.put("author:$authorId", fragments)
-    }
+        compute: suspend () -> List<Fragment>,
+    ): List<Fragment> = fragmentsByAuthorCache.getOrCompute("author:$authorId", compute)
 
-    /**
-     * Get fragments by series from cache
-     */
-    suspend fun getFragmentsBySeries(seriesSlug: String): List<Fragment>? = fragmentsBySeriesCache.get("series:$seriesSlug")
+    suspend fun getOrComputeRelationships(
+        slug: String,
+        compute: suspend () -> ContentRelationships,
+    ): ContentRelationships = relationshipCache.getOrCompute("relationships:$slug", compute)
 
-    /**
-     * Cache fragments by series
-     */
-    suspend fun putFragmentsBySeries(
-        seriesSlug: String,
-        fragments: List<Fragment>,
-    ) {
-        fragmentsBySeriesCache.put("series:$seriesSlug", fragments)
-    }
-
-    /**
-     * Get relationships for a fragment from cache
-     */
     suspend fun getRelationships(slug: String): ContentRelationships? = relationshipCache.get("relationships:$slug")
 
-    /**
-     * Cache relationships for a fragment
-     */
-    suspend fun putRelationships(
-        slug: String,
-        relationships: ContentRelationships,
-    ) {
-        relationshipCache.put("relationships:$slug", relationships)
-    }
-
-    /**
-     * Invalidate relationships for a specific fragment
-     */
-    suspend fun invalidateRelationships(slug: String) {
-        logger.debug("Invalidating relationship cache for: $slug")
-        relationshipCache.invalidate("relationships:$slug")
-    }
-
-    /**
-     * Get parsed content from cache
-     */
-    suspend fun getParsedContent(slug: String): ParsedContent? = parsedContentCache.get("parsed:$slug")
-
-    /**
-     * Cache parsed content
-     */
-    suspend fun putParsedContent(
-        slug: String,
-        parsedContent: ParsedContent,
-    ) {
-        parsedContentCache.put("parsed:$slug", parsedContent)
-    }
-
-    /**
-     * Get search results from cache
-     */
-    suspend fun getSearchResults(cacheKey: String): List<io.github.rygel.fragments.Fragment>? = searchResultCache.get("search:$cacheKey")
-
-    /**
-     * Cache search results
-     */
-    suspend fun putSearchResults(
-        cacheKey: String,
-        results: List<io.github.rygel.fragments.Fragment>,
-    ) {
-        searchResultCache.put("search:$cacheKey", results)
-    }
-
-    /**
-     * Invalidate search results
-     */
-    suspend fun invalidateSearchResults() {
-        logger.debug("Invalidating all search results")
-        searchResultCache.clear()
-    }
-
-    /**
-     * Clear all caches
-     */
     suspend fun clearAll() {
         logger.debug("Clearing all caches")
         fragmentCache.clear()
@@ -281,82 +102,49 @@ class FragmentCache(
         fragmentsByTagCache.clear()
         fragmentsByCategoryCache.clear()
         fragmentsByAuthorCache.clear()
-        fragmentsBySeriesCache.clear()
         relationshipCache.clear()
         parsedContentCache.clear()
         searchResultCache.clear()
     }
 
-    /**
-     * Get combined cache statistics
-     */
-    fun getStatistics(): CacheStatisticsReport =
-        CacheStatisticsReport(
+    fun getStatistics(): CacheStatisticsReport {
+        val listStats =
+            listOf(
+                allFragmentsCache.getStatistics(),
+                visibleFragmentsCache.getStatistics(),
+                fragmentsByTagCache.getStatistics(),
+                fragmentsByCategoryCache.getStatistics(),
+                fragmentsByAuthorCache.getStatistics(),
+            )
+        return CacheStatisticsReport(
             fragmentStats = fragmentCache.getStatistics(),
             listStats =
                 CacheStatistics(
-                    hitCount =
-                        allFragmentsCache.getStatistics().hitCount +
-                            visibleFragmentsCache.getStatistics().hitCount +
-                            fragmentsByTagCache.getStatistics().hitCount +
-                            fragmentsByCategoryCache.getStatistics().hitCount +
-                            fragmentsByAuthorCache.getStatistics().hitCount +
-                            fragmentsBySeriesCache.getStatistics().hitCount,
-                    missCount =
-                        allFragmentsCache.getStatistics().missCount +
-                            visibleFragmentsCache.getStatistics().missCount +
-                            fragmentsByTagCache.getStatistics().missCount +
-                            fragmentsByCategoryCache.getStatistics().missCount +
-                            fragmentsByAuthorCache.getStatistics().missCount +
-                            fragmentsBySeriesCache.getStatistics().missCount,
-                    loadCount =
-                        allFragmentsCache.getStatistics().loadCount +
-                            visibleFragmentsCache.getStatistics().loadCount +
-                            fragmentsByTagCache.getStatistics().loadCount +
-                            fragmentsByCategoryCache.getStatistics().loadCount +
-                            fragmentsByAuthorCache.getStatistics().loadCount +
-                            fragmentsBySeriesCache.getStatistics().loadCount,
-                    loadFailureCount =
-                        allFragmentsCache.getStatistics().loadFailureCount +
-                            visibleFragmentsCache.getStatistics().loadFailureCount +
-                            fragmentsByTagCache.getStatistics().loadFailureCount +
-                            fragmentsByCategoryCache.getStatistics().loadFailureCount +
-                            fragmentsByAuthorCache.getStatistics().loadFailureCount +
-                            fragmentsBySeriesCache.getStatistics().loadFailureCount,
-                    totalLoadTime =
-                        allFragmentsCache.getStatistics().totalLoadTime +
-                            visibleFragmentsCache.getStatistics().totalLoadTime +
-                            fragmentsByTagCache.getStatistics().totalLoadTime +
-                            fragmentsByCategoryCache.getStatistics().totalLoadTime +
-                            fragmentsByAuthorCache.getStatistics().totalLoadTime +
-                            fragmentsBySeriesCache.getStatistics().totalLoadTime,
-                    evictionCount =
-                        allFragmentsCache.getStatistics().evictionCount +
-                            visibleFragmentsCache.getStatistics().evictionCount +
-                            fragmentsByTagCache.getStatistics().evictionCount +
-                            fragmentsByCategoryCache.getStatistics().evictionCount +
-                            fragmentsByAuthorCache.getStatistics().evictionCount +
-                            fragmentsBySeriesCache.getStatistics().evictionCount,
+                    hitCount = listStats.sumOf { it.hitCount },
+                    missCount = listStats.sumOf { it.missCount },
+                    loadCount = listStats.sumOf { it.loadCount },
+                    loadFailureCount = listStats.sumOf { it.loadFailureCount },
+                    totalLoadTime = listStats.sumOf { it.totalLoadTime },
+                    evictionCount = listStats.sumOf { it.evictionCount },
                 ),
             relationshipStats = relationshipCache.getStatistics(),
             parsedContentStats = parsedContentCache.getStatistics(),
             searchStats = searchResultCache.getStatistics(),
             totalSize =
-                fragmentCache.size() +
-                    allFragmentsCache.size() +
-                    visibleFragmentsCache.size() +
-                    fragmentsByTagCache.size() +
-                    fragmentsByCategoryCache.size() +
-                    fragmentsByAuthorCache.size() +
-                    fragmentsBySeriesCache.size() +
-                    relationshipCache.size() +
-                    parsedContentCache.size() +
+                listOf(
+                    fragmentCache.size(),
+                    allFragmentsCache.size(),
+                    visibleFragmentsCache.size(),
+                    fragmentsByTagCache.size(),
+                    fragmentsByCategoryCache.size(),
+                    fragmentsByAuthorCache.size(),
+                    relationshipCache.size(),
+                    parsedContentCache.size(),
                     searchResultCache.size(),
+                ).sum(),
         )
+    }
 
-    /**
-     * Reset all cache statistics
-     */
     fun resetStatistics() {
         fragmentCache.resetStatistics()
         allFragmentsCache.resetStatistics()
@@ -364,16 +152,12 @@ class FragmentCache(
         fragmentsByTagCache.resetStatistics()
         fragmentsByCategoryCache.resetStatistics()
         fragmentsByAuthorCache.resetStatistics()
-        fragmentsBySeriesCache.resetStatistics()
         relationshipCache.resetStatistics()
         parsedContentCache.resetStatistics()
         searchResultCache.resetStatistics()
     }
 }
 
-/**
- * Parsed content with front matter and rendered HTML
- */
 data class ParsedContent(
     val frontMatter: Map<String, Any>,
     val rawContent: String,
@@ -381,9 +165,6 @@ data class ParsedContent(
     val fileHash: String,
 )
 
-/**
- * Combined cache statistics report
- */
 data class CacheStatisticsReport(
     val fragmentStats: CacheStatistics,
     val listStats: CacheStatistics,

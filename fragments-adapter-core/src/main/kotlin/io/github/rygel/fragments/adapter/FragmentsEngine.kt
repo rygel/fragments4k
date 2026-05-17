@@ -7,6 +7,7 @@ import io.github.rygel.fragments.AuthorViewModel
 import io.github.rygel.fragments.ContentRelationships
 import io.github.rygel.fragments.Fragment
 import io.github.rygel.fragments.FragmentRepository
+import io.github.rygel.fragments.FragmentTemplates
 import io.github.rygel.fragments.LlmsTxtGenerator
 import io.github.rygel.fragments.NavigationLink
 import io.github.rygel.fragments.NavigationMenuGenerator
@@ -94,6 +95,10 @@ class FragmentsEngine(
             )
         }
     }
+
+    @Volatile private var cachedFeedOutput: FeedOutput? = null
+
+    @Volatile private var feedContentSnapshot: List<Fragment>? = null
 
     private val allRepositories: List<FragmentRepository> =
         listOf(staticEngine.getRepository(), blogEngine.getRepository()) + additionalRepositories
@@ -236,28 +241,52 @@ class FragmentsEngine(
      * ```
      */
     suspend fun collectResolvedFragments(): List<Fragment> {
-        val staticPages = staticEngine.getAllStaticPages()
-        val blogPosts = blogEngine.getAllPosts()
-        val additional = additionalRepositories.flatMap { it.getAllVisible() }
+        val uniqueRepos = allRepositories.distinctBy { System.identityHashCode(it) }
+        val repoResults = uniqueRepos.associateWith { repo -> repo.getAllVisible() }
+
+        val staticRepo = staticEngine.getRepository()
+        val blogRepo = blogEngine.getRepository()
+
+        val staticResults = repoResults[staticRepo] ?: staticRepo.getAllVisible()
+        val blogResults = repoResults[blogRepo] ?: blogRepo.getAllVisible()
+
+        val staticPages =
+            staticResults
+                .filter { it.template == FragmentTemplates.STATIC || it.template.isEmpty() || it.template == FragmentTemplates.DEFAULT }
+                .map { fragment ->
+                    if (fragment.resolvedUrl != null) {
+                        fragment
+                    } else {
+                        fragment.copy(resolvedUrl = "/page/${fragment.slug}")
+                    }
+                }
+
+        val blogPosts =
+            blogResults
+                .filter { it.template in BlogEngine.BLOG_TEMPLATES }
+                .map { fragment ->
+                    if (fragment.resolvedUrl != null) {
+                        fragment
+                    } else {
+                        val date = fragment.date
+                        val url =
+                            if (date != null) {
+                                "/blog/${date.year}/${String.format(java.util.Locale.US, "%02d", date.monthValue)}/${fragment.slug}"
+                            } else {
+                                "/blog/${fragment.slug}"
+                            }
+                        fragment.copy(resolvedUrl = url)
+                    }
+                }
+
+        val additional = additionalRepositories.flatMap { repoResults[it] ?: it.getAllVisible() }
         val providerFragments = additionalFragmentProviders.flatMap { it() }
         return (staticPages + blogPosts + additional + providerFragments).distinctBy { it.slug }
     }
 
-    suspend fun generateRssFeed(): String {
-        val fragments = collectResolvedFragments()
-        return rssGenerator.generateFeed(
-            siteTitle = siteTitle,
-            siteDescription = siteDescription,
-            siteUrl = siteUrl,
-            feedUrl = feedUrl,
-            resolvedFragments = fragments,
-        )
-    }
+    suspend fun generateRssFeed(): String = generateAllFeeds().rssXml
 
-    suspend fun generateSitemap(): String {
-        val fragments = collectResolvedFragments()
-        return sitemapGenerator.generateSitemap(fragments)
-    }
+    suspend fun generateSitemap(): String = generateAllFeeds().sitemapXml
 
     fun generateRobotsTxt(): String =
         buildString {
@@ -267,16 +296,7 @@ class FragmentsEngine(
             appendLine("Sitemap: $siteUrl/sitemap.xml")
         }
 
-    suspend fun generateLlmsTxt(): String {
-        val fragments = collectResolvedFragments()
-        return LlmsTxtGenerator.generate(
-            siteTitle = siteTitle,
-            siteDescription = siteDescription,
-            siteUrl = siteUrl,
-            repositories = allRepositories,
-            resolvedFragments = fragments,
-        )
-    }
+    suspend fun generateLlmsTxt(): String = generateAllFeeds().llmsTxt
 
     data class FeedOutput(
         val rssXml: String,
@@ -286,6 +306,9 @@ class FragmentsEngine(
 
     suspend fun generateAllFeeds(): FeedOutput {
         val fragments = collectResolvedFragments()
+        val cached = cachedFeedOutput
+        if (cached != null && feedContentSnapshot === fragments) return cached
+
         val rssXml =
             rssGenerator.generateFeed(
                 siteTitle = siteTitle,
@@ -303,7 +326,10 @@ class FragmentsEngine(
                 repositories = allRepositories,
                 resolvedFragments = fragments,
             )
-        return FeedOutput(rssXml, sitemapXml, llmsTxt)
+        val output = FeedOutput(rssXml, sitemapXml, llmsTxt)
+        cachedFeedOutput = output
+        feedContentSnapshot = fragments
+        return output
     }
 
     // -- Archive navigation ---------------------------------------------------

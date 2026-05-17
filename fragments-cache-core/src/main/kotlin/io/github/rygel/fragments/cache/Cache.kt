@@ -1,10 +1,12 @@
 package io.github.rygel.fragments.cache
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.time.Instant
+import java.util.LinkedHashMap
 import java.util.concurrent.atomic.AtomicReference
 
 /**
@@ -170,9 +172,22 @@ class InMemoryCache<K, V>(
     private val configuration: CacheConfiguration = CacheConfiguration.DEFAULT,
 ) : Cache<K, V> {
     private val logger = LoggerFactory.getLogger(InMemoryCache::class.java)
-    private val store = HashMap<K, CacheEntry<V>>()
+    private val store =
+        object : LinkedHashMap<K, CacheEntry<V>>(16, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<K, CacheEntry<V>>): Boolean {
+                val maxSize = configuration.maxSize ?: return false
+                if (size > maxSize) {
+                    if (configuration.recordStats) {
+                        statistics.updateAndGet { it.eviction() }
+                    }
+                    return true
+                }
+                return false
+            }
+        }
     private val mutex = Mutex()
     private val statistics = AtomicReference(CacheStatistics())
+    private val inFlight = java.util.concurrent.ConcurrentHashMap<K, kotlinx.coroutines.CompletableDeferred<V>>()
 
     override suspend fun get(key: K): V? =
         mutex.withLock {
@@ -201,43 +216,33 @@ class InMemoryCache<K, V>(
         compute: suspend () -> V,
     ): V {
         val cached = get(key)
-        if (cached != null) {
-            return cached
-        }
+        if (cached != null) return cached
 
-        val startTime = System.nanoTime()
-        val result = runCatching { compute() }
-        if (result.isFailure) {
-            if (configuration.recordStats) {
-                statistics.updateAndGet { it.loadFailure() }
-                logger.error("Cache load failure for key: $key")
-            }
-            throw result.exceptionOrNull()!!
-        }
-        val value = result.getOrNull()!!
-        val endTime = System.nanoTime()
+        val deferred = inFlight.getOrPut(key) { CompletableDeferred() }
 
-        return mutex.withLock {
-            val entry = store[key]
-            if (entry != null && !entry.isExpired()) {
-                if (configuration.recordStats) {
-                    statistics.updateAndGet { it.hit() }
+        return try {
+            if (!deferred.isCompleted) {
+                val startTime = System.nanoTime()
+                try {
+                    val value = compute()
+                    deferred.complete(value)
+                    put(key, value)
+                    if (configuration.recordStats) {
+                        statistics.updateAndGet { it.load(System.nanoTime() - startTime) }
+                    }
+                    deferred.await()
+                } catch (e: Exception) {
+                    if (configuration.recordStats) {
+                        statistics.updateAndGet { it.loadFailure() }
+                    }
+                    deferred.completeExceptionally(e)
+                    throw e
                 }
-                entry.value
             } else {
-                if (entry != null && entry.isExpired()) {
-                    store.remove(key)
-                }
-
-                putEntry(key, value)
-
-                if (configuration.recordStats) {
-                    statistics.updateAndGet { it.load(endTime - startTime) }
-                    logger.debug("Cache compute and load for key: $key in ${endTime - startTime}ns")
-                }
-
-                value
+                deferred.await()
             }
+        } finally {
+            inFlight.remove(key)
         }
     }
 
@@ -308,21 +313,5 @@ class InMemoryCache<K, V>(
             }
 
         store[key] = CacheEntry(value = value, expiresAt = expiresAt)
-
-        enforceMaxSize()
-    }
-
-    private fun enforceMaxSize() {
-        val maxSize = configuration.maxSize ?: return
-
-        while (store.size > maxSize) {
-            store.entries.minByOrNull { it.value.createdAt }?.key?.let { keyToRemove ->
-                store.remove(keyToRemove)
-                if (configuration.recordStats) {
-                    statistics.updateAndGet { it.eviction() }
-                }
-                logger.debug("Cache eviction for key: $keyToRemove (max size reached)")
-            } ?: break
-        }
     }
 }

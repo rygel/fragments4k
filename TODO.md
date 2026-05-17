@@ -501,54 +501,61 @@ This document outlines planned features and enhancements for the Fragments proje
      - Framework-agnostic HTTP caching layer
      - Expected performance: 60-80% reduction in HTTP responses for cached content
 
-- [ ] **Reload-Time Fragment Indexes**
+- [x] **Reload-Time Fragment Indexes** ✅
   - Current: Repository lookups repeatedly scan cached fragment lists for slug, tag, category, author, year/month, and visible/sorted content
   - Goal: Build indexes when fragments are loaded or reloaded so request-time access avoids repeated filtering and sorting
   - Impact: Improves scalability for larger content collections and reduces CPU per request
-  - Technical: Add `slug -> Fragment`, tag/category/author maps, visible sorted list, and year/month indexes to `FileSystemFragmentRepository` and `ClasspathFragmentRepository`; invalidate and rebuild on `reload()`
+  - Technical: Added `FragmentIndexes` data class (slug, tag, category, author, year/month maps, pre-sorted visible list). Built atomically in both `FileSystemFragmentRepository` and `ClasspathFragmentRepository` on load/reload/cache-update. Query methods now use O(1) map lookups instead of O(n) linear scans.
   - Estimation: 3-5 days
+  - Status: Completed 2026-05-17
 
-- [ ] **Blog View Index**
+- [x] **Blog View Index** ✅
   - Current: `BlogEngine` filters, resolves URLs, copies fragments, and sorts by date in most methods
   - Goal: Maintain a reload-aware blog index with sorted posts and lookup maps for common views
   - Impact: Faster blog overview, tag/category/year/archive/author routes
-  - Technical: Build a `BlogIndex` from visible fragments, keyed by tag/category/year/month/author, and reuse URL-resolved fragments instead of copying on every request
+  - Technical: Added `BlogIndex` data class with lazy rebuild using reference-identity check. Pre-built maps for tag, category, year, year+month, and author. Tags and categories pre-counted. Only `includeDrafts` paths still query the repository directly.
   - Estimation: 3-5 days
+  - Status: Completed 2026-05-17
 
-- [ ] **Cache Generated Feed Outputs**
+- [x] **Cache Generated Feed Outputs** ✅
   - Current: RSS, sitemap, and llms.txt endpoints call `collectResolvedFragments()` and regenerate output on each request
   - Goal: Cache generated feed strings and invalidate them when repositories reload or content changes
   - Impact: Reduces repeated full-corpus scans and XML/text generation for frequently crawled endpoints
-  - Technical: Add feed-output cache entries for RSS, sitemap, robots/llms if needed, with explicit invalidation hooks and optional HTTP cache integration
+  - Technical: Added `FeedOutput` caching with reference-identity check in `FragmentsEngine`. `generateRssFeed()`, `generateSitemap()`, `generateLlmsTxt()` all delegate to `generateAllFeeds()` which caches the combined output. Cache invalidates when `collectResolvedFragments()` returns a new list (reload).
   - Estimation: 2-3 days
+  - Status: Completed 2026-05-17
 
-- [ ] **Avoid Duplicate Repository Reads During Feed Collection**
+- [x] **Avoid Duplicate Repository Reads During Feed Collection** ✅
   - Current: `collectResolvedFragments()` calls static and blog engines separately, which can read/filter the same repository more than once
   - Goal: Collect visible fragments once per repository and partition into static/blog/additional content in memory
   - Impact: Reduces CPU and allocation cost for feed generation and static-site export paths
-  - Technical: Refactor `FragmentsEngine.collectResolvedFragments()` to de-duplicate repositories first, then apply static/blog URL resolution without repeated repository calls
+  - Technical: `collectResolvedFragments()` now deduplicates repositories by identity before calling `getAllVisible()` once per repository, then partitions results by template for static/blog URL resolution.
   - Estimation: 1-2 days
+  - Status: Completed 2026-05-17
 
-- [ ] **Optimize ViewModel Computed Properties**
+- [x] **Optimize ViewModel Computed Properties** ✅
   - Current: `FragmentViewModel.formattedDate` creates a new `DateTimeFormatter` on access and `readingTime` recalculates every access
   - Goal: Cache cheap but repeated template-facing computations
   - Impact: Reduces allocations during page rendering, especially on listing pages
-  - Technical: Cache `DateTimeFormatter` instances by pattern and make `readingTime` lazy like `tableOfContents`
+  - Technical: Added `formatterCache` (ConcurrentHashMap) to companion object — `DateTimeFormatter` instances cached by pattern. `readingTime` changed to `by lazy` — computes once per `FragmentViewModel` instance.
   - Estimation: 0.5-1 day
+  - Status: Completed 2026-05-17
 
-- [ ] **Single-Flight Cache Loads**
+- [x] **Single-Flight Cache Loads** ✅
   - Current: `InMemoryCache.getOrCompute()` computes outside the lock, so concurrent misses for the same key can duplicate expensive work
   - Goal: Ensure only one coroutine computes a missing key while others await the result
   - Impact: Prevents thundering-herd work during cold cache or cache expiry
-  - Technical: Add per-key mutex/deferred single-flight tracking and regression tests with concurrent callers
+  - Technical: Added `ConcurrentHashMap<K, CompletableDeferred<V>>` in-flight tracking. First caller computes and completes the deferred; subsequent callers await the same deferred. Statistics tracking (load count, failure count) preserved.
   - Estimation: 1-2 days
+  - Status: Completed 2026-05-17
 
-- [ ] **Improve Cache Eviction Complexity**
+- [x] **Improve Cache Eviction Complexity** ✅
   - Current: `InMemoryCache.enforceMaxSize()` scans all entries to evict the oldest item on each overflow
   - Goal: Make eviction efficient under high churn or replace the implementation with a proven cache
   - Impact: Reduces O(n) eviction overhead for large caches
-  - Technical: Use Caffeine internally or maintain insertion/access order with a linked structure; keep the existing cache interface stable
+  - Technical: Replaced `HashMap` + `enforceMaxSize()` with access-order `LinkedHashMap` and `removeEldestEntry()`. O(1) amortized eviction vs O(n) `minByOrNull` scan. No new dependency added.
   - Estimation: 2-3 days
+  - Status: Completed 2026-05-17
 
 - [ ] **Optimize Image Variant Generation**
   - Current: Responsive variant generation re-opens and decodes the source image for each variant
