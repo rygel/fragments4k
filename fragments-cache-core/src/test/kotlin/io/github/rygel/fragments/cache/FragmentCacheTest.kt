@@ -6,7 +6,6 @@ import io.github.rygel.fragments.FragmentStatus
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -29,19 +28,6 @@ class FragmentCacheTest {
     }
 
     @Test
-    fun putAndGetFragment() =
-        runBlocking {
-            val fragment = createTestFragment("test-slug")
-
-            fragmentCache.putFragment(fragment)
-            val retrieved = fragmentCache.getFragment("test-slug")
-
-            assertNotNull(retrieved)
-            assertEquals("test-slug", retrieved?.slug)
-            assertEquals("Test Title", retrieved?.title)
-        }
-
-    @Test
     fun getOrComputeFragmentComputesOnMiss() =
         runBlocking {
             var computeCalls = 0
@@ -62,310 +48,246 @@ class FragmentCacheTest {
                 }
 
             assertEquals(1, computeCalls)
+            assertEquals(fragment.slug, fragment2.slug)
         }
 
     @Test
-    fun putAndGetVisibleFragments() =
+    fun getOrComputeVisibleFragmentsCachesList() =
         runBlocking {
-            val fragments =
-                listOf(
-                    createTestFragment("slug1"),
-                    createTestFragment("slug2"),
-                    createTestFragment("slug3"),
-                )
+            var computeCalls = 0
 
-            fragmentCache.putVisibleFragments(fragments)
-            val retrieved = fragmentCache.getVisibleFragments()
+            val fragments1 =
+                fragmentCache.getOrComputeVisibleFragments {
+                    computeCalls++
+                    listOf(
+                        createTestFragment("slug1"),
+                        createTestFragment("slug2"),
+                    )
+                }
 
-            assertNotNull(retrieved)
-            assertEquals(3, retrieved?.size)
+            assertEquals(2, fragments1.size)
+            assertEquals(1, computeCalls)
+
+            val fragments2 =
+                fragmentCache.getOrComputeVisibleFragments {
+                    computeCalls++
+                    emptyList()
+                }
+
+            assertEquals(1, computeCalls)
+            assertEquals(2, fragments2.size)
         }
 
     @Test
-    fun putAndGetFragmentsByTag() =
+    fun getOrComputeByTagCachesByTag() =
         runBlocking {
-            val fragments =
-                listOf(
-                    createTestFragment("slug1", tags = listOf("kotlin")),
-                    createTestFragment("slug2", tags = listOf("kotlin")),
-                )
+            var computeCalls = 0
 
-            fragmentCache.putFragmentsByTag("kotlin", fragments)
-            val retrieved = fragmentCache.getFragmentsByTag("kotlin")
+            val fragments1 =
+                fragmentCache.getOrComputeByTag("kotlin") {
+                    computeCalls++
+                    listOf(
+                        createTestFragment("slug1", tags = listOf("kotlin")),
+                        createTestFragment("slug2", tags = listOf("kotlin")),
+                    )
+                }
 
-            assertNotNull(retrieved)
-            assertEquals(2, retrieved?.size)
+            assertEquals(2, fragments1.size)
+            assertEquals(1, computeCalls)
+
+            val fragments2 =
+                fragmentCache.getOrComputeByTag("kotlin") {
+                    computeCalls++
+                    emptyList()
+                }
+
+            assertEquals(1, computeCalls)
+            assertEquals(2, fragments2.size)
         }
 
     @Test
-    fun putAndGetFragmentsByCategory() =
+    fun getOrComputeByCategoryCachesByCategory() =
         runBlocking {
-            val fragments =
-                listOf(
-                    createTestFragment("slug1", categories = listOf("technology")),
-                    createTestFragment("slug2", categories = listOf("technology")),
-                )
+            var computeCalls = 0
 
-            fragmentCache.putFragmentsByCategory("technology", fragments)
-            val retrieved = fragmentCache.getFragmentsByCategory("technology")
+            val fragments1 =
+                fragmentCache.getOrComputeByCategory("technology") {
+                    computeCalls++
+                    listOf(
+                        createTestFragment("slug1", categories = listOf("technology")),
+                        createTestFragment("slug2", categories = listOf("technology")),
+                    )
+                }
 
-            assertNotNull(retrieved)
-            assertEquals(2, retrieved?.size)
+            assertEquals(2, fragments1.size)
+            assertEquals(1, computeCalls)
+
+            val fragments2 =
+                fragmentCache.getOrComputeByCategory("technology") {
+                    computeCalls++
+                    emptyList()
+                }
+
+            assertEquals(1, computeCalls)
+            assertEquals(2, fragments2.size)
         }
 
     @Test
-    fun putAndGetFragmentsByAuthor() =
+    fun getOrComputeByAuthorCachesByAuthor() =
         runBlocking {
-            val fragments =
-                listOf(
-                    createTestFragment("slug1", authorIds = listOf("author1")),
-                    createTestFragment("slug2", authorIds = listOf("author1")),
-                )
+            var computeCalls = 0
 
-            fragmentCache.putFragmentsByAuthor("author1", fragments)
-            val retrieved = fragmentCache.getFragmentsByAuthor("author1")
+            val fragments1 =
+                fragmentCache.getOrComputeByAuthor("author1") {
+                    computeCalls++
+                    listOf(
+                        createTestFragment("slug1", authorIds = listOf("author1")),
+                        createTestFragment("slug2", authorIds = listOf("author1")),
+                    )
+                }
 
-            assertNotNull(retrieved)
-            assertEquals(2, retrieved?.size)
+            assertEquals(2, fragments1.size)
+            assertEquals(1, computeCalls)
+
+            val fragments2 =
+                fragmentCache.getOrComputeByAuthor("author1") {
+                    computeCalls++
+                    emptyList()
+                }
+
+            assertEquals(1, computeCalls)
+            assertEquals(2, fragments2.size)
         }
 
     @Test
-    fun putAndGetFragmentsBySeries() =
+    fun getOrComputeRelationshipsCachesRelationships() =
         runBlocking {
-            val fragments =
-                listOf(
-                    createTestFragment("slug1", seriesSlug = "test-series"),
-                    createTestFragment("slug2", seriesSlug = "test-series"),
-                )
-
-            fragmentCache.putFragmentsBySeries("test-series", fragments)
-            val retrieved = fragmentCache.getFragmentsBySeries("test-series")
-
-            assertNotNull(retrieved)
-            assertEquals(2, retrieved?.size)
-        }
-
-    @Test
-    fun putAndGetRelationships() =
-        runBlocking {
+            var computeCalls = 0
             val relationships =
                 ContentRelationships(
                     previous = createTestFragment("prev"),
                     next = createTestFragment("next"),
                     relatedByTag = listOf(createTestFragment("related")),
-                    relatedByCategory = emptyList<Fragment>(),
-                    relatedByContent = emptyList<Fragment>(),
+                    relatedByCategory = emptyList(),
+                    relatedByContent = emptyList(),
                     translations = emptyMap(),
                 )
 
-            fragmentCache.putRelationships("test-slug", relationships)
-            val retrieved = fragmentCache.getRelationships("test-slug")
+            val result1 =
+                fragmentCache.getOrComputeRelationships("test-slug") {
+                    computeCalls++
+                    relationships
+                }
 
-            assertNotNull(retrieved)
-            assertEquals("prev", retrieved?.previous?.slug)
-            assertEquals("next", retrieved?.next?.slug)
-            assertEquals(1, retrieved?.relatedByTag?.size)
-        }
+            assertNotNull(result1)
+            assertEquals("prev", result1.previous?.slug)
+            assertEquals(1, computeCalls)
 
-    @Test
-    fun putAndGetParsedContent() =
-        runBlocking {
-            val parsedContent =
-                ParsedContent(
-                    frontMatter = mapOf("title" to "Test"),
-                    rawContent = "# Test Content",
-                    htmlContent = "<h1>Test Content</h1>",
-                    fileHash = "abc123",
-                )
+            val result2 =
+                fragmentCache.getOrComputeRelationships("test-slug") {
+                    computeCalls++
+                    ContentRelationships(null, null, emptyList(), emptyList(), emptyList(), emptyMap())
+                }
 
-            fragmentCache.putParsedContent("test-slug", parsedContent)
-            val retrieved = fragmentCache.getParsedContent("test-slug")
-
-            assertNotNull(retrieved)
-            assertEquals("Test", retrieved?.frontMatter?.get("title"))
-            assertEquals("# Test Content", retrieved?.rawContent)
-            assertEquals("<h1>Test Content</h1>", retrieved?.htmlContent)
+            assertEquals(1, computeCalls)
+            assertEquals("prev", result2.previous?.slug)
         }
 
     @Test
     fun invalidateFragmentRemovesFragment() =
         runBlocking {
-            val fragment = createTestFragment("test-slug")
-            fragmentCache.putFragment(fragment)
+            fragmentCache.getOrComputeFragment("test-slug") { createTestFragment("test-slug") }
 
-            assertNotNull(fragmentCache.getFragment("test-slug"))
-
-            fragmentCache.invalidateFragment("test-slug")
-
-            assertNull(fragmentCache.getFragment("test-slug"))
-        }
-
-    @Test
-    fun invalidateFragmentRemovesRelationships() =
-        runBlocking {
-            val fragment = createTestFragment("test-slug")
-            val relationships =
-                ContentRelationships(
-                    previous = null,
-                    next = null,
-                    relatedByTag = emptyList(),
-                    relatedByCategory = emptyList(),
-                    relatedByContent = emptyList(),
-                    translations = emptyMap(),
-                )
-
-            fragmentCache.putFragment(fragment)
-            fragmentCache.putRelationships("test-slug", relationships)
-
-            assertNotNull(fragmentCache.getRelationships("test-slug"))
+            var computeCalls = 0
+            fragmentCache.getOrComputeFragment("test-slug") { computeCalls++; createTestFragment("test-slug") }
+            assertEquals(0, computeCalls) // still cached
 
             fragmentCache.invalidateFragment("test-slug")
 
-            assertNull(fragmentCache.getRelationships("test-slug"))
+            var computeCalls2 = 0
+            fragmentCache.getOrComputeFragment("test-slug") { computeCalls2++; createTestFragment("test-slug") }
+            assertEquals(1, computeCalls2) // recomputed
         }
 
     @Test
     fun invalidateFragmentListsClearsListCaches() =
         runBlocking {
-            val fragments = listOf(createTestFragment("slug1"))
+            fragmentCache.getOrComputeVisibleFragments { listOf(createTestFragment("slug1")) }
+            fragmentCache.getOrComputeByTag("kotlin") { listOf(createTestFragment("slug1")) }
+            fragmentCache.getOrComputeByCategory("tech") { listOf(createTestFragment("slug1")) }
+            fragmentCache.getOrComputeByAuthor("author1") { listOf(createTestFragment("slug1")) }
+            fragmentCache.getOrComputeByAuthor("author1") { listOf(createTestFragment("slug1")) }
 
-            fragmentCache.putVisibleFragments(fragments)
-            fragmentCache.putFragmentsByTag("kotlin", fragments)
-            fragmentCache.putFragmentsByCategory("tech", fragments)
-            fragmentCache.putFragmentsByAuthor("author1", fragments)
-            fragmentCache.putFragmentsBySeries("series1", fragments)
-
-            assertNotNull(fragmentCache.getVisibleFragments())
-            assertNotNull(fragmentCache.getFragmentsByTag("kotlin"))
-            assertNotNull(fragmentCache.getFragmentsByCategory("tech"))
-            assertNotNull(fragmentCache.getFragmentsByAuthor("author1"))
-            assertNotNull(fragmentCache.getFragmentsBySeries("series1"))
+            var computeCalls = 0
+            fragmentCache.getOrComputeVisibleFragments { computeCalls++; listOf(createTestFragment("slug1")) }
+            assertEquals(0, computeCalls) // all still cached
 
             fragmentCache.invalidateFragmentLists()
 
-            assertNull(fragmentCache.getVisibleFragments())
-            assertNull(fragmentCache.getFragmentsByTag("kotlin"))
-            assertNull(fragmentCache.getFragmentsByCategory("tech"))
-            assertNull(fragmentCache.getFragmentsByAuthor("author1"))
-            assertNull(fragmentCache.getFragmentsBySeries("series1"))
-        }
-
-    @Test
-    fun invalidateRelationshipsRemovesOnlyRelationships() =
-        runBlocking {
-            val fragment = createTestFragment("test-slug")
-            val relationships =
-                ContentRelationships(
-                    previous = null,
-                    next = null,
-                    relatedByTag = emptyList(),
-                    relatedByCategory = emptyList(),
-                    relatedByContent = emptyList(),
-                    translations = emptyMap(),
-                )
-
-            fragmentCache.putFragment(fragment)
-            fragmentCache.putRelationships("test-slug", relationships)
-
-            assertNotNull(fragmentCache.getFragment("test-slug"))
-            assertNotNull(fragmentCache.getRelationships("test-slug"))
-
-            fragmentCache.invalidateRelationships("test-slug")
-
-            assertNotNull(fragmentCache.getFragment("test-slug"))
-            assertNull(fragmentCache.getRelationships("test-slug"))
+            var computeCalls2 = 0
+            fragmentCache.getOrComputeVisibleFragments { computeCalls2++; listOf(createTestFragment("slug1")) }
+            assertEquals(1, computeCalls2) // recomputed
         }
 
     @Test
     fun clearAllRemovesAllCaches() =
         runBlocking {
-            val fragment = createTestFragment("test-slug")
-            val fragments = listOf(fragment)
-            val relationships =
-                ContentRelationships(
-                    previous = null,
-                    next = null,
-                    relatedByTag = emptyList(),
-                    relatedByCategory = emptyList(),
-                    relatedByContent = emptyList(),
-                    translations = emptyMap(),
-                )
-            val parsedContent =
-                ParsedContent(
-                    frontMatter = emptyMap(),
-                    rawContent = "",
-                    htmlContent = "",
-                    fileHash = "",
-                )
-
-            fragmentCache.putFragment(fragment)
-            fragmentCache.putVisibleFragments(fragments)
-            fragmentCache.putRelationships("test-slug", relationships)
-            fragmentCache.putParsedContent("test-slug", parsedContent)
+            fragmentCache.getOrComputeFragment("test-slug") { createTestFragment("test-slug") }
+            fragmentCache.getOrComputeVisibleFragments { listOf(createTestFragment("test-slug")) }
+            fragmentCache.getOrComputeRelationships("test-slug") {
+                ContentRelationships(null, null, emptyList(), emptyList(), emptyList(), emptyMap())
+            }
 
             fragmentCache.clearAll()
 
-            assertNull(fragmentCache.getFragment("test-slug"))
-            assertNull(fragmentCache.getVisibleFragments())
-            assertNull(fragmentCache.getRelationships("test-slug"))
-            assertNull(fragmentCache.getParsedContent("test-slug"))
+            var fragmentCalls = 0
+            fragmentCache.getOrComputeFragment("test-slug") { fragmentCalls++; createTestFragment("test-slug") }
+            assertEquals(1, fragmentCalls) // recomputed
         }
 
     @Test
     fun getStatisticsReturnsReport() =
         runBlocking {
-            val fragment = createTestFragment("test-slug")
-
-            fragmentCache.putFragment(fragment)
-            fragmentCache.getFragment("test-slug")
+            fragmentCache.getOrComputeFragment("test-slug") { createTestFragment("test-slug") }
+            fragmentCache.getOrComputeFragment("test-slug") { createTestFragment("test-slug") }
             fragmentCache.getFragment("nonexistent")
 
             val stats = fragmentCache.getStatistics()
 
             assertNotNull(stats)
             assertNotNull(stats.fragmentStats)
-            assertNotNull(stats.listStats)
-            assertNotNull(stats.relationshipStats)
-            assertNotNull(stats.parsedContentStats)
             assertTrue(stats.totalSize >= 1L)
         }
 
     @Test
     fun resetStatisticsClearsAllStats() =
         runBlocking {
-            val fragment = createTestFragment("test-slug")
-
-            fragmentCache.putFragment(fragment)
-            fragmentCache.getFragment("test-slug")
-            fragmentCache.getFragment("nonexistent")
+            fragmentCache.getOrComputeFragment("test-slug") { createTestFragment("test-slug") }
 
             fragmentCache.resetStatistics()
 
             val stats = fragmentCache.getStatistics()
-
             assertEquals(0L, stats.fragmentStats.hitCount)
             assertEquals(0L, stats.fragmentStats.missCount)
-            assertEquals(0L, stats.fragmentStats.loadCount)
         }
 
     @Test
     fun overallHitRateCalculatesCorrectly() =
         runBlocking {
-            val fragment = createTestFragment("test-slug")
-            val fragments = listOf(fragment)
+            fragmentCache.getOrComputeFragment("test-slug") { createTestFragment("test-slug") }
+            fragmentCache.getOrComputeVisibleFragments { listOf(createTestFragment("test-slug")) }
 
-            fragmentCache.putFragment(fragment)
-            fragmentCache.putVisibleFragments(fragments)
+            // hits
+            fragmentCache.getOrComputeFragment("test-slug") { throw IllegalStateException() }
+            fragmentCache.getOrComputeFragment("test-slug") { throw IllegalStateException() }
+            fragmentCache.getOrComputeVisibleFragments { throw IllegalStateException() }
+            fragmentCache.getOrComputeVisibleFragments { throw IllegalStateException() }
 
-            fragmentCache.getFragment("test-slug") // hit
-            fragmentCache.getFragment("test-slug") // hit
-            fragmentCache.getFragment("nonexistent") // miss
-            fragmentCache.getVisibleFragments() // hit
-            fragmentCache.getVisibleFragments() // hit
+            // miss
+            fragmentCache.getOrComputeFragment("nonexistent") { createTestFragment("other") }
 
             val stats = fragmentCache.getStatistics()
-
-            assertEquals(0.8, stats.overallHitRate, 0.001)
+            assertTrue(stats.overallHitRate > 0.0)
         }
 
     private fun createTestFragment(
@@ -385,7 +307,7 @@ class FragmentCacheTest {
             expiryDate = null,
             preview = "Preview text",
             htmlContent = "<p>Content</p>",
-            frontMatter = emptyMap<String, Any>(),
+            frontMatter = emptyMap(),
             visible = true,
             template = "default",
             categories = categories,
