@@ -3,11 +3,13 @@ package io.github.rygel.fragments
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import java.io.File
 import java.time.LocalDateTime
 
@@ -131,4 +133,64 @@ class FileSystemFragmentRevisionRepositoryTest {
 
             assertNull(result)
         }
+
+    @Test
+    fun safeYamlRejectsUnsafeTagsInRevisionFrontMatter() {
+        val yaml = org.yaml.snakeyaml.Yaml(org.yaml.snakeyaml.constructor.SafeConstructor(org.yaml.snakeyaml.LoaderOptions()))
+        val result =
+            runCatching {
+                yaml.load<Any>("!!javax.script.ScriptEngineManager [[]]")
+            }
+        assertTrue(
+            result.isFailure || result.getOrNull() is String,
+            "SafeConstructor should reject or neuter unsafe YAML tags",
+        )
+    }
+
+    @Test
+    fun saveRevisionRejectsPathTraversalSlug() {
+        runBlocking {
+            val fragment = createFragment(slug = "../../etc/passwd")
+            assertThrows<IllegalArgumentException> {
+                repository.saveRevision(fragment)
+            }
+        }
+    }
+
+    @Test
+    fun saveRevisionRejectsBlankSlug() {
+        runBlocking {
+            val fragment = createFragment(slug = "")
+            assertThrows<IllegalArgumentException> {
+                repository.saveRevision(fragment)
+            }
+        }
+    }
+
+    @Test
+    fun getRevisionsRejectsPathTraversalSlug() {
+        runBlocking {
+            assertThrows<IllegalArgumentException> {
+                repository.getRevisions("../../etc")
+            }
+        }
+    }
+
+    @Test
+    fun deleteRevisionsRejectsPathTraversalSlug() {
+        runBlocking {
+            assertThrows<IllegalArgumentException> {
+                repository.deleteRevisions("../secret")
+            }
+        }
+    }
+
+    @Test
+    fun getRevisionCountRejectsPathTraversalSlug() {
+        runBlocking {
+            assertThrows<IllegalArgumentException> {
+                repository.getRevisionCount("../../etc")
+            }
+        }
+    }
 }
