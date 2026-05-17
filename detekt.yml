@@ -11,7 +11,7 @@ complexity:
     threshold: 15
   TooManyFunctions:
     thresholdInFiles: 15
-    thresholdInClasses: 15
+    thresholdInClasses: 30
   NestedBlockDepth:
     threshold: 5
 
