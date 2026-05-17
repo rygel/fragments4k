@@ -70,6 +70,8 @@ class ClasspathFragmentRepository(
 
     @Volatile private var cachedFragments: List<Fragment> = emptyList()
 
+    @Volatile private var indexes: FragmentIndexes = FragmentIndexes.EMPTY
+
     @Volatile private var loaded = false
 
     companion object {
@@ -84,31 +86,14 @@ class ClasspathFragmentRepository(
 
     override suspend fun getAllVisible(): List<Fragment> =
         withContext(Dispatchers.IO) {
-            val now = LocalDateTime.now()
             loadFragments()
-                .filter { fragment ->
-                    fragment.visible &&
-                        when (fragment.status) {
-                            FragmentStatus.PUBLISHED -> {
-                                fragment.expiryDate == null || !fragment.expiryDate.isBefore(now)
-                            }
-
-                            FragmentStatus.SCHEDULED -> {
-                                fragment.publishDate != null &&
-                                    !fragment.publishDate.isAfter(now) &&
-                                    (fragment.expiryDate == null || !fragment.expiryDate.isBefore(now))
-                            }
-
-                            else -> {
-                                false
-                            }
-                        }
-                }.sortedByDescending { it.date }
+            indexes.allVisibleSorted
         }
 
     override suspend fun getBySlug(slug: String): Fragment? =
         withContext(Dispatchers.IO) {
-            loadFragments().find { it.slug == slug || it.slug == "/$slug" }
+            loadFragments()
+            indexes.bySlug[slug] ?: indexes.bySlug["/$slug"]
         }
 
     override suspend fun getByYearMonthAndSlug(
@@ -117,63 +102,64 @@ class ClasspathFragmentRepository(
         slug: String,
     ): Fragment? =
         withContext(Dispatchers.IO) {
-            loadFragments().find {
-                it.slug == slug &&
-                    it.date?.year == year.toIntOrNull() &&
-                    it.date?.monthValue == month.toIntOrNull()
-            }
+            loadFragments()
+            val yearInt = year.toIntOrNull() ?: return@withContext null
+            val monthInt = month.toIntOrNull() ?: return@withContext null
+            indexes.byYearMonth[Pair(yearInt, monthInt)]?.find { it.slug == slug }
         }
 
     override suspend fun getByTag(tag: String): List<Fragment> =
         withContext(Dispatchers.IO) {
-            loadFragments().filter { it.tags.contains(tag.lowercase()) }
+            loadFragments()
+            indexes.byTag[tag.lowercase()] ?: emptyList()
         }
 
     override suspend fun getByCategory(category: String): List<Fragment> =
         withContext(Dispatchers.IO) {
-            loadFragments().filter { it.categories.contains(category.lowercase()) }
+            loadFragments()
+            indexes.byCategory[category.lowercase()] ?: emptyList()
         }
 
     override suspend fun getByStatus(status: FragmentStatus): List<Fragment> =
         withContext(Dispatchers.IO) {
-            loadFragments().filter { it.status == status }
+            loadFragments()
+            indexes.byStatus[status] ?: emptyList()
         }
 
     override suspend fun getByAuthor(authorId: String): List<Fragment> =
         withContext(Dispatchers.IO) {
-            loadFragments().filter { it.authorIds.contains(authorId) || it.author == authorId }
+            loadFragments()
+            indexes.byAuthor[authorId] ?: emptyList()
         }
 
     override suspend fun getByAuthors(authorIds: List<String>): List<Fragment> =
         withContext(Dispatchers.IO) {
-            loadFragments().filter { fragment ->
-                authorIds.any { fragment.authorIds.contains(it) || fragment.author == it }
-            }
+            loadFragments()
+            authorIds.flatMap { indexes.byAuthor[it] ?: emptyList() }.distinctBy { it.slug }
         }
 
     override suspend fun reload() {
         withContext(Dispatchers.IO) {
-            loaded = false
-            cachedFragments = loadFragmentsFromClasspath()
+            val fragments = loadFragmentsFromClasspath()
+            cachedFragments = fragments
+            indexes = FragmentIndexes.build(fragments)
             loaded = true
         }
     }
 
     override suspend fun getScheduledFragmentsDueForPublication(threshold: LocalDateTime): List<Fragment> =
         withContext(Dispatchers.IO) {
-            loadFragments().filter { fragment ->
-                fragment.status == FragmentStatus.SCHEDULED &&
-                    fragment.publishDate != null &&
-                    !fragment.publishDate.isAfter(threshold)
+            loadFragments()
+            (indexes.byStatus[FragmentStatus.SCHEDULED] ?: emptyList()).filter { fragment ->
+                fragment.publishDate != null && !fragment.publishDate.isAfter(threshold)
             }
         }
 
     override suspend fun getFragmentsExpiringSoon(threshold: LocalDateTime): List<Fragment> =
         withContext(Dispatchers.IO) {
-            loadFragments().filter { fragment ->
-                fragment.expiryDate != null &&
-                    !fragment.expiryDate.isAfter(threshold) &&
-                    fragment.status == FragmentStatus.PUBLISHED
+            loadFragments()
+            (indexes.byStatus[FragmentStatus.PUBLISHED] ?: emptyList()).filter { fragment ->
+                fragment.expiryDate != null && !fragment.expiryDate.isAfter(threshold)
             }
         }
 
@@ -254,6 +240,7 @@ class ClasspathFragmentRepository(
     private fun loadFragments(): List<Fragment> {
         if (!loaded) {
             cachedFragments = loadFragmentsFromClasspath()
+            indexes = FragmentIndexes.build(cachedFragments)
             loaded = true
         }
         return cachedFragments
