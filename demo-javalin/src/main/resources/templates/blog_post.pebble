@@ -259,19 +259,9 @@
             {{ viewModel.content }}
         </div>
 
-        {% if viewModel.relatedPosts.size > 0 %}
-        <aside class="related-posts">
-            <h3>You might also like</h3>
-            <ul>
-                {% for post in viewModel.relatedPosts %}
-                <li>
-                    <a href="/blog/{% for date in post.date %}{{ date.year }}/{% if date.monthValue < 10 %}0{% endif %}{{ date.monthValue }}/{% endfor %}{{ post.slug }}">{{ post.title }}</a>
-                    <span class="post-date">{{ post.formattedDate }}</span>
-                </li>
-                {% endfor %}
-            </ul>
-        </aside>
-        {% endif %}
+        <section id="related-posts" hx-trigger="intersect once" hx-get="/blog/{{ viewModel.year }}/{{ viewModel.monthFormatted }}/{{ viewModel.slug }}/related" hx-target="this" hx-swap="innerHTML">
+            <div class="loading">Loading related posts...</div>
+        </section>
     </article>
 
     <footer>
@@ -279,6 +269,7 @@
         <p>{{ viewModel.footer.fullCopyrightText }}</p>
     </footer>
 
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-kotlin.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>

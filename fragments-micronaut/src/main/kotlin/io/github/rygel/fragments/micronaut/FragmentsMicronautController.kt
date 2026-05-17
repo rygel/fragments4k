@@ -189,6 +189,20 @@ class FragmentsMicronautController
             return HttpResponse.ok(viewModel)
         }
 
+        @Get("/blog/{year}/{month}/{slug}/related")
+        suspend fun relatedPosts(
+            year: String,
+            month: String,
+            slug: String,
+        ): HttpResponse<Any> {
+            val html = engine.getRelatedPostsFragment(year, month, slug)
+            return if (html != null) {
+                HttpResponse.ok(html)
+            } else {
+                HttpResponse.noContent()
+            }
+        }
+
         private fun isHtmxRequest(headers: HttpHeaders): Boolean = engine.isHtmxRequest(headers.get(FragmentViewModel.HTMX_REQUEST_HEADER))
 
         @Get("/rss.xml")

@@ -201,6 +201,21 @@ class FragmentsQuarkusResource
             return Response.ok(viewModel).build()
         }
 
+        @GET
+        @Path("/blog/{year}/{month}/{slug}/related")
+        suspend fun relatedPosts(
+            @PathParam("year") year: String,
+            @PathParam("month") month: String,
+            @PathParam("slug") slug: String,
+        ): Response {
+            val html = engine.getRelatedPostsFragment(year, month, slug)
+            return if (html != null) {
+                Response.ok(html).build()
+            } else {
+                Response.noContent().build()
+            }
+        }
+
         private fun isHtmxRequest(headers: HttpHeaders): Boolean =
             engine.isHtmxRequest(headers.getHeaderString(FragmentViewModel.HTMX_REQUEST_HEADER))
 

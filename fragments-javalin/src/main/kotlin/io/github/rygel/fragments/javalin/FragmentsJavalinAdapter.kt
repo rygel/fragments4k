@@ -184,6 +184,20 @@ fun RoutesConfig.fragmentsRoutes(
         }
     }
 
+    get("/blog/{year}/{month}/{slug}/related") { ctx ->
+        val year = ctx.pathParam("year")
+        val month = ctx.pathParam("month")
+        val slug = ctx.pathParam("slug")
+        ctx.handleAsync {
+            val html = engine.getRelatedPostsFragment(year, month, slug)
+            if (html != null) {
+                ctx.html(html)
+            } else {
+                ctx.status(204)
+            }
+        }
+    }
+
     get("/blog/tag/{tag}") { ctx ->
         val tag = ctx.pathParam("tag")
         val page = ctx.queryParam("page")?.toIntOrNull() ?: 1

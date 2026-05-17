@@ -149,6 +149,9 @@ data class FragmentViewModel(
     val month: Int?
         get() = fragment.date?.monthValue
 
+    val monthFormatted: String
+        get() = fragment.date?.let { String.format(java.util.Locale.US, "%02d", it.monthValue) } ?: ""
+
     val tableOfContents: List<TableOfContentsItem> by lazy { extractTableOfContents() }
 
     val relatedPosts: List<FragmentViewModel> by lazy {

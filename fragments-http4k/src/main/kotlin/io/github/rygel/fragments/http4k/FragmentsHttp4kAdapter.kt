@@ -86,6 +86,7 @@ class FragmentsHttp4kAdapter(
                 "/blog" bind GET to { request -> handleBlogOverview(request) },
                 "/blog/page/{page}" bind GET to { request -> handleBlogOverview(request) },
                 "/blog/{year}/{month}/{slug}" bind GET to { request -> handleBlogPost(request) },
+                "/blog/{year}/{month}/{slug}/related" bind GET to { request -> handleRelatedPosts(request) },
                 "/blog/tag/{tag}" bind GET to { request -> handleByTag(request) },
                 "/blog/category/{category}" bind GET to { request -> handleByCategory(request) },
                 "/blog/author/{slug}" bind GET to { request -> handleByAuthor(request) },
@@ -368,6 +369,20 @@ class FragmentsHttp4kAdapter(
                     archiveBreadcrumbs = engine.generateArchiveBreadcrumbs(currentYear = yearInt, currentMonth = monthInt),
                 )
             renderResponse(viewModel)
+        }
+    }
+
+    private fun handleRelatedPosts(request: Request): Response {
+        val year = request.path("year") ?: return Response(Status.NOT_FOUND)
+        val month = request.path("month") ?: return Response(Status.NOT_FOUND)
+        val slug = request.path("slug") ?: return Response(Status.NOT_FOUND)
+        return runBlocking {
+            val html = engine.getRelatedPostsFragment(year, month, slug)
+            if (html != null) {
+                Response(Status.OK).body(html)
+            } else {
+                Response(Status.NO_CONTENT)
+            }
         }
     }
 

@@ -16,6 +16,7 @@ import io.github.rygel.fragments.lucene.SearchSuggestion
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.GetMapping
@@ -300,6 +301,16 @@ class FragmentsSpringController(
             ),
         )
         return FragmentTemplates.SEARCH
+    }
+
+    @GetMapping("/blog/{year}/{month}/{slug}/related")
+    suspend fun relatedPosts(
+        @PathVariable year: String,
+        @PathVariable month: String,
+        @PathVariable slug: String,
+    ): ResponseEntity<String> {
+        val html = engine.getRelatedPostsFragment(year, month, slug)
+        return if (html != null) ResponseEntity.ok().body(html) else ResponseEntity.noContent().build()
     }
 
     @GetMapping("/api/autocomplete")
